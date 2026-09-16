@@ -8,12 +8,14 @@ function ScenarioCard({
   tone,
   total,
   rate,
+  lines,
 }: {
   title: string;
   subtitle: string;
   tone: "current" | "reform";
   total: number;
   rate: number;
+  lines?: { label: string; value: number }[] | undefined;
 }) {
   const accent =
     tone === "current"
@@ -26,7 +28,17 @@ function ScenarioCard({
         {subtitle}
       </p>
       <h3 className="mt-1 text-xl font-semibold text-foreground">{title}</h3>
-      <div className="mt-4 border-t border-border/60 pt-4">
+      {lines?.length ? (
+        <dl className="mt-4 space-y-2 text-sm">
+          {lines.map((line) => (
+            <div key={line.label} className="flex justify-between gap-3">
+              <dt className="text-muted-foreground">{line.label}</dt>
+              <dd className="font-medium tabular-nums">{brl(line.value)}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      <div className={`mt-4 pt-4 ${lines?.length ? "border-t border-border/60" : ""}`}>
         <p className={`text-3xl font-bold tabular-nums ${totalColor}`}>{brl(total)}</p>
         <p className="mt-1 text-xs text-muted-foreground">
           por mês · carga de {pct(rate)} sobre a base informada
@@ -129,6 +141,7 @@ export function ResultView({
           tone="current"
           total={result.current.total}
           rate={result.current.rate}
+          lines={presentationMode ? undefined : result.current.lines}
         />
         <ScenarioCard
           title="Reforma Tributária"
@@ -136,6 +149,7 @@ export function ResultView({
           tone="reform"
           total={result.reform.total}
           rate={result.reform.rate}
+          lines={presentationMode ? undefined : result.reform.lines}
         />
       </div>
 
@@ -186,33 +200,6 @@ export function ResultView({
 
       {!presentationMode ? (
         <>
-          <details className="group rounded-xl border border-border bg-card">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-semibold marker:content-none">
-              <span>Ver memória de cálculo</span>
-              <span aria-hidden className="text-lg text-muted-foreground transition-transform group-open:rotate-45">
-                +
-              </span>
-            </summary>
-            <div className="grid gap-6 border-t border-border px-5 py-5 md:grid-cols-2">
-              {[
-                { title: "Sistema Atual", lines: result.current.lines },
-                { title: `Reforma Tributária · ${year}`, lines: result.reform.lines },
-              ].map((scenario) => (
-                <div key={scenario.title}>
-                  <h3 className="text-sm font-semibold text-foreground">{scenario.title}</h3>
-                  <dl className="mt-3 space-y-2 text-sm">
-                    {scenario.lines.map((line) => (
-                      <div key={line.label} className="flex justify-between gap-3">
-                        <dt className="text-muted-foreground">{line.label}</dt>
-                        <dd className="font-medium tabular-nums">{brl(line.value)}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                </div>
-              ))}
-            </div>
-          </details>
-
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-xl border border-border bg-card p-5">
               <h3 className="text-base font-semibold">O que esta estimativa considera</h3>
