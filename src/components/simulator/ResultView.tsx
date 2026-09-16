@@ -1,6 +1,14 @@
 import { LEGAL_REFERENCE_DATE, YEARS, type YearId } from "@/lib/tax/constants";
-import { brl, compareRegimes, pct, simulate, type SimulationInput } from "@/lib/tax/calc";
+import { brl, compareRegimes, pct, simulate, type SimulationInput, type TaxpayerType } from "@/lib/tax/calc";
 import { Field, Notice, TextInput, Toggle } from "./ui";
+
+const REGIME_LABELS: Record<TaxpayerType, string> = {
+  pf: "Pessoa Física (CLT)",
+  simples: "Simples Nacional",
+  presumido: "Lucro Presumido",
+  real: "Lucro Real",
+  mei: "MEI",
+};
 
 function RegimeComparison({ input, year }: { input: SimulationInput; year: YearId }) {
   const items = compareRegimes(input, year);
@@ -194,16 +202,16 @@ export function ResultView({
 
       <div className="grid gap-4 md:grid-cols-2">
         <ScenarioCard
-          title="Sistema Atual"
-          subtitle="Como você paga hoje"
+          title={REGIME_LABELS[input.taxpayerType]}
+          subtitle="Sistema atual — como você paga hoje"
           tone="current"
           total={result.current.total}
           rate={result.current.rate}
           lines={presentationMode ? undefined : result.current.lines}
         />
         <ScenarioCard
-          title="Reforma Tributária"
-          subtitle={`Cenário ${year}`}
+          title={REGIME_LABELS[input.taxpayerType]}
+          subtitle={`Cenário ${year} — Reforma Tributária`}
           tone="reform"
           total={result.reform.total}
           rate={result.reform.rate}
