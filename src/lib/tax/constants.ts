@@ -28,7 +28,14 @@ export interface Activity {
   label: string;
   /** Redução sobre a alíquota de referência (0,3 = 30%). */
   reduction: number;
-  /** Profissão regulamentada: exige validação de sócios para manter o benefício. */
+  /**
+   * Profissão regulamentada (Art. 127 da LC 214/2025): a redução de 30% exige
+   * que todos os sócios tenham registro no conselho profissional e nenhum seja
+   * pessoa jurídica — por isso dispara a validação da Etapa 3.
+   * Os benefícios de 60% (Art. 125 da LC 214/2025: saúde, educação, cultura,
+   * transporte público, insumos agro) NÃO têm esse requisito e são aplicados
+   * automaticamente (regulated = false).
+   */
   regulated: boolean;
   sector: Sector;
 }
@@ -59,7 +66,7 @@ export const ACTIVITIES: Activity[] = [
     id: "saude",
     label: "Serviços de saúde",
     reduction: 0.6,
-    regulated: true,
+    regulated: false, // Art. 125: redução de 60% sem requisito societário
     sector: "servico",
   },
   {
