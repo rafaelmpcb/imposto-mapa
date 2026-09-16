@@ -1,19 +1,17 @@
 import { LEGAL_REFERENCE_DATE, YEARS, type YearId } from "@/lib/tax/constants";
 import { brl, pct, simulate, type SimulationInput } from "@/lib/tax/calc";
-import { Notice } from "./ui";
+import { Field, Notice, TextInput, Toggle } from "./ui";
 
 function ScenarioCard({
   title,
   subtitle,
   tone,
-  lines,
   total,
   rate,
 }: {
   title: string;
   subtitle: string;
   tone: "current" | "reform";
-  lines: { label: string; value: number }[];
   total: number;
   rate: number;
 }) {
@@ -28,14 +26,6 @@ function ScenarioCard({
         {subtitle}
       </p>
       <h3 className="mt-1 text-xl font-semibold text-foreground">{title}</h3>
-      <dl className="mt-4 space-y-2 border-t border-border/60 pt-4 text-sm">
-        {lines.map((l) => (
-          <div key={l.label} className="flex justify-between gap-3">
-            <dt className="text-muted-foreground">{l.label}</dt>
-            <dd className="font-medium tabular-nums">{brl(l.value)}</dd>
-          </div>
-        ))}
-      </dl>
       <div className="mt-4 border-t border-border/60 pt-4">
         <p className={`text-3xl font-bold tabular-nums ${totalColor}`}>{brl(total)}</p>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -50,49 +40,93 @@ export function ResultView({
   input,
   year,
   onYearChange,
+  clientName,
+  onClientNameChange,
+  presentationMode,
+  onPresentationModeChange,
 }: {
   input: SimulationInput;
   year: YearId;
   onYearChange: (y: YearId) => void;
+  clientName: string;
+  onClientNameChange: (name: string) => void;
+  presentationMode: boolean;
+  onPresentationModeChange: (active: boolean) => void;
 }) {
   const result = simulate(input, year);
   const diff = result.reform.total - result.current.total;
+  const rateDiff = result.reform.rate - result.current.rate;
   const worse = diff > 0;
+  const unchanged = Math.abs(diff) < 0.005;
+  const differenceTone = unchanged
+    ? "border-border bg-secondary text-foreground"
+    : worse
+      ? "border-danger/35 bg-danger-soft text-danger"
+      : "border-success/35 bg-success-soft text-success";
+  const differenceLabel = unchanged
+    ? "Sem alteração estimada"
+    : worse
+      ? "Aumento estimado"
+      : "Economia estimada";
+  const percentagePointLabel = `${rateDiff > 0 ? "+" : ""}${(rateDiff * 100).toLocaleString(
+    "pt-BR",
+    { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+  )} p.p.`;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold">Ano de referência</h2>
-        <div className="mt-3 grid gap-2 sm:grid-cols-3">
-          {YEARS.map((y) => (
-            <button
-              key={y.id}
-              type="button"
-              onClick={() => onYearChange(y.id)}
-              className={`rounded-md border px-4 py-3 text-left text-sm transition-colors ${
-                year === y.id
-                  ? "border-navy bg-navy text-navy-foreground"
-                  : "border-input bg-card hover:bg-secondary"
-              }`}
-            >
-              {y.label}
-            </button>
-          ))}
-        </div>
-        <div className="mt-3">
-          <Notice tone="warning">
-            Os valores de 2027 em diante são projeções baseadas no cronograma legal atual, que
-            ainda pode ser ajustado por regulamentação complementar.
-          </Notice>
-        </div>
+      <div className="flex justify-end">
+        <Toggle
+          checked={presentationMode}
+          onChange={onPresentationModeChange}
+          label="Modo Apresentação"
+        />
       </div>
+
+      {!presentationMode ? (
+        <div className="space-y-6">
+          <Field label="Nome do cliente ou empresa (opcional)">
+            <TextInput
+              type="text"
+              value={clientName}
+              onChange={(event) => onClientNameChange(event.target.value)}
+              placeholder="Ex.: Empresa Exemplo Ltda."
+              autoComplete="off"
+            />
+          </Field>
+          <div>
+            <h2 className="text-2xl font-semibold">Ano de referência</h2>
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              {YEARS.map((y) => (
+                <button
+                  key={y.id}
+                  type="button"
+                  onClick={() => onYearChange(y.id)}
+                  className={`rounded-md border px-4 py-3 text-left text-sm transition-colors ${
+                    year === y.id
+                      ? "border-navy bg-navy text-navy-foreground"
+                      : "border-input bg-card hover:bg-secondary"
+                  }`}
+                >
+                  {y.label}
+                </button>
+              ))}
+            </div>
+            <div className="mt-3">
+              <Notice tone="warning">
+                Os valores de 2027 em diante são projeções baseadas no cronograma legal atual, que
+                ainda pode ser ajustado por regulamentação complementar.
+              </Notice>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2">
         <ScenarioCard
           title="Sistema Atual"
           subtitle="Como você paga hoje"
           tone="current"
-          lines={result.current.lines}
           total={result.current.total}
           rate={result.current.rate}
         />
@@ -100,10 +134,18 @@ export function ResultView({
           title="Reforma Tributária"
           subtitle={`Cenário ${year}`}
           tone="reform"
-          lines={result.reform.lines}
           total={result.reform.total}
           rate={result.reform.rate}
         />
+      </div>
+
+      <div className={`mx-auto max-w-xl rounded-xl border-2 p-6 text-center ${differenceTone}`}>
+        <p className="text-sm font-semibold uppercase tracking-wide">{differenceLabel}</p>
+        <p className="mt-2 text-4xl font-bold tabular-nums">{brl(Math.abs(diff))}</p>
+        <p className="mt-1 text-sm font-medium">por mês</p>
+        <p className="mt-4 border-t border-current/20 pt-4 text-base font-semibold tabular-nums">
+          {percentagePointLabel} na carga tributária
+        </p>
       </div>
 
       <div className="rounded-xl border border-border bg-card p-5">
@@ -142,34 +184,65 @@ export function ResultView({
         ) : null}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="text-base font-semibold">O que esta estimativa considera</h3>
-          <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
-            <li>Alíquota de referência de 26,5% e reduções por atividade</li>
-            <li>Tributos sobre consumo do regime atual (PIS, COFINS, ICMS/ISS, Simples)</li>
-            <li>IRPJ, CSLL e contribuição previdenciária patronal sobre a folha</li>
-            <li>Créditos estimados sobre compras e receita monofásica informadas</li>
-            <li>Cronograma de transição previsto na LC 214/2025</li>
-          </ul>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="text-base font-semibold">O que NÃO considera</h3>
-          <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
-            <li>Benefícios estaduais/municipais, substituição tributária e regimes especiais</li>
-            <li>Split payment, cashback e Imposto Seletivo</li>
-            <li>Créditos acumulados, estoques e operações interestaduais específicas</li>
-            <li>Planejamento societário, distribuição de lucros e tributação de dividendos</li>
-            <li>Particularidades contratuais e reprecificação com clientes e fornecedores</li>
-          </ul>
-        </div>
-      </div>
+      {!presentationMode ? (
+        <>
+          <details className="group rounded-xl border border-border bg-card">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-semibold marker:content-none">
+              <span>Ver memória de cálculo</span>
+              <span aria-hidden className="text-lg text-muted-foreground transition-transform group-open:rotate-45">
+                +
+              </span>
+            </summary>
+            <div className="grid gap-6 border-t border-border px-5 py-5 md:grid-cols-2">
+              {[
+                { title: "Sistema Atual", lines: result.current.lines },
+                { title: `Reforma Tributária · ${year}`, lines: result.reform.lines },
+              ].map((scenario) => (
+                <div key={scenario.title}>
+                  <h3 className="text-sm font-semibold text-foreground">{scenario.title}</h3>
+                  <dl className="mt-3 space-y-2 text-sm">
+                    {scenario.lines.map((line) => (
+                      <div key={line.label} className="flex justify-between gap-3">
+                        <dt className="text-muted-foreground">{line.label}</dt>
+                        <dd className="font-medium tabular-nums">{brl(line.value)}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              ))}
+            </div>
+          </details>
 
-      <Notice>
-        Esta é uma estimativa baseada nos dados informados e na legislação vigente da Reforma
-        Tributária (LC 214/2025) em {LEGAL_REFERENCE_DATE}. Não substitui uma análise fiscal
-        completa nem constitui aconselhamento jurídico ou tributário.
-      </Notice>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border border-border bg-card p-5">
+              <h3 className="text-base font-semibold">O que esta estimativa considera</h3>
+              <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                <li>Alíquota de referência de 26,5% e reduções por atividade</li>
+                <li>Tributos sobre consumo do regime atual (PIS, COFINS, ICMS/ISS, Simples)</li>
+                <li>IRPJ, CSLL e contribuição previdenciária patronal sobre a folha</li>
+                <li>Créditos estimados sobre compras e receita monofásica informadas</li>
+                <li>Cronograma de transição previsto na LC 214/2025</li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-5">
+              <h3 className="text-base font-semibold">O que NÃO considera</h3>
+              <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                <li>Benefícios estaduais/municipais, substituição tributária e regimes especiais</li>
+                <li>Split payment, cashback e Imposto Seletivo</li>
+                <li>Créditos acumulados, estoques e operações interestaduais específicas</li>
+                <li>Planejamento societário, distribuição de lucros e tributação de dividendos</li>
+                <li>Particularidades contratuais e reprecificação com clientes e fornecedores</li>
+              </ul>
+            </div>
+          </div>
+
+          <Notice>
+            Esta é uma estimativa baseada nos dados informados e na legislação vigente da Reforma
+            Tributária (LC 214/2025) em {LEGAL_REFERENCE_DATE}. Não substitui uma análise fiscal
+            completa nem constitui aconselhamento jurídico ou tributário.
+          </Notice>
+        </>
+      ) : null}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import type { ReactNode, SelectHTMLAttributes } from "react";
+import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
 
 export function Field({
   label,
@@ -23,6 +23,40 @@ const controlClass =
 
 export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
   return <select {...props} className={controlClass} />;
+}
+
+export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
+  return <input {...props} className={controlClass} />;
+}
+
+export function Toggle({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: string;
+}) {
+  return (
+    <label className="inline-flex cursor-pointer items-center gap-3 text-sm font-semibold text-foreground">
+      <span>{label}</span>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="sr-only"
+      />
+      <span
+        aria-hidden
+        className={`relative h-6 w-11 rounded-full transition-colors ${checked ? "bg-navy" : "bg-input"}`}
+      >
+        <span
+          className={`absolute left-1 top-1 h-4 w-4 rounded-full bg-card shadow-sm transition-transform ${checked ? "translate-x-5" : "translate-x-0"}`}
+        />
+      </span>
+    </label>
+  );
 }
 
 export function MoneyInput({
