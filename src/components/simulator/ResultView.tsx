@@ -216,6 +216,8 @@ export function ResultView({
         </p>
       </div>
 
+      {isBusiness ? <RegimeComparison input={input} year={year} /> : null}
+
       <div className="rounded-xl border border-border bg-card p-5">
         <h3 className="text-lg font-semibold">Resumo executivo</h3>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
