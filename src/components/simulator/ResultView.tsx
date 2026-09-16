@@ -38,7 +38,7 @@ function ScenarioCard({
           ))}
         </dl>
       ) : null}
-      <div className={`mt-4 border-t border-border/60 pt-4 ${lines?.length ? "" : "border-t-0"}`}>
+      <div className={`mt-4 pt-4 ${lines?.length ? "border-t border-border/60" : ""}`}>
         <p className={`text-3xl font-bold tabular-nums ${totalColor}`}>{brl(total)}</p>
         <p className="mt-1 text-xs text-muted-foreground">
           por mês · carga de {pct(rate)} sobre a base informada
