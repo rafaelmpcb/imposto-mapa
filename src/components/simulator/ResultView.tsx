@@ -15,7 +15,7 @@ function ScenarioCard({
   tone: "current" | "reform";
   total: number;
   rate: number;
-  lines?: { label: string; value: number }[];
+  lines?: { label: string; value: number }[] | undefined;
 }) {
   const accent =
     tone === "current"
