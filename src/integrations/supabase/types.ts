@@ -14,7 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      simulations: {
+        Row: {
+          activity_id: string
+          base_amount: number
+          client_name: string | null
+          created_at: string
+          current_rate: number
+          current_total: number
+          id: string
+          input: Json
+          reform_rate: number
+          reform_total: number
+          taxpayer_type: string
+          uf: string
+          year_id: number
+        }
+        Insert: {
+          activity_id: string
+          base_amount?: number
+          client_name?: string | null
+          created_at?: string
+          current_rate?: number
+          current_total?: number
+          id?: string
+          input: Json
+          reform_rate?: number
+          reform_total?: number
+          taxpayer_type: string
+          uf: string
+          year_id: number
+        }
+        Update: {
+          activity_id?: string
+          base_amount?: number
+          client_name?: string | null
+          created_at?: string
+          current_rate?: number
+          current_total?: number
+          id?: string
+          input?: Json
+          reform_rate?: number
+          reform_total?: number
+          taxpayer_type?: string
+          uf?: string
+          year_id?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
