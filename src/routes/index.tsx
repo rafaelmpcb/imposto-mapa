@@ -424,6 +424,8 @@ function Simulator() {
               <Button
                 variant="ghost"
                 onClick={() => {
+                  savedIdRef.current = null;
+                  setClientName("");
                   setInput(defaultInput());
                   setStep(1);
                 }}
@@ -458,6 +460,11 @@ function Simulator() {
           Conteúdo informativo. Estimativas baseadas na LC 214/2025 e no cronograma de transição
           vigente em {LEGAL_REFERENCE_DATE}. Alíquota de referência de 26,5% sujeita a alteração
           pelo Senado Federal.
+          <span className="mt-3 block">
+            <Link to="/meus-calculos" className="font-semibold underline">
+              Meus Cálculos (acesso do escritório)
+            </Link>
+          </span>
         </footer> : null}
       </div>
     </main>
