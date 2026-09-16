@@ -45,10 +45,15 @@ export function Toggle({
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
-        className="peer sr-only"
+        className="sr-only"
       />
-      <span className="relative h-6 w-11 rounded-full bg-input transition-colors peer-checked:bg-navy peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2">
-        <span className="absolute left-1 top-1 h-4 w-4 rounded-full bg-card shadow-sm transition-transform peer-checked:translate-x-5" />
+      <span
+        aria-hidden
+        className={`relative h-6 w-11 rounded-full transition-colors ${checked ? "bg-navy" : "bg-input"}`}
+      >
+        <span
+          className={`absolute left-1 top-1 h-4 w-4 rounded-full bg-card shadow-sm transition-transform ${checked ? "translate-x-5" : "translate-x-0"}`}
+        />
       </span>
     </label>
   );
