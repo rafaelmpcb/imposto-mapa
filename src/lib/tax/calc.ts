@@ -243,6 +243,11 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
         "A nova tabela de isenção do IRPF até R$ 5.000 é considerada a partir de 2027 nesta simulação.",
       );
     }
+    if (Math.abs(newIrpf - current.irpf) > 0.004) {
+      notes.push(
+        "Atenção: a mudança no IRPF vem da Lei 15.270/2025 (isenção até R$5.000), uma lei diferente da Reforma Tributária do consumo (LC 214/2025, IBS/CBS). Salários CLT não são afetados pelo IBS/CBS — INSS e a nova faixa de IRPF são regras à parte.",
+      );
+    }
     return {
       base,
       current: scenario(
