@@ -1,6 +1,60 @@
 import { LEGAL_REFERENCE_DATE, YEARS, type YearId } from "@/lib/tax/constants";
-import { brl, pct, simulate, type SimulationInput } from "@/lib/tax/calc";
+import { brl, compareRegimes, pct, simulate, type SimulationInput } from "@/lib/tax/calc";
 import { Field, Notice, TextInput, Toggle } from "./ui";
+
+function RegimeComparison({ input, year }: { input: SimulationInput; year: YearId }) {
+  const items = compareRegimes(input, year);
+  return (
+    <section className="rounded-xl border border-border bg-card p-5">
+      <h3 className="text-lg font-semibold">Comparação entre regimes</h3>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Carga tributária mensal estimada em {year}, após a reforma, nos três regimes.
+      </p>
+      <div className="mt-4 grid gap-4 md:grid-cols-3">
+        {items.map((item) => (
+          <div
+            key={item.regime}
+            className={`rounded-lg border p-4 ${
+              item.isBest ? "border-success/50 bg-success-soft" : "border-border bg-secondary"
+            }`}
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <h4 className="text-base font-semibold text-foreground">{item.label}</h4>
+              {item.isCurrent ? (
+                <span className="rounded-full border border-navy/40 bg-card px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-navy">
+                  Seu regime atual
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-3 text-2xl font-bold tabular-nums text-foreground">
+              {brl(item.total)}
+            </p>
+            <p className="text-xs text-muted-foreground">por mês · {pct(item.rate)} do faturamento</p>
+            {item.isBest ? (
+              <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-success">
+                Mais vantajoso após a reforma
+              </p>
+            ) : null}
+            {item.estimateNote ? (
+              <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                {item.estimateNote}
+              </p>
+            ) : null}
+          </div>
+        ))}
+      </div>
+      <div className="mt-4">
+        <Notice>
+          Simples Nacional exige faturamento anual de até R$ 4,8 milhões e não é permitido para
+          algumas atividades. Lucro Real é obrigatório para faturamento anual acima de R$ 78 milhões
+          ou determinadas atividades financeiras. Migrar de regime tributário tem implicações legais
+          e operacionais além do cálculo de impostos — este comparativo é uma estimativa para
+          orientar a conversa, não uma recomendação definitiva.
+        </Notice>
+      </div>
+    </section>
+  );
+}
 
 function ScenarioCard({
   title,
@@ -66,6 +120,10 @@ export function ResultView({
   onPresentationModeChange: (active: boolean) => void;
 }) {
   const result = simulate(input, year);
+  const isBusiness =
+    input.taxpayerType === "simples" ||
+    input.taxpayerType === "presumido" ||
+    input.taxpayerType === "real";
   const diff = result.reform.total - result.current.total;
   const rateDiff = result.reform.rate - result.current.rate;
   const worse = diff > 0;
@@ -161,6 +219,8 @@ export function ResultView({
           {percentagePointLabel} na carga tributária
         </p>
       </div>
+
+      {isBusiness ? <RegimeComparison input={input} year={year} /> : null}
 
       <div className="rounded-xl border border-border bg-card p-5">
         <h3 className="text-lg font-semibold">Resumo executivo</h3>

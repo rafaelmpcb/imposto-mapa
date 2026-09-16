@@ -214,6 +214,72 @@ function transition(year: YearId) {
   }
 }
 
+export type BusinessRegime = "simples" | "presumido" | "real";
+
+export interface RegimeComparisonItem {
+  regime: BusinessRegime;
+  label: string;
+  total: number;
+  rate: number;
+  isCurrent: boolean;
+  isBest: boolean;
+  estimateNote?: string;
+}
+
+/** Margem de lucro padrão quando o usuário não informou (Lucro Real estimado). */
+export const DEFAULT_PROFIT_MARGIN = 20;
+
+/** Anexo do Simples mais provável a partir da atividade informada. */
+export function inferSimplesAnexo(activityId: string): keyof typeof SIMPLES_TABLES {
+  const activity = getActivity(activityId);
+  if (activity.sector === "comercio") return "I";
+  if (activity.sector === "industria") return "II";
+  return ["advocacia", "contabilidade", "engenharia", "tecnologia"].includes(activity.id)
+    ? "V"
+    : "III";
+}
+
+/** Compara a carga pós-reforma nos três regimes empresariais. */
+export function compareRegimes(
+  input: SimulationInput,
+  year: YearId,
+): RegimeComparisonItem[] {
+  const regimes: { id: BusinessRegime; label: string }[] = [
+    { id: "simples", label: "Simples Nacional" },
+    { id: "presumido", label: "Lucro Presumido" },
+    { id: "real", label: "Lucro Real" },
+  ];
+
+  const items = regimes.map(({ id, label }) => {
+    const isCurrent = input.taxpayerType === id;
+    let variant: SimulationInput = { ...input, taxpayerType: id };
+    let estimateNote: string | undefined;
+
+    if (id === "simples" && !isCurrent) {
+      variant = { ...variant, simplesAnexo: inferSimplesAnexo(input.activityId) };
+      estimateNote = `Anexo ${variant.simplesAnexo} estimado com base na atividade`;
+    }
+    if (id === "real" && !isCurrent) {
+      variant = { ...variant, profitMargin: DEFAULT_PROFIT_MARGIN };
+      estimateNote = `Margem de lucro estimada em ${DEFAULT_PROFIT_MARGIN}%`;
+    }
+
+    const reform = simulate(variant, year).reform;
+    return {
+      regime: id,
+      label,
+      total: reform.total,
+      rate: reform.rate,
+      isCurrent,
+      isBest: false,
+      ...(estimateNote ? { estimateNote } : {}),
+    } satisfies RegimeComparisonItem;
+  });
+
+  const min = Math.min(...items.map((i) => i.total));
+  return items.map((i) => ({ ...i, isBest: Math.abs(i.total - min) < 0.005 }));
+}
+
 export function simulate(input: SimulationInput, year: YearId): SimulationResult {
   const activity = getActivity(input.activityId);
   const { rate: newRate, applied, lost } = effectiveRate(input);
