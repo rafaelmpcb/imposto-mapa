@@ -170,7 +170,7 @@ function irpfNew(salary: number, dependents: number): number {
 
 function simplesEffectiveRate(anexo: keyof typeof SIMPLES_TABLES, revenue: number): number {
   const rbt12 = Math.max(revenue * 12, 1);
-  const table = SIMPLES_TABLES[anexo] ?? SIMPLES_TABLES.III!;
+  const table = SIMPLES_TABLES[anexo] ?? SIMPLES_TABLES['III']!;
   const bracket = table.find((b) => rbt12 <= b.rbt12) ?? table[table.length - 1]!;
   return Math.max(0, (rbt12 * bracket.rate - bracket.deduct) / rbt12);
 }
