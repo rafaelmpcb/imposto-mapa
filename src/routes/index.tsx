@@ -80,7 +80,7 @@ function Simulator() {
   const progress = ((currentIndex + 1) / steps.length) * 100;
 
   const go = (delta: number) => {
-    const next = steps[Math.min(steps.length - 1, Math.max(0, currentIndex + delta))];
+    const next = steps[Math.min(steps.length - 1, Math.max(0, currentIndex + delta))] ?? 1;
     setStep(next);
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };

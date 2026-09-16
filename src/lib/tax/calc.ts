@@ -76,7 +76,7 @@ export interface SimulationResult {
 
 export const defaultInput = (): SimulationInput => ({
   taxpayerType: "presumido",
-  activityId: ACTIVITIES[0].id,
+  activityId: ACTIVITIES[0]!.id,
   uf: "SP",
   salary: 0,
   dependents: 0,
@@ -145,7 +145,7 @@ function inss(salary: number): number {
 }
 
 function irpfFromBase(base: number): number {
-  const band = IRPF_TABLE.find((b) => base <= b.limit) ?? IRPF_TABLE[IRPF_TABLE.length - 1];
+  const band = IRPF_TABLE.find((b) => base <= b.limit) ?? IRPF_TABLE[IRPF_TABLE.length - 1]!;
   return Math.max(0, base * band.rate - band.deduct);
 }
 
@@ -170,8 +170,8 @@ function irpfNew(salary: number, dependents: number): number {
 
 function simplesEffectiveRate(anexo: keyof typeof SIMPLES_TABLES, revenue: number): number {
   const rbt12 = Math.max(revenue * 12, 1);
-  const table = SIMPLES_TABLES[anexo];
-  const bracket = table.find((b) => rbt12 <= b.rbt12) ?? table[table.length - 1];
+  const table = SIMPLES_TABLES[anexo] ?? SIMPLES_TABLES.III!;
+  const bracket = table.find((b) => rbt12 <= b.rbt12) ?? table[table.length - 1]!;
   return Math.max(0, (rbt12 * bracket.rate - bracket.deduct) / rbt12);
 }
 
@@ -350,7 +350,7 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
   const reformLines: TaxLine[] = [];
 
   if (t.keepPisCofins) {
-    reformLines.push(currentLines[0], currentLines[1]);
+    reformLines.push(currentLines[0]!, currentLines[1]!);
   } else {
     const share = t.newRateShare;
     reformLines.push({

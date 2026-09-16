@@ -114,7 +114,7 @@ export const ACTIVITIES: Activity[] = [
 ];
 
 export const getActivity = (id: string): Activity =>
-  ACTIVITIES.find((a) => a.id === id) ?? ACTIVITIES[ACTIVITIES.length - 1];
+  ACTIVITIES.find((a) => a.id === id) ?? ACTIVITIES[ACTIVITIES.length - 1]!;
 
 /** Alíquota interna padrão de ICMS por UF (%). */
 export const ICMS_BY_UF: Record<string, number> = {
