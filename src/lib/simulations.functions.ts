@@ -1,5 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
 export interface SavedSimulation {
   id: string;
   created_at: string;
@@ -13,7 +21,7 @@ export interface SavedSimulation {
   reform_total: number;
   current_rate: number;
   reform_rate: number;
-  input: unknown;
+  input: JsonValue;
 }
 
 type SavePayload = {
@@ -27,7 +35,7 @@ type SavePayload = {
   reformTotal: number;
   currentRate: number;
   reformRate: number;
-  input: Record<string, unknown>;
+  input: JsonValue;
   id?: string | undefined;
 };
 

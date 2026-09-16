@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { saveSimulation } from "@/lib/simulations.functions";
+import { saveSimulation, type JsonValue } from "@/lib/simulations.functions";
 import { RESTORE_KEY } from "@/lib/tax/session";
 import { simulate } from "@/lib/tax/calc";
 
@@ -106,7 +106,7 @@ function Simulator() {
           reformTotal: result.reform.total,
           currentRate: result.current.rate,
           reformRate: result.reform.rate,
-          input: { ...input } as unknown as Record<string, unknown>,
+          input: { ...input } as unknown as JsonValue,
         },
       })
         .then((res) => {
