@@ -59,15 +59,66 @@ function Simulator() {
   const [optionalOpen, setOptionalOpen] = useState(false);
   const [clientName, setClientName] = useState("");
   const [presentationMode, setPresentationMode] = useState(false);
+  const persist = useServerFn(saveSimulation);
+  const savedIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     try {
+      const restore = localStorage.getItem(RESTORE_KEY);
+      if (restore) {
+        localStorage.removeItem(RESTORE_KEY);
+        const parsed = JSON.parse(restore) as {
+          id?: string;
+          input?: Partial<SimulationInput>;
+          year?: YearId;
+          clientName?: string;
+        };
+        setInput({ ...defaultInput(), ...(parsed.input ?? {}) });
+        if (parsed.year) setYear(parsed.year);
+        setClientName(parsed.clientName ?? "");
+        savedIdRef.current = parsed.id ?? null;
+        setStep(5);
+        return;
+      }
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) setInput({ ...defaultInput(), ...JSON.parse(saved) });
     } catch {
       /* ignora dados inválidos */
     }
   }, []);
+
+  // Persiste cada cálculo visualizado na Etapa 5 (atualiza o mesmo registro
+  // quando o nome do cliente ou o ano de referência mudam).
+  useEffect(() => {
+    if (step !== 5) return;
+    const result = simulate(input, year);
+    const timer = setTimeout(() => {
+      void persist({
+        data: {
+          id: savedIdRef.current ?? undefined,
+          clientName,
+          taxpayerType: input.taxpayerType,
+          activityId: input.activityId,
+          uf: input.uf,
+          baseAmount: result.base,
+          yearId: year,
+          currentTotal: result.current.total,
+          reformTotal: result.reform.total,
+          currentRate: result.current.rate,
+          reformRate: result.reform.rate,
+          input: { ...input } as unknown as Record<string, unknown>,
+        },
+      })
+        .then((res) => {
+          savedIdRef.current = res.id;
+        })
+        .catch(() => {
+          /* histórico indisponível não bloqueia a simulação */
+        });
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [step, input, year, clientName, persist]);
+
 
   useEffect(() => {
     try {
