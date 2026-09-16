@@ -120,6 +120,10 @@ export function ResultView({
   onPresentationModeChange: (active: boolean) => void;
 }) {
   const result = simulate(input, year);
+  const isBusiness =
+    input.taxpayerType === "simples" ||
+    input.taxpayerType === "presumido" ||
+    input.taxpayerType === "real";
   const diff = result.reform.total - result.current.total;
   const rateDiff = result.reform.rate - result.current.rate;
   const worse = diff > 0;
