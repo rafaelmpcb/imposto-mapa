@@ -1,5 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import { saveSimulation } from "@/lib/simulations.functions";
+import { RESTORE_KEY } from "@/lib/tax/session";
+import { simulate } from "@/lib/tax/calc";
 
 import {
   ACTIVITIES,
