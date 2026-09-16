@@ -36,6 +36,8 @@ export const Route = createFileRoute("/")({
 });
 
 const STORAGE_KEY = "reforma-simulador-v1";
+// TODO: substituir pelo link real do diagnóstico completo quando ele for definido.
+const DIAGNOSIS_URL = "";
 
 const TAXPAYERS: { id: TaxpayerType; label: string }[] = [
   { id: "pf", label: "Pessoa Física (CLT)" },
@@ -50,6 +52,8 @@ function Simulator() {
   const [step, setStep] = useState(1);
   const [year, setYear] = useState<YearId>(2027);
   const [optionalOpen, setOptionalOpen] = useState(false);
+  const [clientName, setClientName] = useState("");
+  const [presentationMode, setPresentationMode] = useState(false);
 
   useEffect(() => {
     try {
@@ -107,7 +111,7 @@ function Simulator() {
 
   return (
     <main className="min-h-screen bg-background">
-      <header className="bg-navy text-navy-foreground">
+      {!(step === 5 && presentationMode) ? <header className="bg-navy text-navy-foreground">
         <div className="mx-auto max-w-4xl px-5 py-10 sm:py-14">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-navy-foreground/70">
             Ferramenta gratuita · Direito Tributário
@@ -120,10 +124,10 @@ function Simulator() {
             sistema de IBS e CBS. É uma estimativa — não substitui um diagnóstico fiscal completo.
           </p>
         </div>
-      </header>
+      </header> : null}
 
       <div className="mx-auto max-w-4xl px-5 py-8 sm:py-10">
-        <div className="mb-8">
+        {!(step === 5 && presentationMode) ? <div className="mb-8">
           <div className="flex items-baseline justify-between text-sm">
             <span className="font-semibold text-foreground">{stepTitles[step]}</span>
             <span className="text-muted-foreground">
@@ -136,7 +140,7 @@ function Simulator() {
               style={{ width: `${progress}%` }}
             />
           </div>
-        </div>
+        </div> : null}
 
         <section className="rounded-xl border border-border bg-card p-5 sm:p-7">
           {step === 1 && (
@@ -340,9 +344,19 @@ function Simulator() {
             </div>
           )}
 
-          {step === 5 && <ResultView input={input} year={year} onYearChange={setYear} />}
+          {step === 5 && (
+            <ResultView
+              input={input}
+              year={year}
+              onYearChange={setYear}
+              clientName={clientName}
+              onClientNameChange={setClientName}
+              presentationMode={presentationMode}
+              onPresentationModeChange={setPresentationMode}
+            />
+          )}
 
-          <div className="mt-8 flex items-center justify-between gap-3">
+          {!(step === 5 && presentationMode) ? <div className="mt-8 flex items-center justify-between gap-3">
             <Button variant="ghost" onClick={() => go(-1)} disabled={currentIndex === 0}>
               Voltar
             </Button>
@@ -361,30 +375,34 @@ function Simulator() {
                 Refazer simulação
               </Button>
             )}
-          </div>
+          </div> : null}
         </section>
 
         {step === 5 && (
           <section className="mt-6 rounded-xl border border-navy/25 bg-navy p-6 text-navy-foreground sm:p-8">
-            <h2 className="text-2xl">Quer o número exato, e não a estimativa?</h2>
+            <h2 className="text-2xl">Próximo passo</h2>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-navy-foreground/80">
-              Um diagnóstico fiscal completo analisa contratos, créditos, composição societária e
-              cenários de reprecificação. Agende uma conversa com nossa equipe tributária.
+              Esse é o retrato estimado do impacto da reforma no seu negócio. O próximo passo é o
+              diagnóstico completo — com base em documentos fiscais reais — que começa com a
+              assinatura de um Memorando de Entendimento e Confidencialidade.
             </p>
             <a
-              href="mailto:contato@escritorio.com.br?subject=Diagn%C3%B3stico%20Reforma%20Tribut%C3%A1ria"
+              href={DIAGNOSIS_URL || "#"}
+              onClick={(event) => {
+                if (!DIAGNOSIS_URL) event.preventDefault();
+              }}
               className="mt-5 inline-flex items-center justify-center rounded-md bg-background px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
             >
-              Agendar conversa com o escritório
+              Avançar para o diagnóstico completo
             </a>
           </section>
         )}
 
-        <footer className="mt-10 border-t border-border pt-6 text-xs leading-relaxed text-muted-foreground">
+        {!(step === 5 && presentationMode) ? <footer className="mt-10 border-t border-border pt-6 text-xs leading-relaxed text-muted-foreground">
           Conteúdo informativo. Estimativas baseadas na LC 214/2025 e no cronograma de transição
           vigente em {LEGAL_REFERENCE_DATE}. Alíquota de referência de 26,5% sujeita a alteração
           pelo Senado Federal.
-        </footer>
+        </footer> : null}
       </div>
     </main>
   );
