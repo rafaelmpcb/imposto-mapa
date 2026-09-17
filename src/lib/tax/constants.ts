@@ -148,7 +148,7 @@ export const UF_NAMES: Record<string, string> = {
 };
 
 /** ISS fixo usado para serviços (aproximação de alíquota municipal média). */
-export const ISS_RATE = 0.05;
+export let ISS_RATE = 0.05;
 
 /** DAS do MEI — valores de referência 2026 (configuráveis). */
 export const MEI_DAS = {
@@ -237,15 +237,15 @@ export const SIMPLES_TABLES: Record<string, SimplesBracket[]> = {
 
 /* ---------------- Lucro Presumido / Real ---------------- */
 
-export const PIS_CUMULATIVO = 0.0065;
-export const COFINS_CUMULATIVO = 0.03;
-export const PIS_NAO_CUMULATIVO = 0.0165;
-export const COFINS_NAO_CUMULATIVO = 0.076;
-export const IRPJ_RATE = 0.15;
+export let PIS_CUMULATIVO = 0.0065;
+export let COFINS_CUMULATIVO = 0.03;
+export let PIS_NAO_CUMULATIVO = 0.0165;
+export let COFINS_NAO_CUMULATIVO = 0.076;
+export let IRPJ_RATE = 0.15;
 export const IRPJ_ADICIONAL_RATE = 0.1;
 export const IRPJ_ADICIONAL_LIMIT_MONTHLY = 20000;
-export const CSLL_RATE = 0.09;
-export const CPP_RATE = 0.2;
+export let CSLL_RATE = 0.09;
+export let CPP_RATE = 0.2;
 /** Bases presumidas. */
 export const PRESUMIDO_IRPJ_BASE = { servico: 0.32, comercio: 0.08, industria: 0.08 };
 export const PRESUMIDO_CSLL_BASE = { servico: 0.32, comercio: 0.12, industria: 0.12 };
