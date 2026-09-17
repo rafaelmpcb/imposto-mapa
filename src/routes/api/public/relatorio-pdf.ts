@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 
 import { defaultInput, type SimulationInput } from "@/lib/tax/calc";
+import { slugifyWords } from "@/lib/text";
 import type { YearId } from "@/lib/tax/constants";
 
 const schema = z.object({
