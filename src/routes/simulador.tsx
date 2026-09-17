@@ -694,6 +694,14 @@ function Simulator() {
           </span>
         </footer> : null}
       </div>
+
+      {memoOpen ? (
+        <MemorandoDialog
+          cnpjData={cnpjData}
+          clientName={clientName}
+          onClose={() => setMemoOpen(false)}
+        />
+      ) : null}
     </main>
   );
 }
