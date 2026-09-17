@@ -284,7 +284,7 @@ export function HelpPanel({ onClose, variant = "full" }: { onClose: () => void; 
   );
 }
 
-export function HelpButton() {
+export function HelpButton({ variant = "full" }: { variant?: HelpVariant }) {
   const [open, setOpen] = useState(false);
   return (
     <>
