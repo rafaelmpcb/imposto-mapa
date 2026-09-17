@@ -22,6 +22,7 @@ import {
 import { ResultView } from "@/components/simulator/ResultView";
 import { OfficeContactCta } from "@/components/contact/OfficeContactCta";
 import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
+import { HelpButton } from "@/components/help/HelpPanel";
 import { lookupCnpj } from "@/lib/cnpj.functions";
 import type { CnpjData } from "@/lib/cnpj/types";
 import { slugifyWords, truncateWords } from "@/lib/text";
