@@ -306,6 +306,9 @@ function MyCalculations() {
                           <Button variant="ghost" onClick={() => void handleShare(item)}>
                             {item.share_enabled ? "Desativar link" : "Compartilhar"}
                           </Button>
+                          <Button variant="ghost" onClick={() => setMemoFor(item)}>
+                            Gerar Memorando
+                          </Button>
                           {confirmId === item.id ? (
                             <>
                               <Button onClick={() => void handleDelete(item.id)}>
@@ -339,6 +342,13 @@ function MyCalculations() {
           </section>
         )}
       </div>
+      {memoFor ? (
+        <MemorandoDialog
+          cnpjData={(memoFor.cnpj_data as unknown as CnpjData | null) ?? null}
+          clientName={memoFor.client_name ?? ""}
+          onClose={() => setMemoFor(null)}
+        />
+      ) : null}
     </main>
   );
 }
