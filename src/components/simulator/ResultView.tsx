@@ -116,6 +116,7 @@ function RegimeComparison({
   presentationMode: boolean;
 }) {
   const items = compareRegimes(input, year);
+  const advisory = pjClientAdvisory(input, items);
   const currentItem = items.find((i) => i.isCurrent);
   const [openRegime, setOpenRegime] = useState<string | null>(null);
 
