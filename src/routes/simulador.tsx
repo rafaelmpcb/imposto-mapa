@@ -199,6 +199,8 @@ function Simulator() {
           currentRate: result.current.rate,
           reformRate: result.reform.rate,
           input: { ...input } as unknown as JsonValue,
+          cnpj: cnpjData?.cnpj ?? null,
+          cnpjData: cnpjData ? ({ ...cnpjData } as unknown as JsonValue) : null,
         },
       })
         .then((res) => {
