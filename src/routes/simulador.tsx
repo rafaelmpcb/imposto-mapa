@@ -115,7 +115,12 @@ function Simulator() {
       const response = await fetch("/api/public/relatorio-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input, year, clientName: clientName.trim() || null }),
+        body: JSON.stringify({
+          input,
+          year,
+          clientName: clientName.trim() || null,
+          cnpj: cnpjData?.cnpj ?? null,
+        }),
       });
       if (!response.ok) throw new Error("falha");
       const blob = await response.blob();
@@ -211,7 +216,7 @@ function Simulator() {
         });
     }, 800);
     return () => clearTimeout(timer);
-  }, [step, input, year, clientName, persist]);
+  }, [step, input, year, clientName, cnpjData, persist]);
 
 
   useEffect(() => {
