@@ -184,7 +184,7 @@ export function HelpPanel({ onClose, variant = "full" }: { onClose: () => void; 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-foreground/40" role="dialog" aria-modal="true" aria-label="Manual do sistema">
       <button type="button" aria-label="Fechar ajuda" className="flex-1" onClick={onClose} />
-      <aside className="flex h-full w-full max-w-xl flex-col bg-card shadow-xl">
+      <aside className="flex h-full w-full max-w-xl flex-col bg-card text-foreground shadow-xl">
         <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
           <div>
             <h2 className="text-lg font-semibold">
