@@ -2,6 +2,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf
 
 import {
   compareRegimes,
+  pjClientAdvisory,
   simulate,
   type SimulationInput,
   type TaxpayerType,
@@ -537,6 +538,11 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
       if (item.estimateNote) {
         doc.text(item.estimateNote, { size: 8, color: MUTED, x: MARGIN + 10, width: CONTENT_WIDTH - 10 });
       }
+    }
+    const advisory = pjClientAdvisory(input, items);
+    if (advisory) {
+      doc.gap(8);
+      doc.text(advisory, { size: 9 });
     }
     doc.gap(8);
     doc.text(

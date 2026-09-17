@@ -50,6 +50,10 @@ export interface SimulationInput {
   // Etapa 4
   monofasicoShare: number; // %
   purchases: number;
+  /** % das compras vindas de fornecedores optantes pelo Simples Nacional. */
+  simplesSupplierShare: number; // %
+  /** % da receita vinda de clientes PJ que aproveitam crédito (não entra no cálculo). */
+  pjClientShare: number; // %
 }
 
 export interface TaxLine {
@@ -88,6 +92,8 @@ export const defaultInput = (): SimulationInput => ({
   benefitConfirmed: null,
   monofasicoShare: 0,
   purchases: 0,
+  simplesSupplierShare: 0,
+  pjClientShare: 0,
 });
 
 export const brl = (v: number) =>
@@ -282,6 +288,25 @@ export function compareRegimes(
   return items.map((i) => ({ ...i, isBest: Math.abs(i.total - min) < 0.005 }));
 }
 
+/** Percentual acima do qual a base de clientes PJ vira um alerta de competitividade. */
+export const PJ_CLIENT_ALERT_THRESHOLD = 50;
+
+/**
+ * Observação qualitativa sobre clientes PJ que aproveitam crédito.
+ * Não entra em nenhuma fórmula de carga tributária.
+ */
+export function pjClientAdvisory(
+  input: SimulationInput,
+  items: RegimeComparisonItem[],
+): string | null {
+  const share = Math.min(100, Math.max(0, input.pjClientShare || 0));
+  if (share <= PJ_CLIENT_ALERT_THRESHOLD) return null;
+  const simples = items.find((i) => i.regime === "simples");
+  if (!simples) return null;
+  if (!simples.isCurrent && !simples.isBest) return null;
+  return "Boa parte da sua receita vem de clientes PJ que provavelmente aproveitam o crédito integral do seu IBS/CBS. Mesmo com carga nominal menor, permanecer no Simples pode ser menos competitivo com esses clientes, que perdem esse crédito — vale considerar esse fator na decisão de regime.";
+}
+
 export function simulate(input: SimulationInput, year: YearId): SimulationResult {
   const activity = getActivity(input.activityId);
   const { rate: newRate, applied, lost } = effectiveRate(input);
@@ -419,7 +444,16 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
 
   // Cenário reforma
   const newBase = revenue * taxableShare;
-  const credits = purchases * newRate;
+  const simplesSupplierShare = Math.min(100, Math.max(0, input.simplesSupplierShare || 0));
+  const creditablePurchases = purchases * (1 - simplesSupplierShare / 100);
+  const credits = creditablePurchases * newRate;
+  if (purchases > 0 && simplesSupplierShare > 0) {
+    notes.push(
+      `Crédito reduzido: ${simplesSupplierShare.toLocaleString("pt-BR", {
+        maximumFractionDigits: 2,
+      })}% das compras informadas foram de fornecedores no Simples Nacional, sem gerar crédito integral nesta estimativa.`,
+    );
+  }
   const reformLines: TaxLine[] = [];
 
   if (t.keepPisCofins) {

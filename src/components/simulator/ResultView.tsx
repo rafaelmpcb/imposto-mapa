@@ -4,6 +4,7 @@ import {
   brl,
   compareRegimes,
   pct,
+  pjClientAdvisory,
   simulate,
   type RegimeComparisonItem,
   type SimulationInput,
@@ -115,6 +116,7 @@ function RegimeComparison({
   presentationMode: boolean;
 }) {
   const items = compareRegimes(input, year);
+  const advisory = pjClientAdvisory(input, items);
   const currentItem = items.find((i) => i.isCurrent);
   const [openRegime, setOpenRegime] = useState<string | null>(null);
 
@@ -197,6 +199,12 @@ function RegimeComparison({
               />
             ))
         : null}
+
+      {advisory ? (
+        <div className="mt-4">
+          <Notice tone="warning">{advisory}</Notice>
+        </div>
+      ) : null}
 
       <div className="mt-4">
         <Notice>
