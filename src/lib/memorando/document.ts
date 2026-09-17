@@ -8,6 +8,7 @@ import {
 } from "docx";
 
 import type { OfficeConfig } from "@/lib/office-config.functions";
+import { slugifyWords } from "@/lib/text";
 
 export interface MemorandoClient {
   razao_social: string;
@@ -29,15 +30,7 @@ export interface MemorandoData {
   manual: MemorandoManual;
 }
 
-export const slugify = (value: string) =>
-  value
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
+export const slugify = (value: string) => slugifyWords(value, 60);
 
 const FONT = "Arial";
 

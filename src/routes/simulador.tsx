@@ -23,6 +23,7 @@ import { ResultView } from "@/components/simulator/ResultView";
 import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
 import { lookupCnpj } from "@/lib/cnpj.functions";
 import type { CnpjData } from "@/lib/cnpj/types";
+import { slugifyWords, truncateWords } from "@/lib/text";
 import {
   Button,
   Field,
@@ -92,11 +93,13 @@ function Simulator() {
         setCnpjData(null);
         setCnpjError(`${res.error} Você pode preencher o nome manualmente.`);
         setManualName(true);
+        setActivitySuggested(false);
+        setInput((prev) => ({ ...prev, activityId: defaultInput().activityId }));
         return;
       }
       setCnpjData(res.data);
       setCnpj(res.data.cnpj);
-      setClientName(res.data.nome_fantasia || res.data.razao_social);
+      setClientName(truncateWords(res.data.nome_fantasia || res.data.razao_social, 150));
       setInput((prev) => ({ ...prev, activityId: res.data.atividade_sugerida }));
       setActivitySuggested(true);
     } catch {
@@ -125,14 +128,7 @@ function Simulator() {
       if (!response.ok) throw new Error("falha");
       const blob = await response.blob();
       const slug = clientName.trim()
-        ? clientName
-            .trim()
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "")
-            .slice(0, 60)
+        ? slugifyWords(clientName, 60)
         : new Date().toISOString().slice(0, 10);
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -304,6 +300,7 @@ function Simulator() {
                 <Field label="Nome do cliente/empresa (opcional)">
                   <TextInput
                     value={clientName}
+                    maxLength={150}
                     onChange={(event) => setClientName(event.target.value)}
                     placeholder="Ex.: Padaria Bom Pão Ltda"
                   />
@@ -333,6 +330,8 @@ function Simulator() {
                       setManualName(true);
                       setCnpjData(null);
                       setCnpjError("");
+                      setActivitySuggested(false);
+                      setInput((prev) => ({ ...prev, activityId: defaultInput().activityId }));
                     }}
                     className="text-sm font-semibold text-navy underline"
                   >
@@ -370,6 +369,7 @@ function Simulator() {
                     <Field label="Nome do cliente/empresa">
                       <TextInput
                         value={clientName}
+                        maxLength={150}
                         onChange={(event) => setClientName(event.target.value)}
                       />
                     </Field>
@@ -634,6 +634,11 @@ function Simulator() {
                   savedIdRef.current = null;
                   setClientName("");
                   setInput(defaultInput());
+                  setCnpj("");
+                  setCnpjData(null);
+                  setCnpjError("");
+                  setManualName(false);
+                  setActivitySuggested(false);
                   setStep(1);
                 }}
               >
