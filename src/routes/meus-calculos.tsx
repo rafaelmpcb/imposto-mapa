@@ -6,6 +6,7 @@ import { Button, Field, Notice, TextInput } from "@/components/simulator/ui";
 import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
 import type { CnpjData } from "@/lib/cnpj/types";
 import {
+  deleteSimulationsBulk,
   deleteSimulation,
   listSimulations,
   renameSimulation,
@@ -49,6 +50,7 @@ function MyCalculations() {
   const navigate = useNavigate();
   const fetchList = useServerFn(listSimulations);
   const removeItem = useServerFn(deleteSimulation);
+  const removeBulk = useServerFn(deleteSimulationsBulk);
   const rename = useServerFn(renameSimulation);
   const share = useServerFn(setSimulationShare);
 
@@ -60,6 +62,9 @@ function MyCalculations() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [confirmBulk, setConfirmBulk] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [memoFor, setMemoFor] = useState<SavedSimulation | null>(null);
 
@@ -75,6 +80,8 @@ function MyCalculations() {
         return;
       }
       setItems(res.items);
+      setSelected(new Set());
+      setConfirmBulk(false);
       sessionStorage.setItem(CODE_KEY, accessCode);
     } catch {
       setError("Não foi possível carregar o histórico agora. Tente novamente.");
@@ -113,7 +120,50 @@ function MyCalculations() {
       return;
     }
     setConfirmId(null);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
     setItems((prev) => (prev ?? []).filter((i) => i.id !== id));
+  };
+
+  const toggleSelected = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    setConfirmBulk(false);
+  };
+
+  const toggleAll = () => {
+    setSelected((prev) => {
+      const allSelected = filtered.length > 0 && filtered.every((i) => prev.has(i.id));
+      return allSelected ? new Set() : new Set(filtered.map((i) => i.id));
+    });
+    setConfirmBulk(false);
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    setDeleting(true);
+    try {
+      const res = await removeBulk({ data: { code, ids } });
+      if (!res.ok) {
+        setError("Código de acesso inválido.");
+        return;
+      }
+      setSelected(new Set());
+      setConfirmBulk(false);
+      setItems((prev) => (prev ?? []).filter((i) => !ids.includes(i.id)));
+    } catch {
+      setError("Não foi possível excluir os cálculos selecionados. Tente novamente.");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleRename = async (id: string) => {
@@ -213,14 +263,48 @@ function MyCalculations() {
               />
             </Field>
 
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-muted-foreground">
                 {filtered.length} de {items.length} cálculo{items.length === 1 ? "" : "s"}
+                {selected.size > 0 ? ` · ${selected.size} selecionado${selected.size === 1 ? "" : "s"}` : ""}
               </p>
               <Button variant="ghost" onClick={() => void load(code)}>
                 Atualizar
               </Button>
             </div>
+
+            {filtered.length > 0 ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-secondary px-4 py-3">
+                <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-foreground">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-[var(--color-navy,#1e3a5f)]"
+                    checked={filtered.length > 0 && filtered.every((i) => selected.has(i.id))}
+                    onChange={toggleAll}
+                  />
+                  Selecionar todos
+                </label>
+                {selected.size > 0 ? (
+                  confirmBulk ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button variant="ghost" onClick={() => setConfirmBulk(false)}>
+                        Cancelar
+                      </Button>
+                      <Button
+                        disabled={deleting}
+                        onClick={() => void handleBulkDelete()}
+                      >
+                        {deleting ? "Excluindo..." : `Confirmar exclusão (${selected.size})`}
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button variant="ghost" onClick={() => setConfirmBulk(true)}>
+                      Excluir selecionados ({selected.size})
+                    </Button>
+                  )
+                ) : null}
+              </div>
+            ) : null}
 
             {error ? <Notice tone="warning">{error}</Notice> : null}
 
@@ -237,6 +321,15 @@ function MyCalculations() {
                       className="rounded-xl border border-border bg-card p-4 sm:p-5"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
+                        <label className="flex cursor-pointer items-center pt-1">
+                          <input
+                            type="checkbox"
+                            aria-label={`Selecionar ${item.client_name || "cálculo sem identificação"}`}
+                            className="h-4 w-4 accent-[var(--color-navy,#1e3a5f)]"
+                            checked={selected.has(item.id)}
+                            onChange={() => toggleSelected(item.id)}
+                          />
+                        </label>
                         <div className="min-w-0 flex-1">
                           {editingId === item.id ? (
                             <div className="flex flex-wrap items-center gap-2">

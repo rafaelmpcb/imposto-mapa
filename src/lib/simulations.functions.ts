@@ -115,6 +115,19 @@ export const deleteSimulation = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/** Exclusão em lote: apaga vários cálculos de uma vez, com o mesmo código de acesso. */
+export const deleteSimulationsBulk = createServerFn({ method: "POST" })
+  .inputValidator((input: { code: string; ids: string[] }) => input)
+  .handler(async ({ data }) => {
+    if (!checkCode(data.code)) return { ok: false as const, deleted: 0 };
+    const ids = data.ids.filter((id) => typeof id === "string" && id.length > 0);
+    if (ids.length === 0) return { ok: true as const, deleted: 0 };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("simulations").delete().in("id", ids);
+    if (error) throw new Error(error.message);
+    return { ok: true as const, deleted: ids.length };
+  });
+
 export const renameSimulation = createServerFn({ method: "POST" })
   .inputValidator((input: { code: string; id: string; clientName: string }) => input)
   .handler(async ({ data }) => {
