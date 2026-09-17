@@ -21,7 +21,7 @@ const TITLE = "Meus Cálculos — histórico de simulações da Reforma Tributá
 const DESCRIPTION =
   "Área restrita do escritório: histórico cronológico das simulações de impacto da Reforma Tributária, com opção de reabrir cada cálculo.";
 
-export const Route = createFileRoute("/meus-calculos")({
+export const Route = createFileRoute("/_authenticated/meus-calculos")({
   head: () => ({
     meta: [
       { title: TITLE },

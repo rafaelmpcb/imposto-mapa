@@ -25,7 +25,7 @@ const TITLE = "Configuração de alíquotas — área restrita";
 const DESCRIPTION =
   "Área restrita do escritório para ajustar as alíquotas de referência usadas nas estimativas do simulador.";
 
-export const Route = createFileRoute("/config-aliquotas")({
+export const Route = createFileRoute("/_authenticated/config-aliquotas")({
   head: () => ({
     meta: [
       { title: TITLE },
