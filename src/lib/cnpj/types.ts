@@ -4,6 +4,8 @@ export interface CnpjData {
   razao_social: string;
   nome_fantasia: string;
   endereco: string;
+  /** UF do endereço retornado pela consulta (ex.: "SP"). */
+  uf?: string;
   situacao_cadastral: string;
   cnae_codigo: string;
   cnae_descricao: string;

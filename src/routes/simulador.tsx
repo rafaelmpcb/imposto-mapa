@@ -101,7 +101,11 @@ function Simulator() {
       setCnpjData(res.data);
       setCnpj(res.data.cnpj);
       setClientName(truncateWords(res.data.nome_fantasia || res.data.razao_social, 150));
-      setInput((prev) => ({ ...prev, activityId: res.data.atividade_sugerida }));
+      setInput((prev) => ({
+        ...prev,
+        activityId: res.data.atividade_sugerida,
+        ...(res.data.uf && UFS.includes(res.data.uf) ? { uf: res.data.uf } : {}),
+      }));
       setActivitySuggested(true);
     } catch {
       setCnpjData(null);
@@ -176,7 +180,8 @@ function Simulator() {
         return;
       }
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) setInput({ ...defaultInput(), ...JSON.parse(saved) });
+      // A validação do benefício (Art. 127) nunca é restaurada: exige resposta explícita.
+      if (saved) setInput({ ...defaultInput(), ...JSON.parse(saved), benefitConfirmed: null });
     } catch {
       /* ignora dados inválidos */
     }
