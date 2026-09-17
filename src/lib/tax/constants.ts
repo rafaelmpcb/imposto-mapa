@@ -6,17 +6,20 @@
  * regulamentação complementar. Todos os valores abaixo são configuráveis.
  */
 
+/* Os valores marcados como ajustáveis (export let) podem ser sobrescritos pelo
+   painel de configuração do escritório — ver applyTaxOverrides() no fim do arquivo. */
+
 /** Alíquota de referência cheia (CBS + IBS combinados). */
-export const REFERENCE_RATE = 0.265;
+export let REFERENCE_RATE = 0.265;
 
 /** Divisão estimada da alíquota de referência entre os dois tributos. */
-export const CBS_SHARE = 0.088; // federal (substitui PIS/COFINS)
-export const IBS_SHARE = 0.177; // estadual + municipal (substitui ICMS/ISS)
+export let CBS_SHARE = 0.088; // federal (substitui PIS/COFINS)
+export let IBS_SHARE = 0.177; // estadual + municipal (substitui ICMS/ISS)
 
 /** Alíquota simbólica de teste do IBS em 2026/2027. */
-export const IBS_TEST_RATE = 0.001;
+export let IBS_TEST_RATE = 0.001;
 /** Alíquota de teste da CBS em 2026 (compensável com PIS/COFINS). */
-export const CBS_TEST_RATE = 0.009;
+export let CBS_TEST_RATE = 0.009;
 
 /** Data de referência da legislação usada nas estimativas. */
 export const LEGAL_REFERENCE_DATE = "setembro de 2026";
