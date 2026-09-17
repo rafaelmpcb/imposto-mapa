@@ -4,6 +4,7 @@ import {
   brl,
   compareRegimes,
   pct,
+  pjClientAdvisory,
   simulate,
   type RegimeComparisonItem,
   type SimulationInput,
@@ -197,6 +198,12 @@ function RegimeComparison({
               />
             ))
         : null}
+
+      {advisory ? (
+        <div className="mt-4">
+          <Notice tone="warning">{advisory}</Notice>
+        </div>
+      ) : null}
 
       <div className="mt-4">
         <Notice>
