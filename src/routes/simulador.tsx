@@ -332,7 +332,12 @@ function Simulator() {
                   ))}
                 </Select>
               </Field>
-              <Field label="Atividade principal">
+              <Field
+                label="Atividade principal"
+                {...(activitySuggested
+                  ? { hint: "Sugerido a partir do CNAE — confirme ou ajuste." }
+                  : {})}
+              >
                 <Select
                   value={input.activityId}
                   onChange={(e) => set("activityId", e.target.value)}
