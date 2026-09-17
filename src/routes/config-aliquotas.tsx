@@ -64,6 +64,36 @@ function TaxConfigPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const loadOffice = useServerFn(getOfficeConfig);
+  const persistOffice = useServerFn(saveOfficeConfig);
+  const [office, setOffice] = useState<OfficeConfig>(emptyOfficeConfig());
+  const [officeMeta, setOfficeMeta] = useState<OfficeConfigMeta>({});
+  const [officeBusy, setOfficeBusy] = useState(false);
+  const [officeMessage, setOfficeMessage] = useState("");
+  const [officeError, setOfficeError] = useState("");
+
+  const handleSaveOffice = async () => {
+    setOfficeBusy(true);
+    setOfficeError("");
+    setOfficeMessage("");
+    try {
+      const res = await persistOffice({ data: { code, values: office } });
+      if (!res.ok) {
+        setOfficeError("Código de acesso inválido.");
+        return;
+      }
+      sessionStorage.setItem(CODE_KEY, code);
+      setUnlocked(true);
+      const fresh = await loadOffice();
+      setOfficeMeta(fresh.meta);
+      setOfficeMessage("Dados do escritório atualizados.");
+    } catch {
+      setOfficeError("Não foi possível salvar agora. Tente novamente.");
+    } finally {
+      setOfficeBusy(false);
+    }
+  };
+
   const fill = (stored: TaxConfigMap) => {
     const next: Record<string, string> = {};
     for (const def of TUNABLES) {
@@ -83,6 +113,10 @@ function TaxConfigPage() {
       }
     });
     void loadMeta().then(setMeta);
+    void loadOffice().then((res) => {
+      setOffice(res.values);
+      setOfficeMeta(res.meta);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
