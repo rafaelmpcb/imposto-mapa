@@ -155,15 +155,20 @@ function Highlight({ text, term }: { text: string; term: string }) {
   return <>{parts}</>;
 }
 
-export function HelpPanel({ onClose }: { onClose: () => void }) {
+export type HelpVariant = "full" | "simulator";
+
+export function HelpPanel({ onClose, variant = "full" }: { onClose: () => void; variant?: HelpVariant }) {
   const [query, setQuery] = useState("");
-  const [open, setOpen] = useState<Record<string, boolean>>({ "visao-geral": true });
+  const [open, setOpen] = useState<Record<string, boolean>>(
+    variant === "full" ? { "visao-geral": true } : { "sobre-simulacao": true },
+  );
 
   const term = query.trim().toLowerCase();
+  const sections = variant === "full" ? SECTIONS : SIMULATOR_SECTIONS;
 
   const matches = useMemo(
-    () => (term ? SECTIONS.filter((s) => sectionText(s).includes(term)) : SECTIONS),
-    [term],
+    () => (term ? sections.filter((s) => sectionText(s).includes(term)) : sections),
+    [term, sections],
   );
 
   useEffect(() => {
