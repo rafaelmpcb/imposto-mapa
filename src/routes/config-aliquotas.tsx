@@ -12,6 +12,14 @@ import {
   type TaxConfigMeta,
 } from "@/lib/tax-config.functions";
 import { applyTaxOverrides, TUNABLES } from "@/lib/tax/constants";
+import {
+  emptyOfficeConfig,
+  getOfficeConfig,
+  OFFICE_FIELDS,
+  saveOfficeConfig,
+  type OfficeConfig,
+  type OfficeConfigMeta,
+} from "@/lib/office-config.functions";
 
 const TITLE = "Configuração de alíquotas — área restrita";
 const DESCRIPTION =
