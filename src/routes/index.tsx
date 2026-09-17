@@ -82,7 +82,7 @@ export default function Landing() {
             to="/simulador"
             className="mt-8 inline-flex items-center justify-center rounded-md bg-background px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
           >
-            Começar a simulação gratuita
+             Começar a simulação
           </Link>
         </div>
       </header>
