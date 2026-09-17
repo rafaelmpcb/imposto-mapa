@@ -264,6 +264,7 @@ export function ResultView({
   onClientNameChange,
   presentationMode,
   onPresentationModeChange,
+  readOnly = false,
 }: {
   input: SimulationInput;
   year: YearId;
@@ -272,6 +273,7 @@ export function ResultView({
   onClientNameChange: (name: string) => void;
   presentationMode: boolean;
   onPresentationModeChange: (active: boolean) => void;
+  readOnly?: boolean;
 }) {
   const result = simulate(input, year);
   const isBusiness =
