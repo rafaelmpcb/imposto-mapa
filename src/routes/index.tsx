@@ -68,7 +68,7 @@ export default function Landing() {
       <header className="bg-navy text-navy-foreground">
         <div className="mx-auto max-w-4xl px-5 py-14 sm:py-20">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-navy-foreground/70">
-            Ferramenta gratuita · Direito Tributário
+             
           </p>
           <h1 className="mt-3 text-3xl leading-tight sm:text-5xl">
             Calculadora da Reforma Tributária: quanto o IBS e a CBS mudam na sua conta
