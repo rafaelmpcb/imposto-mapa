@@ -300,7 +300,7 @@ export function HelpButton({ variant = "full" }: { variant?: HelpVariant }) {
         </span>
         Ajuda
       </button>
-      {open ? <HelpPanel onClose={() => setOpen(false)} /> : null}
+      {open ? <HelpPanel variant={variant} onClose={() => setOpen(false)} /> : null}
     </>
   );
 }
