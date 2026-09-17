@@ -8,6 +8,7 @@ import {
 } from "docx";
 
 import type { OfficeConfig } from "@/lib/office-config.functions";
+import { slugifyWords } from "@/lib/text";
 
 export interface MemorandoClient {
   razao_social: string;
