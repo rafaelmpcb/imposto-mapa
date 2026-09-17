@@ -93,6 +93,8 @@ function Simulator() {
         setCnpjData(null);
         setCnpjError(`${res.error} Você pode preencher o nome manualmente.`);
         setManualName(true);
+        setActivitySuggested(false);
+        setInput((prev) => ({ ...prev, activityId: defaultInput().activityId }));
         return;
       }
       setCnpjData(res.data);
