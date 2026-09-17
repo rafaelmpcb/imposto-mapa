@@ -538,6 +538,11 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
         doc.text(item.estimateNote, { size: 8, color: MUTED, x: MARGIN + 10, width: CONTENT_WIDTH - 10 });
       }
     }
+    const advisory = pjClientAdvisory(input, items);
+    if (advisory) {
+      doc.gap(8);
+      doc.text(advisory, { size: 9 });
+    }
     doc.gap(8);
     doc.text(
       "Simples Nacional exige faturamento anual de até R$ 4,8 milhões e não é permitido para algumas atividades. Lucro Real é obrigatório para faturamento anual acima de R$ 78 milhões ou determinadas atividades financeiras. Migrar de regime tributário tem implicações legais e operacionais além do cálculo de impostos — este comparativo é uma estimativa para orientar a conversa, não uma recomendação definitiva.",
