@@ -59,6 +59,7 @@ function MyCalculations() {
   const [editingName, setEditingName] = useState("");
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [memoFor, setMemoFor] = useState<SavedSimulation | null>(null);
 
   const load = async (accessCode: string) => {
     setLoading(true);
@@ -97,6 +98,7 @@ function MyCalculations() {
         input: item.input,
         year: item.year_id,
         clientName: item.client_name ?? "",
+        cnpjData: item.cnpj_data ?? null,
       }),
     );
     void navigate({ to: "/simulador" });
