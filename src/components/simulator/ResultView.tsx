@@ -301,13 +301,15 @@ export function ResultView({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
-        <Toggle
-          checked={presentationMode}
-          onChange={onPresentationModeChange}
-          label="Modo Apresentação"
-        />
-      </div>
+      {!readOnly ? (
+        <div className="flex justify-end">
+          <Toggle
+            checked={presentationMode}
+            onChange={onPresentationModeChange}
+            label="Modo Apresentação"
+          />
+        </div>
+      ) : null}
 
       {!presentationMode ? (
         <div className="space-y-6">
