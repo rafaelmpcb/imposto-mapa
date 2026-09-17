@@ -259,6 +259,43 @@ class Doc {
     void colA;
   }
 
+  /** Duas colunas independentes: cada cenário com seus próprios tributos. */
+  dualRow(
+    left: { label: string; value: string } | null,
+    right: { label: string; value: string } | null,
+    opts: { bold?: boolean; color?: ReturnType<typeof rgb> } = {},
+  ): void {
+    const size = 9.5;
+    const font = opts.bold ? this.bold : this.regular;
+    this.ensure(18);
+    this.y -= 15;
+    const half = (CONTENT_WIDTH - 18) / 2;
+    const columns: { origin: number; cell: typeof left }[] = [
+      { origin: MARGIN, cell: left },
+      { origin: MARGIN + half + 18, cell: right },
+    ];
+    for (const { origin, cell } of columns) {
+      if (!cell) continue;
+      const value = safe(cell.value);
+      const valueWidth = font.widthOfTextAtSize(value, size);
+      const labelLines = this.wrap(cell.label, font, size, half - valueWidth - 10);
+      this.page.drawText(labelLines[0] ?? "", {
+        x: origin,
+        y: this.y,
+        size,
+        font,
+        color: opts.color ?? TEXT,
+      });
+      this.page.drawText(value, {
+        x: origin + half - valueWidth,
+        y: this.y,
+        size,
+        font,
+        color: opts.color ?? TEXT,
+      });
+    }
+  }
+
   rule(): void {
     this.ensure(8);
     this.y -= 5;
