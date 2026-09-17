@@ -20,7 +20,18 @@ import {
   type TaxpayerType,
 } from "@/lib/tax/calc";
 import { ResultView } from "@/components/simulator/ResultView";
-import { Button, Field, MoneyInput, NumberInput, Notice, Select } from "@/components/simulator/ui";
+import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
+import { lookupCnpj } from "@/lib/cnpj.functions";
+import type { CnpjData } from "@/lib/cnpj/types";
+import {
+  Button,
+  Field,
+  MoneyInput,
+  NumberInput,
+  Notice,
+  Select,
+  TextInput,
+} from "@/components/simulator/ui";
 
 const TITLE = "Simulador de Impacto da Reforma Tributária (IBS/CBS)";
 const DESCRIPTION =
