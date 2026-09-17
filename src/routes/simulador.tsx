@@ -632,6 +632,11 @@ function Simulator() {
                   savedIdRef.current = null;
                   setClientName("");
                   setInput(defaultInput());
+                  setCnpj("");
+                  setCnpjData(null);
+                  setCnpjError("");
+                  setManualName(false);
+                  setActivitySuggested(false);
                   setStep(1);
                 }}
               >
