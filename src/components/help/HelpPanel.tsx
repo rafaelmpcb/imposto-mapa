@@ -210,7 +210,7 @@ export function HelpPanel({ onClose, variant = "full" }: { onClose: () => void; 
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar no manual (ex.: memorando, CNAE, login)"
+            placeholder={variant === "full" ? "Buscar no manual (ex.: memorando, CNAE, login)" : "Buscar na ajuda (ex.: CNPJ, CNAE, etapas)"}
             className="w-full rounded-md border border-input bg-card px-3 py-2.5 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
           />
           <nav className="mt-3 flex flex-wrap gap-2">
