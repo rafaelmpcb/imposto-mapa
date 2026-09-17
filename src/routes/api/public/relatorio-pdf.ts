@@ -6,7 +6,7 @@ import { slugifyWords } from "@/lib/text";
 import type { YearId } from "@/lib/tax/constants";
 
 const schema = z.object({
-  clientName: z.string().max(140).optional().nullable(),
+  clientName: z.string().max(200).optional().nullable(),
   cnpj: z.string().max(30).optional().nullable(),
   year: z.union([z.literal(2026), z.literal(2027), z.literal(2033)]),
   input: z.object({
