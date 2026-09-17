@@ -228,27 +228,16 @@ function MyCalculations() {
       <div className="mx-auto max-w-4xl px-5 py-8">
         {items === null ? (
           <section className="rounded-xl border border-border bg-card p-5 sm:p-7">
-            <form
-              className="space-y-5"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void load();
-              }}
-            >
-              <Field label="Código de acesso">
-                <TextInput
-                  type="password"
-                  value={code}
-                  onChange={(event) => setCode(event.target.value)}
-                  placeholder="Informe o código do escritório"
-                  autoComplete="off"
-                />
-              </Field>
-              {error ? <Notice tone="warning">{error}</Notice> : null}
-              <Button type="submit" disabled={loading || code.trim().length === 0}>
-                {loading ? "Verificando..." : "Acessar histórico"}
-              </Button>
-            </form>
+            {error ? (
+              <div className="space-y-4">
+                <Notice tone="warning">{error}</Notice>
+                <Button onClick={() => void load()}>Tentar novamente</Button>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {loading ? "Carregando histórico..." : "Nenhum cálculo encontrado."}
+              </p>
+            )}
           </section>
         ) : (
           <section className="space-y-4">
