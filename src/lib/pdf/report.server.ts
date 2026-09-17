@@ -378,23 +378,30 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
 
   /* 2. Sistema atual x cenário pós-reforma */
   doc.heading(`Sistema atual x Cenário ${year} — comparativo tributo a tributo`);
-  doc.row("Tributo", "Sistema atual", `Cenário ${year}`, { bold: true, color: MUTED });
+  doc.dualRow(
+    { label: `Sistema atual — ${regimeLabel}`, value: "" },
+    { label: `Cenário ${year} — ${regimeLabel}`, value: "" },
+    { bold: true, color: MUTED },
+  );
   doc.rule();
-  const labels = [
-    ...result.current.lines.map((l) => l.label),
-    ...result.reform.lines.filter((l) => !result.current.lines.some((c) => c.label === l.label)).map((l) => l.label),
-  ];
-  for (const label of labels) {
-    const a = result.current.lines.find((l) => l.label === label)?.value;
-    const b = result.reform.lines.find((l) => l.label === label)?.value;
-    doc.row(label, a === undefined ? "—" : money(a), b === undefined ? "—" : money(b));
+  const rowCount = Math.max(result.current.lines.length, result.reform.lines.length);
+  for (let i = 0; i < rowCount; i += 1) {
+    const a = result.current.lines[i];
+    const b = result.reform.lines[i];
+    doc.dualRow(
+      a ? { label: a.label, value: money(a.value) } : null,
+      b ? { label: b.label, value: money(b.value) } : null,
+    );
   }
   doc.rule();
-  doc.row("Total mensal", money(result.current.total), money(result.reform.total), { bold: true });
-  doc.row(
-    "Carga sobre a base informada",
-    percent(result.current.rate),
-    percent(result.reform.rate),
+  doc.dualRow(
+    { label: "Total mensal", value: money(result.current.total) },
+    { label: "Total mensal", value: money(result.reform.total) },
+    { bold: true },
+  );
+  doc.dualRow(
+    { label: "Carga sobre a base", value: percent(result.current.rate) },
+    { label: "Carga sobre a base", value: percent(result.reform.rate) },
     { bold: true },
   );
   doc.gap(10);
