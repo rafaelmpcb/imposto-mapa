@@ -680,6 +680,12 @@ function Simulator() {
           </section>
         )}
 
+        {step === 5 && (
+          <div className="mt-6">
+            <OfficeContactCta />
+          </div>
+        )}
+
         {!(step === 5 && presentationMode) ? <footer className="mt-10 border-t border-border pt-6 text-xs leading-relaxed text-muted-foreground">
           Conteúdo informativo. Estimativas baseadas na LC 214/2025 e no cronograma de transição
           vigente em {LEGAL_REFERENCE_DATE}. Alíquota de referência de 26,5% sujeita a alteração
