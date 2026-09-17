@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/meus-calculos")({
   component: MyCalculations,
 });
 
-const CODE_KEY = "reforma-advogado-code";
+const TAXPAYER_LABELS_PLACEHOLDER = null;
 
 const TAXPAYER_LABELS: Record<string, string> = {
   pf: "Pessoa Física (CLT)",
@@ -54,7 +54,6 @@ function MyCalculations() {
   const rename = useServerFn(renameSimulation);
   const share = useServerFn(setSimulationShare);
 
-  const [code, setCode] = useState("");
   const [items, setItems] = useState<SavedSimulation[] | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -67,22 +66,20 @@ function MyCalculations() {
   const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [memoFor, setMemoFor] = useState<SavedSimulation | null>(null);
+  const [userEmail, setUserEmail] = useState("");
 
-  const load = async (accessCode: string) => {
+  const load = async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetchList({ data: { code: accessCode } });
+      const res = await fetchList({ data: undefined });
       if (!res.ok) {
-        setError("Código de acesso inválido.");
-        setItems(null);
-        sessionStorage.removeItem(CODE_KEY);
+        setError("Não foi possível carregar o histórico.");
         return;
       }
       setItems(res.items);
       setSelected(new Set());
       setConfirmBulk(false);
-      sessionStorage.setItem(CODE_KEY, accessCode);
     } catch {
       setError("Não foi possível carregar o histórico agora. Tente novamente.");
     } finally {
@@ -91,13 +88,15 @@ function MyCalculations() {
   };
 
   useEffect(() => {
-    const saved = sessionStorage.getItem(CODE_KEY);
-    if (saved) {
-      setCode(saved);
-      void load(saved);
-    }
+    void supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email ?? ""));
+    void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    void navigate({ to: "/auth", replace: true });
+  };
 
   const reopen = (item: SavedSimulation) => {
     localStorage.setItem(
