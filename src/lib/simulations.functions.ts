@@ -9,6 +9,8 @@ export type JsonValue =
   | { [key: string]: JsonValue };
 
 export interface SavedSimulation {
+  share_token?: string | null;
+  share_enabled?: boolean;
   id: string;
   created_at: string;
   client_name: string | null;
@@ -90,4 +92,71 @@ export const listSimulations = createServerFn({ method: "POST" })
       .limit(300);
     if (error) throw new Error(error.message);
     return { ok: true as const, items: (rows ?? []) as unknown as SavedSimulation[] };
+  });
+
+function checkCode(code: string): boolean {
+  const expected = process.env["ADVOGADO_ACCESS_CODE"] ?? "";
+  return Boolean(expected) && code.trim() === expected;
+}
+
+export const deleteSimulation = createServerFn({ method: "POST" })
+  .inputValidator((input: { code: string; id: string }) => input)
+  .handler(async ({ data }) => {
+    if (!checkCode(data.code)) return { ok: false as const };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("simulations").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+export const renameSimulation = createServerFn({ method: "POST" })
+  .inputValidator((input: { code: string; id: string; clientName: string }) => input)
+  .handler(async ({ data }) => {
+    if (!checkCode(data.code)) return { ok: false as const };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("simulations")
+      .update({ client_name: data.clientName.trim() || null })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+/** Liga ou desliga o link de compartilhamento somente-leitura. */
+export const setSimulationShare = createServerFn({ method: "POST" })
+  .inputValidator((input: { code: string; id: string; enabled: boolean }) => input)
+  .handler(async ({ data }) => {
+    if (!checkCode(data.code)) return { ok: false as const, token: null };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const token = data.enabled ? crypto.randomUUID().replace(/-/g, "") : null;
+    const patch = data.enabled
+      ? { share_enabled: true, share_token: token }
+      : { share_enabled: false, share_token: null };
+    const { error } = await supabaseAdmin.from("simulations").update(patch).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const, token };
+  });
+
+/** Leitura pública de uma simulação compartilhada, apenas com token válido. */
+export const getSharedSimulation = createServerFn({ method: "GET" })
+  .inputValidator((input: { token: string }) => input)
+  .handler(async ({ data }) => {
+    if (!data.token) return { found: false as const, item: null };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
+      .from("simulations")
+      .select("id, created_at, client_name, year_id, input, share_enabled")
+      .eq("share_token", data.token)
+      .maybeSingle();
+    if (error || !row || !row.share_enabled) return { found: false as const, item: null };
+    return {
+      found: true as const,
+      item: {
+        id: row.id as string,
+        created_at: row.created_at as string,
+        client_name: (row.client_name as string | null) ?? null,
+        year_id: row.year_id as number,
+        input: row.input as JsonValue,
+      },
+    };
   });
