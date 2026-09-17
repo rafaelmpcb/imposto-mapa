@@ -6,7 +6,7 @@ import {
   type SimulationInput,
   type TaxpayerType,
 } from "@/lib/tax/calc";
-import { LEGAL_REFERENCE_DATE, type YearId } from "@/lib/tax/constants";
+import { LEGAL_REFERENCE_DATE, YEARS, type YearId } from "@/lib/tax/constants";
 
 const REGIME_LABELS: Record<TaxpayerType, string> = {
   pf: "Pessoa Física (CLT)",
