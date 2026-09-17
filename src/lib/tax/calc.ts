@@ -271,6 +271,7 @@ export function compareRegimes(
       label,
       total: reform.total,
       rate: reform.rate,
+      lines: reform.lines,
       isCurrent,
       isBest: false,
       ...(estimateNote ? { estimateNote } : {}),
