@@ -86,6 +86,44 @@ const SECTIONS: Section[] = [
   },
 ];
 
+const SIMULATOR_SECTIONS: Section[] = [
+  {
+    id: "sobre-simulacao",
+    title: "Sobre esta simulação",
+    paragraphs: [
+      "O Reforma Fácil é uma calculadora que estima, a partir dos dados informados aqui, como a carga tributária da empresa pode mudar com a Reforma Tributária (IBS/CBS). Os valores mostrados são uma estimativa inicial, com base nas informações preenchidas nesta simulação.",
+    ],
+  },
+  {
+    id: "passo-a-passo",
+    title: "Passo a passo",
+    steps: [
+      'Etapa 1 — Identificação: informe o CNPJ da empresa, ou clique em "Pular e preencher manualmente" se preferir. Informando o CNPJ, alguns dados (razão social, CNAE, sugestão de Atividade) são preenchidos automaticamente — você pode ajustar qualquer um deles.',
+      "Etapa 2 — Atividade e regime: confirme ou ajuste a Atividade principal e informe o regime tributário atual (Simples Nacional, Lucro Presumido, Lucro Real, MEI ou Pessoa Física). Dependendo da Atividade, pode aparecer uma etapa perguntando sobre registro em conselho profissional — essa resposta é sempre preenchida manualmente.",
+      "Etapas seguintes — Faturamento e dados financeiros: informe faturamento, despesas e demais dados pedidos, de acordo com o regime selecionado. O número total de etapas pode variar dependendo das suas respostas — isso é normal.",
+      "Etapa final — Resultado: mostra o comparativo entre a carga tributária atual e a estimada com a reforma, a diferença entre elas e, quando o CNPJ foi informado, um contexto sobre o setor da empresa. A partir daqui é possível baixar o relatório em PDF, gerar o Memorando de Entendimento e, quando disponível, falar diretamente pelo WhatsApp ou e-mail.",
+    ],
+  },
+  {
+    id: "faq",
+    title: "Perguntas frequentes",
+    faq: [
+      {
+        q: "O CNAE preenche automaticamente minha Atividade ou o meu regime?",
+        a: "Não. O CNAE só sugere a Atividade (você pode alterar) e aparece como contexto no resultado final; ele nunca decide sozinho o Anexo do Simples, o regime ou a resposta sobre registro em conselho profissional.",
+      },
+      {
+        q: "Por que o número de etapas muda?",
+        a: "A etapa sobre registro em conselho profissional só aparece quando a Atividade selecionada exige esse tipo de validação — por isso o total de etapas pode variar.",
+      },
+      {
+        q: "Preciso criar login para fazer essa simulação?",
+        a: "Não. A simulação é aberta e não exige login.",
+      },
+    ],
+  },
+];
+
 const sectionText = (s: Section) =>
   [
     s.title,
@@ -117,15 +155,20 @@ function Highlight({ text, term }: { text: string; term: string }) {
   return <>{parts}</>;
 }
 
-export function HelpPanel({ onClose }: { onClose: () => void }) {
+export type HelpVariant = "full" | "simulator";
+
+export function HelpPanel({ onClose, variant = "full" }: { onClose: () => void; variant?: HelpVariant }) {
   const [query, setQuery] = useState("");
-  const [open, setOpen] = useState<Record<string, boolean>>({ "visao-geral": true });
+  const [open, setOpen] = useState<Record<string, boolean>>(
+    variant === "full" ? { "visao-geral": true } : { "sobre-simulacao": true },
+  );
 
   const term = query.trim().toLowerCase();
+  const sections = variant === "full" ? SECTIONS : SIMULATOR_SECTIONS;
 
   const matches = useMemo(
-    () => (term ? SECTIONS.filter((s) => sectionText(s).includes(term)) : SECTIONS),
-    [term],
+    () => (term ? sections.filter((s) => sectionText(s).includes(term)) : sections),
+    [term, sections],
   );
 
   useEffect(() => {
@@ -141,12 +184,16 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-foreground/40" role="dialog" aria-modal="true" aria-label="Manual do sistema">
       <button type="button" aria-label="Fechar ajuda" className="flex-1" onClick={onClose} />
-      <aside className="flex h-full w-full max-w-xl flex-col bg-card shadow-xl">
+      <aside className="flex h-full w-full max-w-xl flex-col bg-card text-foreground shadow-xl">
         <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
           <div>
-            <h2 className="text-lg font-semibold">Ajuda — manual do sistema</h2>
+            <h2 className="text-lg font-semibold">
+              {variant === "full" ? "Ajuda — manual do sistema" : "Ajuda — sobre a simulação"}
+            </h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Documentação interna. Busque por um termo ou navegue pelo sumário.
+              {variant === "full"
+                ? "Documentação interna. Busque por um termo ou navegue pelo sumário."
+                : "Busque por um termo ou navegue pelo sumário."}
             </p>
           </div>
           <button
@@ -163,7 +210,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar no manual (ex.: memorando, CNAE, login)"
+            placeholder={variant === "full" ? "Buscar no manual (ex.: memorando, CNAE, login)" : "Buscar na ajuda (ex.: CNPJ, CNAE, etapas)"}
             className="w-full rounded-md border border-input bg-card px-3 py-2.5 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
           />
           <nav className="mt-3 flex flex-wrap gap-2">
@@ -237,7 +284,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function HelpButton() {
+export function HelpButton({ variant = "full" }: { variant?: HelpVariant }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -253,7 +300,7 @@ export function HelpButton() {
         </span>
         Ajuda
       </button>
-      {open ? <HelpPanel onClose={() => setOpen(false)} /> : null}
+      {open ? <HelpPanel variant={variant} onClose={() => setOpen(false)} /> : null}
     </>
   );
 }

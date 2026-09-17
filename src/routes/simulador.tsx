@@ -22,6 +22,7 @@ import {
 import { ResultView } from "@/components/simulator/ResultView";
 import { OfficeContactCta } from "@/components/contact/OfficeContactCta";
 import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
+import { HelpButton } from "@/components/help/HelpPanel";
 import { lookupCnpj } from "@/lib/cnpj.functions";
 import type { CnpjData } from "@/lib/cnpj/types";
 import { slugifyWords, truncateWords } from "@/lib/text";
@@ -265,9 +266,12 @@ function Simulator() {
     <main className="min-h-screen bg-background">
       {!(step === 5 && presentationMode) ? <header className="bg-navy text-navy-foreground">
         <div className="mx-auto max-w-4xl px-5 py-10 sm:py-14">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-navy-foreground/70">
-            Ferramenta gratuita · Direito Tributário
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-navy-foreground/70">
+              Ferramenta gratuita · Direito Tributário
+            </p>
+            <HelpButton variant="simulator" />
+          </div>
           <h1 className="mt-3 text-3xl leading-tight sm:text-5xl">
             Simulador de Impacto da Reforma Tributária
           </h1>
