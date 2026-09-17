@@ -328,6 +328,8 @@ function Simulator() {
                       setManualName(true);
                       setCnpjData(null);
                       setCnpjError("");
+                      setActivitySuggested(false);
+                      setInput((prev) => ({ ...prev, activityId: defaultInput().activityId }));
                     }}
                     className="text-sm font-semibold text-navy underline"
                   >
