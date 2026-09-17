@@ -222,6 +222,16 @@ function MyCalculations() {
           <p className="mt-3 max-w-2xl text-sm text-navy-foreground/80">
             Histórico das simulações realizadas, em ordem cronológica, para consulta e reabertura.
           </p>
+          <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-navy-foreground/80">
+            {userEmail ? <span>Conectado como {userEmail}</span> : null}
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              className="rounded-md border border-navy-foreground/30 px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-navy-foreground/10"
+            >
+              Sair
+            </button>
+          </div>
         </div>
       </header>
 
