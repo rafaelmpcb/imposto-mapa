@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { LEGAL_REFERENCE_DATE, YEARS, type YearId } from "@/lib/tax/constants";
+import type { CnpjData } from "@/lib/cnpj/types";
+import { buildIdentifiedProfile } from "@/lib/tax/identified-profile";
 import {
   brl,
   compareRegimes,
@@ -273,6 +275,7 @@ export function ResultView({
   onClientNameChange,
   presentationMode,
   onPresentationModeChange,
+  cnpjData,
   readOnly = false,
 }: {
   input: SimulationInput;
@@ -282,6 +285,7 @@ export function ResultView({
   onClientNameChange: (name: string) => void;
   presentationMode: boolean;
   onPresentationModeChange: (active: boolean) => void;
+  cnpjData?: CnpjData | null;
   readOnly?: boolean;
 }) {
   const [ratesVersion, setRatesVersion] = useState(0);
@@ -310,9 +314,19 @@ export function ResultView({
     "pt-BR",
     { minimumFractionDigits: 2, maximumFractionDigits: 2 },
   )} p.p.`;
+  const identifiedProfile = buildIdentifiedProfile(cnpjData, input, year);
 
   return (
     <div className="space-y-6">
+      {identifiedProfile ? (
+        <section className="rounded-lg border border-border bg-secondary/50 p-5">
+          <h2 className="text-lg font-semibold text-foreground">Perfil identificado</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            {identifiedProfile}
+          </p>
+        </section>
+      ) : null}
+
       {!readOnly ? (
         <div className="flex justify-end">
           <Toggle
