@@ -619,6 +619,19 @@ function Simulator() {
                       />
                     </Field>
                   )}
+                  {isCompany && input.taxpayerType !== "real" && (
+                    <Field
+                      label="Margem de lucro estimada (%)"
+                      hint="Usada apenas no cenário de Lucro Real da seção “Comparação entre regimes”. Padrão de 20% se você não tiver esse dado."
+                    >
+                      <NumberInput
+                        value={input.profitMargin}
+                        onChange={(v) => set("profitMargin", v)}
+                        suffix="%"
+                        max={100}
+                      />
+                    </Field>
+                  )}
                 </div>
               )}
             </div>
