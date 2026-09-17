@@ -425,7 +425,16 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
 
   // Cenário reforma
   const newBase = revenue * taxableShare;
-  const credits = purchases * newRate;
+  const simplesSupplierShare = Math.min(100, Math.max(0, input.simplesSupplierShare || 0));
+  const creditablePurchases = purchases * (1 - simplesSupplierShare / 100);
+  const credits = creditablePurchases * newRate;
+  if (purchases > 0 && simplesSupplierShare > 0) {
+    notes.push(
+      `Crédito reduzido: ${simplesSupplierShare.toLocaleString("pt-BR", {
+        maximumFractionDigits: 2,
+      })}% das compras informadas foram de fornecedores no Simples Nacional, sem gerar crédito integral nesta estimativa.`,
+    );
+  }
   const reformLines: TaxLine[] = [];
 
   if (t.keepPisCofins) {
