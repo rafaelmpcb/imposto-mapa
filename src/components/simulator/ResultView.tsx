@@ -9,6 +9,7 @@ import {
   type SimulationInput,
   type TaxpayerType,
 } from "@/lib/tax/calc";
+import { ImpactChart } from "./ImpactChart";
 import { Field, Notice, TextInput, Toggle } from "./ui";
 
 const REGIME_LABELS: Record<TaxpayerType, string> = {
@@ -372,6 +373,8 @@ export function ResultView({
           {percentagePointLabel} na carga tributária
         </p>
       </div>
+
+      <ImpactChart input={input} year={year} />
 
       {isBusiness ? (
         <RegimeComparison input={input} year={year} presentationMode={presentationMode} />
