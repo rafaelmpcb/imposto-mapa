@@ -6,6 +6,7 @@ import { Button, Field, Notice, TextInput } from "@/components/simulator/ui";
 import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
 import type { CnpjData } from "@/lib/cnpj/types";
 import {
+  deleteSimulationsBulk,
   deleteSimulation,
   listSimulations,
   renameSimulation,
