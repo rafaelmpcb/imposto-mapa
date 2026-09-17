@@ -275,6 +275,8 @@ export function ResultView({
   onPresentationModeChange: (active: boolean) => void;
   readOnly?: boolean;
 }) {
+  const [ratesVersion, setRatesVersion] = useState(0);
+  void ratesVersion;
   const result = simulate(input, year);
   const isBusiness =
     input.taxpayerType === "simples" ||
