@@ -3,6 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 
 import { Button, Field, Notice, TextInput } from "@/components/simulator/ui";
+import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
+import type { CnpjData } from "@/lib/cnpj/types";
 import {
   deleteSimulation,
   listSimulations,
