@@ -298,6 +298,7 @@ function Simulator() {
                 <Field label="Nome do cliente/empresa (opcional)">
                   <TextInput
                     value={clientName}
+                    maxLength={150}
                     onChange={(event) => setClientName(event.target.value)}
                     placeholder="Ex.: Padaria Bom Pão Ltda"
                   />
