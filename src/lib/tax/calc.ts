@@ -86,7 +86,7 @@ export const defaultInput = (): SimulationInput => ({
   dependents: 0,
   revenue: 0,
   payroll: 0,
-  profitMargin: 15,
+  profitMargin: DEFAULT_PROFIT_MARGIN,
   simplesAnexo: "III",
   meiType: "servicos",
   benefitConfirmed: null,
@@ -267,8 +267,14 @@ export function compareRegimes(
       estimateNote = `Anexo ${variant.simplesAnexo} estimado com base na atividade`;
     }
     if (id === "real" && !isCurrent) {
-      variant = { ...variant, profitMargin: DEFAULT_PROFIT_MARGIN };
-      estimateNote = `Margem de lucro estimada em ${DEFAULT_PROFIT_MARGIN}%`;
+      const margin =
+        Number.isFinite(input.profitMargin) && input.profitMargin > 0
+          ? Math.min(100, input.profitMargin)
+          : DEFAULT_PROFIT_MARGIN;
+      variant = { ...variant, profitMargin: margin };
+      estimateNote = `Margem de lucro estimada em ${margin.toLocaleString("pt-BR", {
+        maximumFractionDigits: 2,
+      })}%`;
     }
 
     const reform = simulate(variant, year).reform;
