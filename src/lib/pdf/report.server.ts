@@ -6,7 +6,7 @@ import {
   type SimulationInput,
   type TaxpayerType,
 } from "@/lib/tax/calc";
-import { LEGAL_REFERENCE_DATE, type YearId } from "@/lib/tax/constants";
+import { LEGAL_REFERENCE_DATE, YEARS, type YearId } from "@/lib/tax/constants";
 
 const REGIME_LABELS: Record<TaxpayerType, string> = {
   pf: "Pessoa Física (CLT)",
@@ -259,6 +259,34 @@ class Doc {
     void colA;
   }
 
+  /** Linha de tabela com quatro colunas: rótulo + três valores alinhados à direita. */
+  row4(
+    label: string,
+    a: string,
+    b: string,
+    c: string,
+    opts: { bold?: boolean; color?: ReturnType<typeof rgb> } = {},
+  ): void {
+    const size = 9.5;
+    const font = opts.bold ? this.bold : this.regular;
+    this.ensure(18);
+    this.y -= 15;
+    const color = opts.color ?? TEXT;
+    this.page.drawText(safe(label), { x: MARGIN, y: this.y, size, font, color });
+    const stops = [0.5, 0.75, 1].map((f) => MARGIN + CONTENT_WIDTH * f);
+    [a, b, c].forEach((value, i) => {
+      const text = safe(value);
+      this.page.drawText(text, {
+        x: (stops[i] as number) - font.widthOfTextAtSize(text, size),
+        y: this.y,
+        size,
+        font,
+        color,
+      });
+    });
+  }
+
+
   /** Duas colunas independentes: cada cenário com seus próprios tributos. */
   dualRow(
     left: { label: string; value: string } | null,
@@ -444,6 +472,46 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
     { text: `${money(Math.abs(diff))} por mês`, size: 20, bold: true, color: diffColor },
     { text: `${pp} na carga tributária · ${money(Math.abs(diff) * 12)} por ano`, size: 9.5, color: MUTED },
   ]);
+
+  /* 3b. Evolução ao longo da transição */
+  doc.heading("Evolução da carga ao longo da transição");
+  doc.text(
+    "Mesma projeção do gráfico da tela de resultado, com os valores informados por você, nos três marcos da transição.",
+    { size: 9, color: MUTED, after: 4 },
+  );
+  const evolution = YEARS.map((y) => {
+    const r = simulate(input, y.id);
+    return { id: y.id, label: y.label, current: r.current, reform: r.reform };
+  });
+  doc.row4("Ano", "Sistema atual", "Pós-reforma", "Diferença", { bold: true, color: MUTED });
+  doc.rule();
+  for (const e of evolution) {
+    const d = e.reform.total - e.current.total;
+    doc.row4(
+      String(e.id),
+      money(e.current.total),
+      money(e.reform.total),
+      `${d > 0.005 ? "+" : d < -0.005 ? "-" : ""}${money(Math.abs(d))}`,
+      { color: d > 0.005 ? DANGER : d < -0.005 ? SUCCESS : TEXT },
+    );
+  }
+  doc.rule();
+  doc.row4("Carga sobre a base", "", "", "", { bold: true, color: MUTED });
+  for (const e of evolution) {
+    const dp = (e.reform.rate - e.current.rate) * 100;
+    doc.row4(
+      String(e.id),
+      percent(e.current.rate),
+      percent(e.reform.rate),
+      `${dp > 0.005 ? "+" : ""}${dp.toFixed(2).replace(".", ",")} p.p.`,
+      { color: dp > 0.005 ? DANGER : dp < -0.005 ? SUCCESS : TEXT },
+    );
+  }
+  doc.gap(6);
+  doc.text(
+    `Marcos: ${YEARS.map((y) => y.label).join(" · ")}.`,
+    { size: 8.5, color: MUTED },
+  );
 
   /* 4. Comparação entre regimes */
   if (isBusiness) {
