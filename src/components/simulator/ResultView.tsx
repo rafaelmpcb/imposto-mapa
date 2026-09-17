@@ -83,7 +83,7 @@ function RegimeDetail({
           tone="current"
           total={currentItem.total}
           rate={currentItem.rate}
-          lines={currentItem.lines}
+          lines={presentationMode ? undefined : currentItem.lines}
         />
         <ScenarioCard
           title={item.label}
@@ -91,7 +91,7 @@ function RegimeDetail({
           tone="reform"
           total={item.total}
           rate={item.rate}
-          lines={item.lines}
+          lines={presentationMode ? undefined : item.lines}
         />
       </div>
       <DifferenceCard
@@ -103,7 +103,15 @@ function RegimeDetail({
   );
 }
 
-function RegimeComparison({ input, year }: { input: SimulationInput; year: YearId }) {
+function RegimeComparison({
+  input,
+  year,
+  presentationMode,
+}: {
+  input: SimulationInput;
+  year: YearId;
+  presentationMode: boolean;
+}) {
   const items = compareRegimes(input, year);
   const currentItem = items.find((i) => i.isCurrent);
   const [openRegime, setOpenRegime] = useState<string | null>(null);
