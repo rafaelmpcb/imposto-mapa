@@ -61,10 +61,12 @@ function RegimeDetail({
   currentItem,
   item,
   year,
+  presentationMode,
 }: {
   currentItem: RegimeComparisonItem;
   item: RegimeComparisonItem;
   year: YearId;
+  presentationMode: boolean;
 }) {
   const diff = item.total - currentItem.total;
   const rateDiff = item.rate - currentItem.rate;
@@ -81,7 +83,7 @@ function RegimeDetail({
           tone="current"
           total={currentItem.total}
           rate={currentItem.rate}
-          lines={currentItem.lines}
+          lines={presentationMode ? undefined : currentItem.lines}
         />
         <ScenarioCard
           title={item.label}
@@ -89,7 +91,7 @@ function RegimeDetail({
           tone="reform"
           total={item.total}
           rate={item.rate}
-          lines={item.lines}
+          lines={presentationMode ? undefined : item.lines}
         />
       </div>
       <DifferenceCard
@@ -101,7 +103,15 @@ function RegimeDetail({
   );
 }
 
-function RegimeComparison({ input, year }: { input: SimulationInput; year: YearId }) {
+function RegimeComparison({
+  input,
+  year,
+  presentationMode,
+}: {
+  input: SimulationInput;
+  year: YearId;
+  presentationMode: boolean;
+}) {
   const items = compareRegimes(input, year);
   const currentItem = items.find((i) => i.isCurrent);
   const [openRegime, setOpenRegime] = useState<string | null>(null);
@@ -181,6 +191,7 @@ function RegimeComparison({ input, year }: { input: SimulationInput; year: YearI
                 currentItem={currentItem}
                 item={item}
                 year={year}
+                presentationMode={presentationMode}
               />
             ))
         : null}
@@ -362,7 +373,9 @@ export function ResultView({
         </p>
       </div>
 
-      {isBusiness ? <RegimeComparison input={input} year={year} /> : null}
+      {isBusiness ? (
+        <RegimeComparison input={input} year={year} presentationMode={presentationMode} />
+      ) : null}
 
       <div className="rounded-xl border border-border bg-card p-5">
         <h3 className="text-lg font-semibold">Resumo executivo</h3>
