@@ -39,6 +39,9 @@ const toPercentText = (fraction: number) =>
 
 const fromPercentText = (text: string) => Number(text.replace(",", ".")) / 100;
 
+const formatUpdatedAt = (iso: string) =>
+  new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+
 function TaxConfigPage() {
   const load = useServerFn(getTaxConfig);
   const loadMeta = useServerFn(getTaxConfigMeta);
@@ -160,7 +163,13 @@ function TaxConfigPage() {
             <h2 className="text-lg font-semibold">{group}</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {TUNABLES.filter((t) => t.group === group).map((def) => (
-                <Field key={def.key} label={def.label} hint={`Padrão: ${toPercentText(def.fallback)}%`}>
+                <Field
+                  key={def.key}
+                  label={def.label}
+                  hint={`Padrão: ${toPercentText(def.fallback)}%${
+                    meta[def.key] ? ` · Última alteração: ${formatUpdatedAt(meta[def.key]!)}` : ""
+                  }`}
+                >
                   <div className="flex items-stretch overflow-hidden rounded-md border border-input bg-card">
                     <input
                       inputMode="decimal"
