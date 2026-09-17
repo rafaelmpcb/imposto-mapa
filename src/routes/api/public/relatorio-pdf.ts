@@ -49,10 +49,22 @@ export const Route = createFileRoute("/api/public/relatorio-pdf")({
           clientName: parsed.data.clientName ?? null,
         });
 
+        const slug = (parsed.data.clientName ?? "")
+          .trim()
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .slice(0, 60);
+        const filename = `relatorio-reforma-tributaria-${
+          slug || new Date().toISOString().slice(0, 10)
+        }.pdf`;
+
         return new Response(bytes as unknown as BodyInit, {
           headers: {
             "Content-Type": "application/pdf",
-            "Content-Disposition": 'attachment; filename="relatorio-reforma-tributaria.pdf"',
+            "Content-Disposition": `attachment; filename="${filename}"`,
             "Cache-Control": "no-store",
           },
         });

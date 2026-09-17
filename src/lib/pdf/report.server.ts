@@ -267,27 +267,42 @@ class Doc {
   ): void {
     const size = 9.5;
     const font = opts.bold ? this.bold : this.regular;
-    this.ensure(18);
-    this.y -= 15;
+    const lineH = 13;
     const half = (CONTENT_WIDTH - 18) / 2;
     const columns: { origin: number; cell: typeof left }[] = [
       { origin: MARGIN, cell: left },
       { origin: MARGIN + half + 18, cell: right },
     ];
-    for (const { origin, cell } of columns) {
-      if (!cell) continue;
-      const value = safe(cell.value);
-      const valueWidth = font.widthOfTextAtSize(value, size);
-      const labelLines = this.wrap(cell.label, font, size, half - valueWidth - 10);
-      this.page.drawText(labelLines[0] ?? "", {
-        x: origin,
-        y: this.y,
-        size,
-        font,
-        color: opts.color ?? TEXT,
+    const rendered = columns
+      .map(({ origin, cell }) => {
+        if (!cell) return null;
+        const value = safe(cell.value);
+        const valueWidth = font.widthOfTextAtSize(value, size);
+        const labelLines = this.wrap(
+          cell.label,
+          font,
+          size,
+          Math.max(half - valueWidth - 10, 80),
+        );
+        return { origin, value, valueWidth, labelLines };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null);
+    const maxLines = Math.max(1, ...rendered.map((r) => r.labelLines.length));
+    this.ensure(maxLines * lineH + 4);
+    this.y -= maxLines * lineH;
+    for (const r of rendered) {
+      r.labelLines.forEach((line, i) => {
+        this.page.drawText(line, {
+          x: r.origin,
+          y: this.y + (maxLines - 1 - i) * lineH,
+          size,
+          font,
+          color: opts.color ?? TEXT,
+        });
       });
-      this.page.drawText(value, {
-        x: origin + half - valueWidth,
+      // Valor alinhado à última linha do rótulo.
+      this.page.drawText(r.value, {
+        x: r.origin + half - r.valueWidth,
         y: this.y,
         size,
         font,
@@ -309,7 +324,18 @@ class Doc {
 
   box(lines: { text: string; size?: number; bold?: boolean; color?: ReturnType<typeof rgb> }[]): void {
     const padding = 12;
-    const heights = lines.map((l) => (l.size ?? 10) * 1.5);
+    const width = CONTENT_WIDTH - padding * 2;
+    const entries = lines.map((l) => {
+      const size = l.size ?? 10;
+      const font = l.bold ? this.bold : this.regular;
+      return {
+        wrapped: this.wrap(l.text, font, size, width),
+        size,
+        font,
+        color: l.color ?? TEXT,
+      };
+    });
+    const heights = entries.flatMap((e) => e.wrapped.map(() => e.size * 1.5));
     const total = heights.reduce((a, b) => a + b, 0) + padding * 2;
     this.ensure(total + 10);
     const top = this.y;
@@ -323,18 +349,17 @@ class Doc {
       color: rgb(0.97, 0.975, 0.985),
     });
     let cursor = top - padding;
-    for (const line of lines) {
-      const size = line.size ?? 10;
-      const font = line.bold ? this.bold : this.regular;
-      cursor -= size * 1.5;
-      const content = safe(line.text);
-      this.page.drawText(content, {
-        x: MARGIN + CONTENT_WIDTH / 2 - font.widthOfTextAtSize(content, size) / 2,
-        y: cursor + size * 0.35,
-        size,
-        font,
-        color: line.color ?? TEXT,
-      });
+    for (const entry of entries) {
+      for (const line of entry.wrapped) {
+        cursor -= entry.size * 1.5;
+        this.page.drawText(line, {
+          x: MARGIN + CONTENT_WIDTH / 2 - entry.font.widthOfTextAtSize(line, entry.size) / 2,
+          y: cursor + entry.size * 0.35,
+          size: entry.size,
+          font: entry.font,
+          color: entry.color,
+        });
+      }
     }
     this.y = top - total - 6;
   }
