@@ -41,12 +41,14 @@ const fromPercentText = (text: string) => Number(text.replace(",", ".")) / 100;
 
 function TaxConfigPage() {
   const load = useServerFn(getTaxConfig);
+  const loadMeta = useServerFn(getTaxConfigMeta);
   const save = useServerFn(saveTaxConfig);
   const reset = useServerFn(resetTaxConfig);
 
   const [code, setCode] = useState("");
   const [unlocked, setUnlocked] = useState(false);
   const [values, setValues] = useState<Record<string, string>>({});
+  const [meta, setMeta] = useState<TaxConfigMeta>({});
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -69,6 +71,7 @@ function TaxConfigPage() {
         setUnlocked(true);
       }
     });
+    void loadMeta().then(setMeta);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
