@@ -630,6 +630,30 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
     { size: 10 },
   );
 
+  /* 9. Contato do escritório */
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("office_config")
+      .select("key, value")
+      .in("key", ["nome", "whatsapp", "email_contato", "telefone", "site"]);
+    const contact: Record<string, string> = {};
+    for (const row of data ?? []) contact[row.key as string] = String(row.value ?? "").trim();
+    const lines = [
+      contact["whatsapp"] ? `WhatsApp: ${contact["whatsapp"]}` : "",
+      contact["telefone"] ? `Telefone: ${contact["telefone"]}` : "",
+      contact["email_contato"] ? `E-mail: ${contact["email_contato"]}` : "",
+      contact["site"] ? `Site: ${contact["site"]}` : "",
+    ].filter(Boolean);
+    if (lines.length) {
+      doc.heading("Fale com o escritório");
+      if (contact["nome"]) doc.text(contact["nome"], { size: 10 });
+      for (const line of lines) doc.text(line, { size: 10 });
+    }
+  } catch {
+    /* contatos são opcionais no relatório */
+  }
+
 
   return doc.save();
 }

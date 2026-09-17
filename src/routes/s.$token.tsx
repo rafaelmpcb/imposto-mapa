@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { OfficeContactCta } from "@/components/contact/OfficeContactCta";
 import { ResultView } from "@/components/simulator/ResultView";
 import { Notice } from "@/components/simulator/ui";
 import { getSharedSimulation } from "@/lib/simulations.functions";
@@ -95,6 +96,8 @@ function SharedSimulation() {
           Tributária (LC 214/2025) em {LEGAL_REFERENCE_DATE}. Não substitui uma análise fiscal
           completa nem constitui aconselhamento jurídico ou tributário.
         </Notice>
+
+        <OfficeContactCta message="Olá! Recebi o link da simulação da Reforma Tributária e gostaria de conversar sobre o diagnóstico completo." />
 
         <Link to="/" className="inline-block text-sm font-semibold text-navy underline">
           Fazer minha própria simulação

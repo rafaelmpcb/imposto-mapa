@@ -40,6 +40,7 @@ export type Database = {
           cnpj: string | null
           cnpj_data: Json | null
           created_at: string
+          created_by: string | null
           current_rate: number
           current_total: number
           id: string
@@ -59,6 +60,7 @@ export type Database = {
           cnpj?: string | null
           cnpj_data?: Json | null
           created_at?: string
+          created_by?: string | null
           current_rate?: number
           current_total?: number
           id?: string
@@ -78,6 +80,7 @@ export type Database = {
           cnpj?: string | null
           cnpj_data?: Json | null
           created_at?: string
+          created_by?: string | null
           current_rate?: number
           current_total?: number
           id?: string

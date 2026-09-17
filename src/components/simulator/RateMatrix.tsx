@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+
+import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 
 import {
@@ -124,12 +126,13 @@ export function RateMatrix({
   const [values, setValues] = useState<Record<string, number>>(() => currentTaxConfig());
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
-  const [code, setCode] = useState("");
+  const [signedIn, setSignedIn] = useState(false);
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     setValues(currentTaxConfig());
+    void supabase.auth.getSession().then(({ data }) => setSignedIn(Boolean(data.session)));
   }, []);
 
   const commit = (key: string) => {
@@ -168,11 +171,11 @@ export function RateMatrix({
     setBusy(true);
     setStatus("");
     try {
-      const response = await persist({ data: { code: code.trim(), values } });
+      const response = await persist({ data: { values } });
       setStatus(
         response.ok
           ? "Alíquotas salvas para todas as simulações."
-          : "Código de acesso inválido — as alterações seguem valendo só nesta tela.",
+          : "Não foi possível salvar — as alterações seguem valendo só nesta tela.",
       );
     } catch {
       setStatus("Não foi possível salvar agora. Tente novamente.");
@@ -282,22 +285,11 @@ export function RateMatrix({
       </p>
 
       <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-border pt-4">
-        <div className="w-44">
-          <label className="mb-1 block text-xs font-medium text-muted-foreground" htmlFor="rate-code">
-            Código do escritório
-          </label>
-          <TextInput
-            id="rate-code"
-            type="password"
-            value={code}
-            onChange={(event) => setCode(event.target.value)}
-            placeholder="Para salvar"
-            autoComplete="off"
-          />
-        </div>
-        <Button type="button" onClick={() => void saveForAll()} disabled={busy || !code.trim()}>
-          Salvar para todas as simulações
-        </Button>
+        {signedIn ? (
+          <Button type="button" onClick={() => void saveForAll()} disabled={busy}>
+            Salvar para todas as simulações
+          </Button>
+        ) : null}
         <Button type="button" variant="ghost" onClick={() => void restore()} disabled={busy}>
           Restaurar valores salvos
         </Button>

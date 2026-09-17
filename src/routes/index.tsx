@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { OfficeContactCta } from "@/components/contact/OfficeContactCta";
+
 import { LEGAL_REFERENCE_DATE } from "@/lib/tax/constants";
 
 const TITLE = "Calculadora da Reforma Tributária 2026 — simulador IBS e CBS";
@@ -88,6 +90,7 @@ export default function Landing() {
       </header>
 
       <div className="mx-auto max-w-4xl space-y-12 px-5 py-12 sm:py-16">
+        <OfficeContactCta message="Olá! Gostaria de falar sobre o impacto da Reforma Tributária no meu negócio." />
         <section>
           <h2 className="text-2xl">O que muda com a Reforma Tributária</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
@@ -153,8 +156,8 @@ export default function Landing() {
           vigente em {LEGAL_REFERENCE_DATE}. Alíquota de referência de 26,5% sujeita a alteração
           pelo Senado Federal. Não constitui aconselhamento jurídico ou tributário.
           <span className="mt-3 block">
-            <Link to="/meus-calculos" className="font-semibold underline">
-              Meus Cálculos (acesso do escritório)
+            <Link to="/auth" className="font-semibold underline">
+              Área restrita do escritório
             </Link>
           </span>
         </footer>

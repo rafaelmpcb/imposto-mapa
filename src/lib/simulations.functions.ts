@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
 export type JsonValue =
   | string
   | number
@@ -84,12 +86,8 @@ export const saveSimulation = createServerFn({ method: "POST" })
   });
 
 export const listSimulations = createServerFn({ method: "POST" })
-  .inputValidator((input: { code: string }) => input)
-  .handler(async ({ data }) => {
-    const expected = process.env["ADVOGADO_ACCESS_CODE"] ?? "";
-    if (!expected || data.code.trim() !== expected) {
-      return { ok: false as const, items: [] as SavedSimulation[] };
-    }
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
       .from("simulations")
@@ -100,26 +98,21 @@ export const listSimulations = createServerFn({ method: "POST" })
     return { ok: true as const, items: (rows ?? []) as unknown as SavedSimulation[] };
   });
 
-function checkCode(code: string): boolean {
-  const expected = process.env["ADVOGADO_ACCESS_CODE"] ?? "";
-  return Boolean(expected) && code.trim() === expected;
-}
-
 export const deleteSimulation = createServerFn({ method: "POST" })
-  .inputValidator((input: { code: string; id: string }) => input)
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string }) => input)
   .handler(async ({ data }) => {
-    if (!checkCode(data.code)) return { ok: false as const };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("simulations").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
 
-/** Exclusão em lote: apaga vários cálculos de uma vez, com o mesmo código de acesso. */
+/** Exclusão em lote: apaga vários cálculos de uma vez. */
 export const deleteSimulationsBulk = createServerFn({ method: "POST" })
-  .inputValidator((input: { code: string; ids: string[] }) => input)
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { ids: string[] }) => input)
   .handler(async ({ data }) => {
-    if (!checkCode(data.code)) return { ok: false as const, deleted: 0 };
     const ids = data.ids.filter((id) => typeof id === "string" && id.length > 0);
     if (ids.length === 0) return { ok: true as const, deleted: 0 };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -129,9 +122,9 @@ export const deleteSimulationsBulk = createServerFn({ method: "POST" })
   });
 
 export const renameSimulation = createServerFn({ method: "POST" })
-  .inputValidator((input: { code: string; id: string; clientName: string }) => input)
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string; clientName: string }) => input)
   .handler(async ({ data }) => {
-    if (!checkCode(data.code)) return { ok: false as const };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("simulations")
@@ -143,9 +136,9 @@ export const renameSimulation = createServerFn({ method: "POST" })
 
 /** Liga ou desliga o link de compartilhamento somente-leitura. */
 export const setSimulationShare = createServerFn({ method: "POST" })
-  .inputValidator((input: { code: string; id: string; enabled: boolean }) => input)
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string; enabled: boolean }) => input)
   .handler(async ({ data }) => {
-    if (!checkCode(data.code)) return { ok: false as const, token: null };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const token = data.enabled ? crypto.randomUUID().replace(/-/g, "") : null;
     const patch = data.enabled

@@ -1,4 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+
+import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 
@@ -21,7 +23,7 @@ const TITLE = "Meus Cálculos — histórico de simulações da Reforma Tributá
 const DESCRIPTION =
   "Área restrita do escritório: histórico cronológico das simulações de impacto da Reforma Tributária, com opção de reabrir cada cálculo.";
 
-export const Route = createFileRoute("/meus-calculos")({
+export const Route = createFileRoute("/_authenticated/meus-calculos")({
   head: () => ({
     meta: [
       { title: TITLE },
@@ -35,8 +37,6 @@ export const Route = createFileRoute("/meus-calculos")({
   }),
   component: MyCalculations,
 });
-
-const CODE_KEY = "reforma-advogado-code";
 
 const TAXPAYER_LABELS: Record<string, string> = {
   pf: "Pessoa Física (CLT)",
@@ -54,7 +54,6 @@ function MyCalculations() {
   const rename = useServerFn(renameSimulation);
   const share = useServerFn(setSimulationShare);
 
-  const [code, setCode] = useState("");
   const [items, setItems] = useState<SavedSimulation[] | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -67,22 +66,20 @@ function MyCalculations() {
   const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [memoFor, setMemoFor] = useState<SavedSimulation | null>(null);
+  const [userEmail, setUserEmail] = useState("");
 
-  const load = async (accessCode: string) => {
+  const load = async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetchList({ data: { code: accessCode } });
+      const res = await fetchList({ data: undefined });
       if (!res.ok) {
-        setError("Código de acesso inválido.");
-        setItems(null);
-        sessionStorage.removeItem(CODE_KEY);
+        setError("Não foi possível carregar o histórico.");
         return;
       }
       setItems(res.items);
       setSelected(new Set());
       setConfirmBulk(false);
-      sessionStorage.setItem(CODE_KEY, accessCode);
     } catch {
       setError("Não foi possível carregar o histórico agora. Tente novamente.");
     } finally {
@@ -91,13 +88,15 @@ function MyCalculations() {
   };
 
   useEffect(() => {
-    const saved = sessionStorage.getItem(CODE_KEY);
-    if (saved) {
-      setCode(saved);
-      void load(saved);
-    }
+    void supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email ?? ""));
+    void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    void navigate({ to: "/auth", replace: true });
+  };
 
   const reopen = (item: SavedSimulation) => {
     localStorage.setItem(
@@ -114,9 +113,9 @@ function MyCalculations() {
   };
 
   const handleDelete = async (id: string) => {
-    const res = await removeItem({ data: { code, id } });
+    const res = await removeItem({ data: { id } });
     if (!res.ok) {
-      setError("Código de acesso inválido.");
+      setError("Não foi possível concluir a ação.");
       return;
     }
     setConfirmId(null);
@@ -151,9 +150,9 @@ function MyCalculations() {
     if (ids.length === 0) return;
     setDeleting(true);
     try {
-      const res = await removeBulk({ data: { code, ids } });
+      const res = await removeBulk({ data: { ids } });
       if (!res.ok) {
-        setError("Código de acesso inválido.");
+        setError("Não foi possível concluir a ação.");
         return;
       }
       setSelected(new Set());
@@ -167,9 +166,9 @@ function MyCalculations() {
   };
 
   const handleRename = async (id: string) => {
-    const res = await rename({ data: { code, id, clientName: editingName } });
+    const res = await rename({ data: { id, clientName: editingName } });
     if (!res.ok) {
-      setError("Código de acesso inválido.");
+      setError("Não foi possível concluir a ação.");
       return;
     }
     setItems((prev) =>
@@ -182,9 +181,9 @@ function MyCalculations() {
 
   const handleShare = async (item: SavedSimulation) => {
     const enabled = !item.share_enabled;
-    const res = await share({ data: { code, id: item.id, enabled } });
+    const res = await share({ data: { id: item.id, enabled } });
     if (!res.ok) {
-      setError("Código de acesso inválido.");
+      setError("Não foi possível concluir a ação.");
       return;
     }
     setItems((prev) =>
@@ -223,33 +222,32 @@ function MyCalculations() {
           <p className="mt-3 max-w-2xl text-sm text-navy-foreground/80">
             Histórico das simulações realizadas, em ordem cronológica, para consulta e reabertura.
           </p>
+          <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-navy-foreground/80">
+            {userEmail ? <span>Conectado como {userEmail}</span> : null}
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              className="rounded-md border border-navy-foreground/30 px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-navy-foreground/10"
+            >
+              Sair
+            </button>
+          </div>
         </div>
       </header>
 
       <div className="mx-auto max-w-4xl px-5 py-8">
         {items === null ? (
           <section className="rounded-xl border border-border bg-card p-5 sm:p-7">
-            <form
-              className="space-y-5"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void load(code);
-              }}
-            >
-              <Field label="Código de acesso">
-                <TextInput
-                  type="password"
-                  value={code}
-                  onChange={(event) => setCode(event.target.value)}
-                  placeholder="Informe o código do escritório"
-                  autoComplete="off"
-                />
-              </Field>
-              {error ? <Notice tone="warning">{error}</Notice> : null}
-              <Button type="submit" disabled={loading || code.trim().length === 0}>
-                {loading ? "Verificando..." : "Acessar histórico"}
-              </Button>
-            </form>
+            {error ? (
+              <div className="space-y-4">
+                <Notice tone="warning">{error}</Notice>
+                <Button onClick={() => void load()}>Tentar novamente</Button>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {loading ? "Carregando histórico..." : "Nenhum cálculo encontrado."}
+              </p>
+            )}
           </section>
         ) : (
           <section className="space-y-4">
@@ -268,7 +266,7 @@ function MyCalculations() {
                 {filtered.length} de {items.length} cálculo{items.length === 1 ? "" : "s"}
                 {selected.size > 0 ? ` · ${selected.size} selecionado${selected.size === 1 ? "" : "s"}` : ""}
               </p>
-              <Button variant="ghost" onClick={() => void load(code)}>
+              <Button variant="ghost" onClick={() => void load()}>
                 Atualizar
               </Button>
             </div>

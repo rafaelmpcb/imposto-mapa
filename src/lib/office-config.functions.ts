@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
 export interface OfficeConfig {
   nome: string;
   cnpj: string;
@@ -7,6 +9,10 @@ export interface OfficeConfig {
   advogado_nome: string;
   oab: string;
   foro: string;
+  whatsapp: string;
+  email_contato: string;
+  telefone: string;
+  site: string;
 }
 
 export const OFFICE_FIELDS: { key: keyof OfficeConfig; label: string; placeholder: string }[] = [
@@ -22,6 +28,18 @@ export const OFFICE_FIELDS: { key: keyof OfficeConfig; label: string; placeholde
   { key: "foro", label: "Foro padrão (comarca)", placeholder: "Fortaleza/CE" },
 ];
 
+/** Contatos exibidos ao cliente (opcionais). */
+export const OFFICE_CONTACT_FIELDS: {
+  key: keyof OfficeConfig;
+  label: string;
+  placeholder: string;
+}[] = [
+  { key: "whatsapp", label: "WhatsApp (com DDD)", placeholder: "85 99999-9999" },
+  { key: "email_contato", label: "E-mail de contato", placeholder: "contato@escritorio.com.br" },
+  { key: "telefone", label: "Telefone fixo", placeholder: "85 3333-3333" },
+  { key: "site", label: "Site", placeholder: "https://www.escritorio.com.br" },
+];
+
 export const emptyOfficeConfig = (): OfficeConfig => ({
   nome: "",
   cnpj: "",
@@ -29,6 +47,26 @@ export const emptyOfficeConfig = (): OfficeConfig => ({
   advogado_nome: "",
   oab: "",
   foro: "",
+  whatsapp: "",
+  email_contato: "",
+  telefone: "",
+  site: "",
+});
+
+export interface OfficeContact {
+  nome: string;
+  whatsapp: string;
+  email_contato: string;
+  telefone: string;
+  site: string;
+}
+
+export const emptyOfficeContact = (): OfficeContact => ({
+  nome: "",
+  whatsapp: "",
+  email_contato: "",
+  telefone: "",
+  site: "",
 });
 
 export type OfficeConfigMeta = Record<string, string>;
@@ -48,15 +86,26 @@ export const getOfficeConfig = createServerFn({ method: "GET" }).handler(async (
   return { values, meta };
 });
 
-function checkCode(code: string): boolean {
-  const expected = process.env["ADVOGADO_ACCESS_CODE"] ?? "";
-  return Boolean(expected) && code.trim() === expected;
-}
+/** Leitura pública: apenas os contatos exibidos ao cliente. */
+export const getOfficeContact = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const contact = emptyOfficeContact();
+  const { data, error } = await supabaseAdmin
+    .from("office_config")
+    .select("key, value")
+    .in("key", ["nome", "whatsapp", "email_contato", "telefone", "site"]);
+  if (error) return contact;
+  for (const row of data ?? []) {
+    const key = row.key as keyof OfficeContact;
+    if (key in contact) contact[key] = String(row.value ?? "");
+  }
+  return contact;
+});
 
 export const saveOfficeConfig = createServerFn({ method: "POST" })
-  .inputValidator((input: { code: string; values: OfficeConfig }) => input)
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { values: OfficeConfig }) => input)
   .handler(async ({ data }) => {
-    if (!checkCode(data.code)) return { ok: false as const };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const rows = Object.entries(data.values).map(([key, value]) => ({
       key,

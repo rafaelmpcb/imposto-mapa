@@ -10,9 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ConfigAliquotasRouteImport } from './routes/config-aliquotas'
-import { Route as MeusCalculosRouteImport } from './routes/meus-calculos'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as SimuladorRouteImport } from './routes/simulador'
+import { Route as AuthenticatedConfigAliquotasRouteImport } from './routes/_authenticated/config-aliquotas'
+import { Route as AuthenticatedMeusCalculosRouteImport } from './routes/_authenticated/meus-calculos'
 import { Route as STokenRouteImport } from './routes/s.$token'
 import { Route as ApiPublicRelatorioPdfRouteImport } from './routes/api/public/relatorio-pdf'
 
@@ -21,14 +23,13 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ConfigAliquotasRoute = ConfigAliquotasRouteImport.update({
-  id: '/config-aliquotas',
-  path: '/config-aliquotas',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MeusCalculosRoute = MeusCalculosRouteImport.update({
-  id: '/meus-calculos',
-  path: '/meus-calculos',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SimuladorRoute = SimuladorRouteImport.update({
@@ -36,6 +37,18 @@ const SimuladorRoute = SimuladorRouteImport.update({
   path: '/simulador',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedConfigAliquotasRoute =
+  AuthenticatedConfigAliquotasRouteImport.update({
+    id: '/config-aliquotas',
+    path: '/config-aliquotas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMeusCalculosRoute =
+  AuthenticatedMeusCalculosRouteImport.update({
+    id: '/meus-calculos',
+    path: '/meus-calculos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const STokenRoute = STokenRouteImport.update({
   id: '/s/$token',
   path: '/s/$token',
@@ -49,26 +62,30 @@ const ApiPublicRelatorioPdfRoute = ApiPublicRelatorioPdfRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/config-aliquotas': typeof ConfigAliquotasRoute
-  '/meus-calculos': typeof MeusCalculosRoute
+  '/auth': typeof AuthRoute
   '/simulador': typeof SimuladorRoute
+  '/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
+  '/meus-calculos': typeof AuthenticatedMeusCalculosRoute
   '/s/$token': typeof STokenRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/config-aliquotas': typeof ConfigAliquotasRoute
-  '/meus-calculos': typeof MeusCalculosRoute
+  '/auth': typeof AuthRoute
   '/simulador': typeof SimuladorRoute
+  '/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
+  '/meus-calculos': typeof AuthenticatedMeusCalculosRoute
   '/s/$token': typeof STokenRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/config-aliquotas': typeof ConfigAliquotasRoute
-  '/meus-calculos': typeof MeusCalculosRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
   '/simulador': typeof SimuladorRoute
+  '/_authenticated/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
+  '/_authenticated/meus-calculos': typeof AuthenticatedMeusCalculosRoute
   '/s/$token': typeof STokenRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
 }
@@ -76,33 +93,37 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
+    | '/simulador'
     | '/config-aliquotas'
     | '/meus-calculos'
-    | '/simulador'
     | '/s/$token'
     | '/api/public/relatorio-pdf'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth'
+    | '/simulador'
     | '/config-aliquotas'
     | '/meus-calculos'
-    | '/simulador'
     | '/s/$token'
     | '/api/public/relatorio-pdf'
   id:
     | '__root__'
     | '/'
-    | '/config-aliquotas'
-    | '/meus-calculos'
+    | '/_authenticated'
+    | '/auth'
     | '/simulador'
+    | '/_authenticated/config-aliquotas'
+    | '/_authenticated/meus-calculos'
     | '/s/$token'
     | '/api/public/relatorio-pdf'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ConfigAliquotasRoute: typeof ConfigAliquotasRoute
-  MeusCalculosRoute: typeof MeusCalculosRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
   SimuladorRoute: typeof SimuladorRoute
   STokenRoute: typeof STokenRoute
   ApiPublicRelatorioPdfRoute: typeof ApiPublicRelatorioPdfRoute
@@ -117,18 +138,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/config-aliquotas': {
-      id: '/config-aliquotas'
-      path: '/config-aliquotas'
-      fullPath: '/config-aliquotas'
-      preLoaderRoute: typeof ConfigAliquotasRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/meus-calculos': {
-      id: '/meus-calculos'
-      path: '/meus-calculos'
-      fullPath: '/meus-calculos'
-      preLoaderRoute: typeof MeusCalculosRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/simulador': {
@@ -137,6 +158,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/simulador'
       preLoaderRoute: typeof SimuladorRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/config-aliquotas': {
+      id: '/_authenticated/config-aliquotas'
+      path: '/config-aliquotas'
+      fullPath: '/config-aliquotas'
+      preLoaderRoute: typeof AuthenticatedConfigAliquotasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/meus-calculos': {
+      id: '/_authenticated/meus-calculos'
+      path: '/meus-calculos'
+      fullPath: '/meus-calculos'
+      preLoaderRoute: typeof AuthenticatedMeusCalculosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/s/$token': {
       id: '/s/$token'
@@ -155,10 +190,23 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedConfigAliquotasRoute: typeof AuthenticatedConfigAliquotasRoute
+  AuthenticatedMeusCalculosRoute: typeof AuthenticatedMeusCalculosRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedConfigAliquotasRoute: AuthenticatedConfigAliquotasRoute,
+  AuthenticatedMeusCalculosRoute: AuthenticatedMeusCalculosRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ConfigAliquotasRoute: ConfigAliquotasRoute,
-  MeusCalculosRoute: MeusCalculosRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
   SimuladorRoute: SimuladorRoute,
   STokenRoute: STokenRoute,
   ApiPublicRelatorioPdfRoute: ApiPublicRelatorioPdfRoute,

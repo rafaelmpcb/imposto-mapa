@@ -16,6 +16,7 @@ import {
   emptyOfficeConfig,
   getOfficeConfig,
   OFFICE_FIELDS,
+  OFFICE_CONTACT_FIELDS,
   saveOfficeConfig,
   type OfficeConfig,
   type OfficeConfigMeta,
@@ -25,7 +26,7 @@ const TITLE = "Configuração de alíquotas — área restrita";
 const DESCRIPTION =
   "Área restrita do escritório para ajustar as alíquotas de referência usadas nas estimativas do simulador.";
 
-export const Route = createFileRoute("/config-aliquotas")({
+export const Route = createFileRoute("/_authenticated/config-aliquotas")({
   head: () => ({
     meta: [
       { title: TITLE },
@@ -39,8 +40,6 @@ export const Route = createFileRoute("/config-aliquotas")({
   }),
   component: TaxConfigPage,
 });
-
-const CODE_KEY = "reforma-advogado-code";
 
 const toPercentText = (fraction: number) =>
   (fraction * 100).toLocaleString("pt-BR", { maximumFractionDigits: 4 });
@@ -56,8 +55,6 @@ function TaxConfigPage() {
   const save = useServerFn(saveTaxConfig);
   const reset = useServerFn(resetTaxConfig);
 
-  const [code, setCode] = useState("");
-  const [unlocked, setUnlocked] = useState(false);
   const [values, setValues] = useState<Record<string, string>>({});
   const [meta, setMeta] = useState<TaxConfigMeta>({});
   const [message, setMessage] = useState("");
@@ -77,13 +74,11 @@ function TaxConfigPage() {
     setOfficeError("");
     setOfficeMessage("");
     try {
-      const res = await persistOffice({ data: { code, values: office } });
+      const res = await persistOffice({ data: { values: office } });
       if (!res.ok) {
-        setOfficeError("Código de acesso inválido.");
+        setOfficeError("Não foi possível salvar os dados do escritório.");
         return;
       }
-      sessionStorage.setItem(CODE_KEY, code);
-      setUnlocked(true);
       const fresh = await loadOffice();
       setOfficeMeta(fresh.meta);
       setOfficeMessage("Dados do escritório atualizados.");
@@ -106,11 +101,6 @@ function TaxConfigPage() {
   useEffect(() => {
     void load().then((stored) => {
       fill(stored);
-      const saved = sessionStorage.getItem(CODE_KEY);
-      if (saved) {
-        setCode(saved);
-        setUnlocked(true);
-      }
     });
     void loadMeta().then(setMeta);
     void loadOffice().then((res) => {
@@ -130,15 +120,11 @@ function TaxConfigPage() {
         const parsed = fromPercentText(values[def.key] ?? "");
         payload[def.key] = Number.isFinite(parsed) ? parsed : def.fallback;
       }
-      const res = await save({ data: { code, values: payload } });
+      const res = await save({ data: { values: payload } });
       if (!res.ok) {
-        setError("Código de acesso inválido.");
-        setUnlocked(false);
-        sessionStorage.removeItem(CODE_KEY);
+        setError("Não foi possível salvar as alíquotas.");
         return;
       }
-      sessionStorage.setItem(CODE_KEY, code);
-      setUnlocked(true);
       applyTaxOverrides(payload);
       void loadMeta().then(setMeta);
       setMessage("Alíquotas atualizadas. As próximas simulações já usam esses valores.");
@@ -154,9 +140,9 @@ function TaxConfigPage() {
     setError("");
     setMessage("");
     try {
-      const res = await reset({ data: { code } });
+      const res = await reset({ data: undefined });
       if (!res.ok) {
-        setError("Código de acesso inválido.");
+        setError("Não foi possível restaurar os valores.");
         return;
       }
       const defaults: TaxConfigMap = {};
@@ -190,16 +176,6 @@ function TaxConfigPage() {
       </header>
 
       <div className="mx-auto max-w-3xl space-y-6 px-5 py-8">
-        <Field label="Código de acesso">
-          <TextInput
-            type="password"
-            value={code}
-            onChange={(event) => setCode(event.target.value)}
-            placeholder="Informe o código do escritório"
-            autoComplete="off"
-          />
-        </Field>
-
         {groups.map((group) => (
           <section key={group} className="rounded-xl border border-border bg-card p-5">
             <h2 className="text-lg font-semibold">{group}</h2>
@@ -233,20 +209,15 @@ function TaxConfigPage() {
 
         {error ? <Notice tone="warning">{error}</Notice> : null}
         {message ? <Notice>{message}</Notice> : null}
-        {unlocked ? null : (
-          <Notice tone="warning">
-            Informe o código de acesso do escritório para salvar alterações.
-          </Notice>
-        )}
 
         <div className="flex flex-wrap gap-3">
-          <Button onClick={() => void handleSave()} disabled={busy || code.trim().length === 0}>
+          <Button onClick={() => void handleSave()} disabled={busy}>
             {busy ? "Salvando..." : "Salvar alíquotas"}
           </Button>
           <Button
             variant="ghost"
             onClick={() => void handleReset()}
-            disabled={busy || code.trim().length === 0}
+            disabled={busy}
           >
             Restaurar padrão
           </Button>
@@ -255,10 +226,11 @@ function TaxConfigPage() {
         <section className="rounded-xl border border-border bg-card p-5">
           <h2 className="text-lg font-semibold">Dados do escritório</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Usados nos memorandos de entendimento e confidencialidade.
+            Usados nos memorandos de entendimento e confidencialidade. Os contatos abaixo aparecem
+            para o cliente no resultado da simulação, no relatório em PDF e nas páginas públicas.
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {OFFICE_FIELDS.map((field) => (
+            {[...OFFICE_FIELDS, ...OFFICE_CONTACT_FIELDS].map((field) => (
               <Field
                 key={field.key}
                 label={field.label}
@@ -281,7 +253,7 @@ function TaxConfigPage() {
           <div className="mt-4">
             <Button
               onClick={() => void handleSaveOffice()}
-              disabled={officeBusy || code.trim().length === 0}
+              disabled={officeBusy}
             >
               {officeBusy ? "Salvando..." : "Salvar dados do escritório"}
             </Button>

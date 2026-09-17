@@ -20,6 +20,7 @@ import {
   type TaxpayerType,
 } from "@/lib/tax/calc";
 import { ResultView } from "@/components/simulator/ResultView";
+import { OfficeContactCta } from "@/components/contact/OfficeContactCta";
 import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
 import { lookupCnpj } from "@/lib/cnpj.functions";
 import type { CnpjData } from "@/lib/cnpj/types";
@@ -678,6 +679,12 @@ function Simulator() {
               <p className="mt-3 text-xs font-medium text-navy-foreground/80">{pdfError}</p>
             ) : null}
           </section>
+        )}
+
+        {step === 5 && (
+          <div className="mt-6">
+            <OfficeContactCta />
+          </div>
         )}
 
         {!(step === 5 && presentationMode) ? <footer className="mt-10 border-t border-border pt-6 text-xs leading-relaxed text-muted-foreground">
