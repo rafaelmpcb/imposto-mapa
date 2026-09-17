@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
 export type TaxConfigMap = Record<string, number>;
 
 /** Leitura pública: os percentuais usados nas estimativas. */
@@ -26,15 +28,10 @@ export const getTaxConfigMeta = createServerFn({ method: "GET" }).handler(async 
   return out;
 });
 
-function checkCode(code: string): boolean {
-  const expected = process.env["ADVOGADO_ACCESS_CODE"] ?? "";
-  return Boolean(expected) && code.trim() === expected;
-}
-
 export const saveTaxConfig = createServerFn({ method: "POST" })
-  .inputValidator((input: { code: string; values: TaxConfigMap }) => input)
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { values: TaxConfigMap }) => input)
   .handler(async ({ data }) => {
-    if (!checkCode(data.code)) return { ok: false as const };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const rows = Object.entries(data.values)
       .filter(([, v]) => Number.isFinite(v))
@@ -47,9 +44,8 @@ export const saveTaxConfig = createServerFn({ method: "POST" })
   });
 
 export const resetTaxConfig = createServerFn({ method: "POST" })
-  .inputValidator((input: { code: string }) => input)
-  .handler(async ({ data }) => {
-    if (!checkCode(data.code)) return { ok: false as const };
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("tax_config").delete().neq("key", "");
     if (error) throw new Error(error.message);
