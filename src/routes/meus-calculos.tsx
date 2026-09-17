@@ -3,6 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 
 import { Button, Field, Notice, TextInput } from "@/components/simulator/ui";
+import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
+import type { CnpjData } from "@/lib/cnpj/types";
 import {
   deleteSimulation,
   listSimulations,
@@ -59,6 +61,7 @@ function MyCalculations() {
   const [editingName, setEditingName] = useState("");
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [memoFor, setMemoFor] = useState<SavedSimulation | null>(null);
 
   const load = async (accessCode: string) => {
     setLoading(true);
@@ -97,6 +100,7 @@ function MyCalculations() {
         input: item.input,
         year: item.year_id,
         clientName: item.client_name ?? "",
+        cnpjData: item.cnpj_data ?? null,
       }),
     );
     void navigate({ to: "/simulador" });
@@ -252,6 +256,11 @@ function MyCalculations() {
                               {item.client_name || "Sem identificação"}
                             </p>
                           )}
+                          {item.cnpj ? (
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              CNPJ {item.cnpj}
+                            </p>
+                          ) : null}
                           <p className="mt-1 text-xs text-muted-foreground">
                             {new Date(item.created_at).toLocaleString("pt-BR")} ·{" "}
                             {TAXPAYER_LABELS[item.taxpayer_type] ?? item.taxpayer_type} ·{" "}
@@ -299,6 +308,9 @@ function MyCalculations() {
                           <Button variant="ghost" onClick={() => void handleShare(item)}>
                             {item.share_enabled ? "Desativar link" : "Compartilhar"}
                           </Button>
+                          <Button variant="ghost" onClick={() => setMemoFor(item)}>
+                            Gerar Memorando
+                          </Button>
                           {confirmId === item.id ? (
                             <>
                               <Button onClick={() => void handleDelete(item.id)}>
@@ -332,6 +344,13 @@ function MyCalculations() {
           </section>
         )}
       </div>
+      {memoFor ? (
+        <MemorandoDialog
+          cnpjData={(memoFor.cnpj_data as unknown as CnpjData | null) ?? null}
+          clientName={memoFor.client_name ?? ""}
+          onClose={() => setMemoFor(null)}
+        />
+      ) : null}
     </main>
   );
 }

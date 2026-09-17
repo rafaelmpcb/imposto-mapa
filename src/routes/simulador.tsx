@@ -20,7 +20,18 @@ import {
   type TaxpayerType,
 } from "@/lib/tax/calc";
 import { ResultView } from "@/components/simulator/ResultView";
-import { Button, Field, MoneyInput, NumberInput, Notice, Select } from "@/components/simulator/ui";
+import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
+import { lookupCnpj } from "@/lib/cnpj.functions";
+import type { CnpjData } from "@/lib/cnpj/types";
+import {
+  Button,
+  Field,
+  MoneyInput,
+  NumberInput,
+  Notice,
+  Select,
+  TextInput,
+} from "@/components/simulator/ui";
 
 const TITLE = "Simulador de Impacto da Reforma Tributária (IBS/CBS)";
 const DESCRIPTION =
@@ -63,6 +74,40 @@ function Simulator() {
   const [pdfBusy, setPdfBusy] = useState(false);
   const [pdfError, setPdfError] = useState("");
 
+  const searchCnpjFn = useServerFn(lookupCnpj);
+  const [cnpj, setCnpj] = useState("");
+  const [cnpjData, setCnpjData] = useState<CnpjData | null>(null);
+  const [cnpjBusy, setCnpjBusy] = useState(false);
+  const [cnpjError, setCnpjError] = useState("");
+  const [manualName, setManualName] = useState(false);
+  const [activitySuggested, setActivitySuggested] = useState(false);
+  const [memoOpen, setMemoOpen] = useState(false);
+
+  const searchCnpj = async () => {
+    setCnpjBusy(true);
+    setCnpjError("");
+    try {
+      const res = await searchCnpjFn({ data: { cnpj } });
+      if (!res.ok) {
+        setCnpjData(null);
+        setCnpjError(`${res.error} Você pode preencher o nome manualmente.`);
+        setManualName(true);
+        return;
+      }
+      setCnpjData(res.data);
+      setCnpj(res.data.cnpj);
+      setClientName(res.data.nome_fantasia || res.data.razao_social);
+      setInput((prev) => ({ ...prev, activityId: res.data.atividade_sugerida }));
+      setActivitySuggested(true);
+    } catch {
+      setCnpjData(null);
+      setCnpjError("Não foi possível consultar o CNPJ agora. Preencha o nome manualmente.");
+      setManualName(true);
+    } finally {
+      setCnpjBusy(false);
+    }
+  };
+
   const downloadPdf = async () => {
     setPdfBusy(true);
     setPdfError("");
@@ -70,7 +115,12 @@ function Simulator() {
       const response = await fetch("/api/public/relatorio-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input, year, clientName: clientName.trim() || null }),
+        body: JSON.stringify({
+          input,
+          year,
+          clientName: clientName.trim() || null,
+          cnpj: cnpjData?.cnpj ?? null,
+        }),
       });
       if (!response.ok) throw new Error("falha");
       const blob = await response.blob();
@@ -114,10 +164,15 @@ function Simulator() {
           input?: Partial<SimulationInput>;
           year?: YearId;
           clientName?: string;
+          cnpjData?: CnpjData | null;
         };
         setInput({ ...defaultInput(), ...(parsed.input ?? {}) });
         if (parsed.year) setYear(parsed.year);
         setClientName(parsed.clientName ?? "");
+        if (parsed.cnpjData) {
+          setCnpjData(parsed.cnpjData);
+          setCnpj(parsed.cnpjData.cnpj);
+        }
         savedIdRef.current = parsed.id ?? null;
         setStep(5);
         return;
@@ -149,6 +204,8 @@ function Simulator() {
           currentRate: result.current.rate,
           reformRate: result.reform.rate,
           input: { ...input } as unknown as JsonValue,
+          cnpj: cnpjData?.cnpj ?? null,
+          cnpjData: cnpjData ? ({ ...cnpjData } as unknown as JsonValue) : null,
         },
       })
         .then((res) => {
@@ -159,7 +216,7 @@ function Simulator() {
         });
     }, 800);
     return () => clearTimeout(timer);
-  }, [step, input, year, clientName, persist]);
+  }, [step, input, year, clientName, cnpjData, persist]);
 
 
   useEffect(() => {
@@ -243,6 +300,83 @@ function Simulator() {
         <section className="rounded-xl border border-border bg-card p-5 sm:p-7">
           {step === 1 && (
             <div className="space-y-5">
+              {manualName ? (
+                <Field label="Nome do cliente/empresa (opcional)">
+                  <TextInput
+                    value={clientName}
+                    onChange={(event) => setClientName(event.target.value)}
+                    placeholder="Ex.: Padaria Bom Pão Ltda"
+                  />
+                </Field>
+              ) : (
+                <div className="space-y-3 rounded-lg border border-border bg-secondary/40 p-4">
+                  <Field
+                    label="CNPJ do cliente (opcional)"
+                    hint="Usamos dados públicos da Receita Federal para preencher a simulação."
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <TextInput
+                        value={cnpj}
+                        onChange={(event) => setCnpj(event.target.value)}
+                        placeholder="00.000.000/0001-00"
+                        inputMode="numeric"
+                        className="min-w-48 flex-1"
+                      />
+                      <Button onClick={() => void searchCnpj()} disabled={cnpjBusy}>
+                        {cnpjBusy ? "Buscando..." : "Buscar dados"}
+                      </Button>
+                    </div>
+                  </Field>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setManualName(true);
+                      setCnpjData(null);
+                      setCnpjError("");
+                    }}
+                    className="text-sm font-semibold text-navy underline"
+                  >
+                    Pular e preencher manualmente
+                  </button>
+
+                  {cnpjError ? <Notice tone="warning">{cnpjError}</Notice> : null}
+
+                  {cnpjData ? (
+                    <div className="space-y-2 rounded-md border border-border bg-card p-4 text-sm">
+                      <p className="font-semibold text-foreground">{cnpjData.razao_social}</p>
+                      <p className="text-muted-foreground">{cnpjData.endereco}</p>
+                      <p
+                        className={
+                          cnpjData.situacao_cadastral === "ATIVA"
+                            ? "text-muted-foreground"
+                            : "font-semibold text-danger"
+                        }
+                      >
+                        Situação cadastral: {cnpjData.situacao_cadastral || "não informada"}
+                      </p>
+                      <p className="text-muted-foreground">
+                        CNAE {cnpjData.cnae_codigo} — {cnpjData.cnae_descricao}
+                      </p>
+                      {cnpjData.representante_sugerido ? (
+                        <p className="text-muted-foreground">
+                          Representante sugerido: {cnpjData.representante_sugerido} (confirme antes
+                          de usar em documentos)
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {cnpjData ? (
+                    <Field label="Nome do cliente/empresa">
+                      <TextInput
+                        value={clientName}
+                        onChange={(event) => setClientName(event.target.value)}
+                      />
+                    </Field>
+                  ) : null}
+                </div>
+              )}
+
               <Field label="Tipo de contribuinte">
                 <Select
                   value={input.taxpayerType}
@@ -255,7 +389,12 @@ function Simulator() {
                   ))}
                 </Select>
               </Field>
-              <Field label="Atividade principal">
+              <Field
+                label="Atividade principal"
+                {...(activitySuggested
+                  ? { hint: "Sugerido a partir do CNAE — confirme ou ajuste." }
+                  : {})}
+              >
                 <Select
                   value={input.activityId}
                   onChange={(e) => set("activityId", e.target.value)}
@@ -530,6 +669,13 @@ function Simulator() {
               >
                 {pdfBusy ? "Gerando PDF..." : "Baixar PDF"}
               </button>
+              <button
+                type="button"
+                onClick={() => setMemoOpen(true)}
+                className="inline-flex items-center justify-center rounded-md border border-navy-foreground/40 px-6 py-3 text-sm font-semibold text-navy-foreground transition-colors hover:bg-navy-foreground/10"
+              >
+                Gerar Memorando
+              </button>
             </div>
             {pdfError ? (
               <p className="mt-3 text-xs font-medium text-navy-foreground/80">{pdfError}</p>
@@ -548,6 +694,14 @@ function Simulator() {
           </span>
         </footer> : null}
       </div>
+
+      {memoOpen ? (
+        <MemorandoDialog
+          cnpjData={cnpjData}
+          clientName={clientName}
+          onClose={() => setMemoOpen(false)}
+        />
+      ) : null}
     </main>
   );
 }

@@ -12,6 +12,14 @@ import {
   type TaxConfigMeta,
 } from "@/lib/tax-config.functions";
 import { applyTaxOverrides, TUNABLES } from "@/lib/tax/constants";
+import {
+  emptyOfficeConfig,
+  getOfficeConfig,
+  OFFICE_FIELDS,
+  saveOfficeConfig,
+  type OfficeConfig,
+  type OfficeConfigMeta,
+} from "@/lib/office-config.functions";
 
 const TITLE = "Configuração de alíquotas — área restrita";
 const DESCRIPTION =
@@ -56,6 +64,36 @@ function TaxConfigPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const loadOffice = useServerFn(getOfficeConfig);
+  const persistOffice = useServerFn(saveOfficeConfig);
+  const [office, setOffice] = useState<OfficeConfig>(emptyOfficeConfig());
+  const [officeMeta, setOfficeMeta] = useState<OfficeConfigMeta>({});
+  const [officeBusy, setOfficeBusy] = useState(false);
+  const [officeMessage, setOfficeMessage] = useState("");
+  const [officeError, setOfficeError] = useState("");
+
+  const handleSaveOffice = async () => {
+    setOfficeBusy(true);
+    setOfficeError("");
+    setOfficeMessage("");
+    try {
+      const res = await persistOffice({ data: { code, values: office } });
+      if (!res.ok) {
+        setOfficeError("Código de acesso inválido.");
+        return;
+      }
+      sessionStorage.setItem(CODE_KEY, code);
+      setUnlocked(true);
+      const fresh = await loadOffice();
+      setOfficeMeta(fresh.meta);
+      setOfficeMessage("Dados do escritório atualizados.");
+    } catch {
+      setOfficeError("Não foi possível salvar agora. Tente novamente.");
+    } finally {
+      setOfficeBusy(false);
+    }
+  };
+
   const fill = (stored: TaxConfigMap) => {
     const next: Record<string, string> = {};
     for (const def of TUNABLES) {
@@ -75,6 +113,10 @@ function TaxConfigPage() {
       }
     });
     void loadMeta().then(setMeta);
+    void loadOffice().then((res) => {
+      setOffice(res.values);
+      setOfficeMeta(res.meta);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -209,6 +251,42 @@ function TaxConfigPage() {
             Restaurar padrão
           </Button>
         </div>
+
+        <section className="rounded-xl border border-border bg-card p-5">
+          <h2 className="text-lg font-semibold">Dados do escritório</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Usados nos memorandos de entendimento e confidencialidade.
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {OFFICE_FIELDS.map((field) => (
+              <Field
+                key={field.key}
+                label={field.label}
+                {...(officeMeta[field.key]
+                  ? { hint: `Última alteração: ${formatUpdatedAt(officeMeta[field.key]!)}` }
+                  : {})}
+              >
+                <TextInput
+                  value={office[field.key] ?? ""}
+                  placeholder={field.placeholder}
+                  onChange={(event) =>
+                    setOffice((prev) => ({ ...prev, [field.key]: event.target.value }))
+                  }
+                />
+              </Field>
+            ))}
+          </div>
+          {officeError ? <Notice tone="warning">{officeError}</Notice> : null}
+          {officeMessage ? <Notice>{officeMessage}</Notice> : null}
+          <div className="mt-4">
+            <Button
+              onClick={() => void handleSaveOffice()}
+              disabled={officeBusy || code.trim().length === 0}
+            >
+              {officeBusy ? "Salvando..." : "Salvar dados do escritório"}
+            </Button>
+          </div>
+        </section>
 
         <Link to="/meus-calculos" className="inline-block text-sm font-semibold text-navy underline">
           Voltar para Meus Cálculos

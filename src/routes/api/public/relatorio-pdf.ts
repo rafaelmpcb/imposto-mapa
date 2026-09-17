@@ -6,6 +6,7 @@ import type { YearId } from "@/lib/tax/constants";
 
 const schema = z.object({
   clientName: z.string().max(140).optional().nullable(),
+  cnpj: z.string().max(30).optional().nullable(),
   year: z.union([z.literal(2026), z.literal(2027), z.literal(2033)]),
   input: z.object({
     taxpayerType: z.enum(["pf", "simples", "presumido", "real", "mei"]),
@@ -49,6 +50,7 @@ export const Route = createFileRoute("/api/public/relatorio-pdf")({
           input,
           year: parsed.data.year as YearId,
           clientName: parsed.data.clientName ?? null,
+          cnpj: parsed.data.cnpj ?? null,
         });
 
         const slug = (parsed.data.clientName ?? "")
