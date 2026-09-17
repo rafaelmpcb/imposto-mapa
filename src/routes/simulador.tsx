@@ -26,7 +26,7 @@ const TITLE = "Simulador de Impacto da Reforma Tributária (IBS/CBS)";
 const DESCRIPTION =
   "Estime em minutos como a Reforma Tributária muda a carga da sua empresa ou do seu salário em 2026, 2027 e 2033. Ferramenta gratuita e estimativa.";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/simulador")({
   head: () => ({
     meta: [
       { title: "Simulador da Reforma Tributária IBS/CBS | Estimativa gratuita" },
