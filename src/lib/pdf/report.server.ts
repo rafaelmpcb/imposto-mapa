@@ -483,7 +483,7 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
     const r = simulate(input, y.id);
     return { id: y.id, label: y.label, current: r.current, reform: r.reform };
   });
-  doc.row4("Ano", "Sistema atual", "Pos-reforma", "Diferença", { bold: true, color: MUTED });
+  doc.row4("Ano", "Sistema atual", "Pós-reforma", "Diferença", { bold: true, color: MUTED });
   doc.rule();
   for (const e of evolution) {
     const d = e.reform.total - e.current.total;
