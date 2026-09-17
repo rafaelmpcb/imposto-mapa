@@ -437,6 +437,32 @@ function Simulator() {
                       <MoneyInput value={input.purchases} onChange={(v) => set("purchases", v)} />
                     </Field>
                   )}
+                  {isCompany && input.purchases > 0 && (
+                    <Field
+                      label="Dessas compras, quantos % vieram de fornecedores optantes pelo Simples Nacional?"
+                      hint="Nesta estimativa, essa fatia não gera crédito integral de IBS/CBS."
+                    >
+                      <NumberInput
+                        value={input.simplesSupplierShare}
+                        onChange={(v) => set("simplesSupplierShare", v)}
+                        suffix="%"
+                        max={100}
+                      />
+                    </Field>
+                  )}
+                  {isCompany && (
+                    <Field
+                      label="Aproximadamente que % da sua receita vem de clientes PJ (empresas) que aproveitam o crédito de IBS/CBS que você recolhe?"
+                      hint="Não altera o cálculo — serve para avaliar competitividade entre regimes."
+                    >
+                      <NumberInput
+                        value={input.pjClientShare}
+                        onChange={(v) => set("pjClientShare", v)}
+                        suffix="%"
+                        max={100}
+                      />
+                    </Field>
+                  )}
                 </div>
               )}
             </div>
