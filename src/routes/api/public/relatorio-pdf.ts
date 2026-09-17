@@ -50,6 +50,7 @@ export const Route = createFileRoute("/api/public/relatorio-pdf")({
           input,
           year: parsed.data.year as YearId,
           clientName: parsed.data.clientName ?? null,
+          cnpj: parsed.data.cnpj ?? null,
         });
 
         const slug = (parsed.data.clientName ?? "")
