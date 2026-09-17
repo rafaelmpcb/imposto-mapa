@@ -187,9 +187,13 @@ export function HelpPanel({ onClose, variant = "full" }: { onClose: () => void; 
       <aside className="flex h-full w-full max-w-xl flex-col bg-card shadow-xl">
         <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
           <div>
-            <h2 className="text-lg font-semibold">Ajuda — manual do sistema</h2>
+            <h2 className="text-lg font-semibold">
+              {variant === "full" ? "Ajuda — manual do sistema" : "Ajuda — sobre a simulação"}
+            </h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Documentação interna. Busque por um termo ou navegue pelo sumário.
+              {variant === "full"
+                ? "Documentação interna. Busque por um termo ou navegue pelo sumário."
+                : "Busque por um termo ou navegue pelo sumário."}
             </p>
           </div>
           <button
