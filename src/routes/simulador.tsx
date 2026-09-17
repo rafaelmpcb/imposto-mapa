@@ -243,6 +243,83 @@ function Simulator() {
         <section className="rounded-xl border border-border bg-card p-5 sm:p-7">
           {step === 1 && (
             <div className="space-y-5">
+              {manualName ? (
+                <Field label="Nome do cliente/empresa (opcional)">
+                  <TextInput
+                    value={clientName}
+                    onChange={(event) => setClientName(event.target.value)}
+                    placeholder="Ex.: Padaria Bom Pão Ltda"
+                  />
+                </Field>
+              ) : (
+                <div className="space-y-3 rounded-lg border border-border bg-secondary/40 p-4">
+                  <Field
+                    label="CNPJ do cliente (opcional)"
+                    hint="Usamos dados públicos da Receita Federal para preencher a simulação."
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <TextInput
+                        value={cnpj}
+                        onChange={(event) => setCnpj(event.target.value)}
+                        placeholder="00.000.000/0001-00"
+                        inputMode="numeric"
+                        className="min-w-48 flex-1"
+                      />
+                      <Button onClick={() => void searchCnpj()} disabled={cnpjBusy}>
+                        {cnpjBusy ? "Buscando..." : "Buscar dados"}
+                      </Button>
+                    </div>
+                  </Field>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setManualName(true);
+                      setCnpjData(null);
+                      setCnpjError("");
+                    }}
+                    className="text-sm font-semibold text-navy underline"
+                  >
+                    Pular e preencher manualmente
+                  </button>
+
+                  {cnpjError ? <Notice tone="warning">{cnpjError}</Notice> : null}
+
+                  {cnpjData ? (
+                    <div className="space-y-2 rounded-md border border-border bg-card p-4 text-sm">
+                      <p className="font-semibold text-foreground">{cnpjData.razao_social}</p>
+                      <p className="text-muted-foreground">{cnpjData.endereco}</p>
+                      <p
+                        className={
+                          cnpjData.situacao_cadastral === "ATIVA"
+                            ? "text-muted-foreground"
+                            : "font-semibold text-danger"
+                        }
+                      >
+                        Situação cadastral: {cnpjData.situacao_cadastral || "não informada"}
+                      </p>
+                      <p className="text-muted-foreground">
+                        CNAE {cnpjData.cnae_codigo} — {cnpjData.cnae_descricao}
+                      </p>
+                      {cnpjData.representante_sugerido ? (
+                        <p className="text-muted-foreground">
+                          Representante sugerido: {cnpjData.representante_sugerido} (confirme antes
+                          de usar em documentos)
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {cnpjData ? (
+                    <Field label="Nome do cliente/empresa">
+                      <TextInput
+                        value={clientName}
+                        onChange={(event) => setClientName(event.target.value)}
+                      />
+                    </Field>
+                  ) : null}
+                </div>
+              )}
+
               <Field label="Tipo de contribuinte">
                 <Select
                   value={input.taxpayerType}
