@@ -1,6 +1,9 @@
-import { useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { ArrowDown, ArrowUp, Building2, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { LEGAL_REFERENCE_DATE, YEARS, type YearId } from "@/lib/tax/constants";
 import type { CnpjData } from "@/lib/cnpj/types";
+import { emptyOfficeContact, getOfficeContact } from "@/lib/office-config.functions";
 import { buildIdentifiedProfile } from "@/lib/tax/identified-profile";
 import {
   brl,
@@ -123,8 +126,22 @@ function RegimeComparison({
   const [openRegime, setOpenRegime] = useState<string | null>(null);
 
   return (
-    <section className="rounded-xl border border-border bg-card p-5">
-      <h3 className="text-lg font-semibold">Comparação entre regimes</h3>
+    <section
+      className={
+        presentationMode
+          ? "border-t border-border px-0 py-10"
+          : "rounded-xl border border-border bg-card p-5"
+      }
+    >
+      <h3
+        className={
+          presentationMode
+            ? "font-presentation-display text-xl font-semibold"
+            : "text-lg font-semibold"
+        }
+      >
+        Comparação entre regimes
+      </h3>
       <p className="mt-1 text-sm text-muted-foreground">
         Carga tributária mensal estimada em {year}, após a reforma, nos três regimes. Clique em um
         regime alternativo para ver a comparação detalhada com o seu regime atual.
@@ -133,9 +150,9 @@ function RegimeComparison({
         {items.map((item) => {
           const expandable = !item.isCurrent && !!currentItem;
           const isOpen = openRegime === item.regime;
-          const cardClass = `w-full rounded-lg border p-4 text-left transition-colors ${
+           const cardClass = `w-full rounded-lg border p-4 text-left transition-colors ${
             item.isBest ? "border-success/50 bg-success-soft" : "border-border bg-secondary"
-          } ${isOpen ? "ring-2 ring-navy/40" : ""}`;
+           } ${isOpen ? "ring-2 ring-navy/40" : ""} ${presentationMode ? "shadow-none" : ""}`;
           const content = (
             <>
               <div className="flex flex-wrap items-center gap-2">
@@ -288,6 +305,8 @@ export function ResultView({
   cnpjData?: CnpjData | null;
   readOnly?: boolean;
 }) {
+  const loadOfficeContact = useServerFn(getOfficeContact);
+  const [officeName, setOfficeName] = useState("");
   const [ratesVersion, setRatesVersion] = useState(0);
   // ratesVersion entra como dependência porque as alíquotas editadas na tabela
   // são constantes de módulo, não parte de `input`.
@@ -315,6 +334,157 @@ export function ResultView({
     { minimumFractionDigits: 2, maximumFractionDigits: 2 },
   )} p.p.`;
   const identifiedProfile = buildIdentifiedProfile(cnpjData, input, year);
+
+  useEffect(() => {
+    void loadOfficeContact()
+      .then((contact) => setOfficeName(contact.nome))
+      .catch(() => setOfficeName(emptyOfficeContact().nome));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (presentationMode) {
+    const clientDisplayName = clientName.trim() || cnpjData?.nome_fantasia || cnpjData?.razao_social;
+    const diffIcon = worse ? ArrowUp : ArrowDown;
+    const DifferenceIcon = diffIcon;
+    const differenceSurface = unchanged
+      ? "border-border bg-secondary text-foreground"
+      : worse
+        ? "border-danger/25 bg-danger-soft text-danger"
+        : "border-success/25 bg-success-soft text-success";
+
+    return (
+      <div className="presentation-reveal font-presentation">
+        <header className="flex flex-col gap-4 border-b border-border bg-secondary/50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-10 lg:px-12">
+          <div className="flex items-center gap-3">
+            <Building2 aria-hidden className="h-5 w-5 text-navy" strokeWidth={1.75} />
+            <p className="text-sm font-semibold text-foreground">
+              {officeName || "Escritório de Advocacia Tributária"}
+            </p>
+          </div>
+          <div className="flex items-center justify-between gap-4 sm:justify-end">
+            <p className="text-xs font-medium text-muted-foreground">Relatório de impacto · {year}</p>
+            <button
+              type="button"
+              onClick={() => onPresentationModeChange(false)}
+              className="presentation-exit inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              aria-label="Sair do Modo Apresentação"
+              title="Sair do Modo Apresentação"
+            >
+              <X aria-hidden className="h-4 w-4" />
+            </button>
+          </div>
+        </header>
+
+        <div className="px-6 py-8 sm:px-10 sm:py-10 lg:px-12 lg:py-12">
+          <section className="mb-10 lg:mb-12">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Análise estratégica
+            </p>
+            <h1 className="mt-2 max-w-4xl font-presentation-display text-3xl font-semibold leading-tight text-foreground sm:text-4xl lg:text-5xl">
+              {clientDisplayName || "Resultado da simulação tributária"}
+            </h1>
+            <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+              <span className="rounded-full border border-navy/20 bg-accent px-3 py-1 font-semibold text-navy">
+                {REGIME_LABELS[input.taxpayerType]}
+              </span>
+              {cnpjData?.cnpj ? <span>CNPJ {cnpjData.cnpj}</span> : null}
+              <span>Cenário de transição {year}</span>
+            </div>
+          </section>
+
+          <section className="grid gap-5 lg:grid-cols-2 lg:gap-7">
+            <div className="rounded-lg border border-border bg-secondary/60 p-6 sm:p-8">
+              <p className="text-sm font-semibold text-muted-foreground">Cenário atual</p>
+              <h2 className="mt-2 font-presentation-display text-xl font-semibold text-foreground">
+                {REGIME_LABELS[input.taxpayerType]}
+              </h2>
+              <p className="mt-8 font-presentation-display text-4xl font-semibold tabular-nums text-foreground sm:text-5xl">
+                {brl(result.current.total)}
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                por mês · {pct(result.current.rate)} sobre a base informada
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-navy bg-navy p-6 text-navy-foreground sm:p-8">
+              <p className="text-sm font-semibold text-navy-foreground/70">Cenário com a reforma</p>
+              <h2 className="mt-2 font-presentation-display text-xl font-semibold">
+                {REGIME_LABELS[input.taxpayerType]}
+              </h2>
+              <p className="mt-8 font-presentation-display text-4xl font-semibold tabular-nums sm:text-5xl">
+                {brl(result.reform.total)}
+              </p>
+              <p className="mt-2 text-sm text-navy-foreground/70">
+                por mês · {pct(result.reform.rate)} sobre a base informada
+              </p>
+            </div>
+          </section>
+
+          <section className={`relative my-8 overflow-hidden rounded-lg border p-7 sm:p-9 ${differenceSurface}`}>
+            <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="flex items-center gap-2 text-sm font-semibold">
+                  <DifferenceIcon aria-hidden className="h-5 w-5" strokeWidth={2.25} />
+                  {differenceLabel}
+                </p>
+                <p className="mt-3 font-presentation-display text-4xl font-semibold tabular-nums sm:text-5xl lg:text-6xl">
+                  {brl(Math.abs(diff))}
+                </p>
+                <p className="mt-2 text-sm font-medium">diferença mensal projetada</p>
+              </div>
+              <div className="sm:text-right">
+                <p className="font-presentation-display text-2xl font-semibold tabular-nums sm:text-3xl">
+                  {percentagePointLabel}
+                </p>
+                <p className="mt-1 text-sm font-medium opacity-75">na carga tributária</p>
+              </div>
+            </div>
+          </section>
+
+          {identifiedProfile ? (
+            <section className="border-l-2 border-navy/25 py-2 pl-5 sm:pl-6">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Perfil identificado · CNAE {cnpjData?.cnae_codigo}
+              </p>
+              <p className="mt-2 max-w-5xl text-sm leading-relaxed text-muted-foreground">
+                {identifiedProfile}
+              </p>
+            </section>
+          ) : null}
+
+          <div className="mt-10">
+            <ImpactChart input={input} year={year} presentationMode />
+          </div>
+
+          {isBusiness ? (
+            <RegimeComparison input={input} year={year} presentationMode />
+          ) : null}
+
+          <section className="border-t border-border py-10">
+            <h3 className="font-presentation-display text-xl font-semibold">Resumo executivo</h3>
+            <p className="mt-3 max-w-5xl text-sm leading-relaxed text-muted-foreground">
+              Com base nos dados informados, a carga tributária projetada muda de{" "}
+              <strong className="text-foreground">{pct(result.current.rate)}</strong> para{" "}
+              <strong className="text-foreground">{pct(result.reform.rate)}</strong> em {year} — uma{" "}
+              {worse ? "elevação" : "redução"} estimada de{" "}
+              <strong className="text-foreground">{brl(Math.abs(diff))}</strong> por mês (
+              {brl(Math.abs(diff) * 12)} por ano).
+            </p>
+            {result.notes.length ? (
+              <ul className="mt-5 grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
+                {result.notes.map((note) => (
+                  <li key={note} className="flex gap-2">
+                    <span aria-hidden className="text-navy">•</span>
+                    {note}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

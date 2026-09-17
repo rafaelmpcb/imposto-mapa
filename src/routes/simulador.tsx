@@ -278,7 +278,13 @@ function Simulator() {
         </div>
       </header> : null}
 
-      <div className="mx-auto max-w-4xl px-5 py-8 sm:py-10">
+      <div
+        className={
+          step === 5 && presentationMode
+            ? "presentation-shell mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-8"
+            : "mx-auto max-w-4xl px-5 py-8 sm:py-10"
+        }
+      >
         {!(step === 5 && presentationMode) ? <div className="mb-8">
           <div className="flex items-baseline justify-between text-sm">
             <span className="font-semibold text-foreground">{stepTitles[step]}</span>
@@ -294,7 +300,13 @@ function Simulator() {
           </div>
         </div> : null}
 
-        <section className="rounded-xl border border-border bg-card p-5 sm:p-7">
+        <section
+          className={
+            step === 5 && presentationMode
+              ? "presentation-sheet overflow-hidden rounded-lg border border-border bg-card"
+              : "rounded-xl border border-border bg-card p-5 sm:p-7"
+          }
+        >
           {step === 1 && (
             <div className="space-y-5">
               {manualName ? (
@@ -651,7 +663,13 @@ function Simulator() {
         </section>
 
         {step === 5 && (
-          <section className="mt-6 rounded-xl border border-navy/25 bg-navy p-6 text-navy-foreground sm:p-8">
+          <section
+            className={
+              presentationMode
+                ? "mt-0 border-x border-b border-border bg-navy px-6 py-8 text-navy-foreground sm:px-10 lg:px-12"
+                : "mt-6 rounded-xl border border-navy/25 bg-navy p-6 text-navy-foreground sm:p-8"
+            }
+          >
             <h2 className="text-2xl">Próximo passo</h2>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-navy-foreground/80">
               Esse é o retrato estimado do impacto da reforma no seu negócio. O próximo passo é o
@@ -683,7 +701,7 @@ function Simulator() {
           </section>
         )}
 
-        {step === 5 && (
+        {step === 5 && !presentationMode && (
           <div className="mt-6">
             <OfficeContactCta />
           </div>
