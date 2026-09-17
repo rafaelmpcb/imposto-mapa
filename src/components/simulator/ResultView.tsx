@@ -9,6 +9,7 @@ import {
   type SimulationInput,
   type TaxpayerType,
 } from "@/lib/tax/calc";
+import { ImpactChart } from "./ImpactChart";
 import { Field, Notice, TextInput, Toggle } from "./ui";
 
 const REGIME_LABELS: Record<TaxpayerType, string> = {
@@ -263,6 +264,7 @@ export function ResultView({
   onClientNameChange,
   presentationMode,
   onPresentationModeChange,
+  readOnly = false,
 }: {
   input: SimulationInput;
   year: YearId;
@@ -271,6 +273,7 @@ export function ResultView({
   onClientNameChange: (name: string) => void;
   presentationMode: boolean;
   onPresentationModeChange: (active: boolean) => void;
+  readOnly?: boolean;
 }) {
   const result = simulate(input, year);
   const isBusiness =
@@ -298,13 +301,15 @@ export function ResultView({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
-        <Toggle
-          checked={presentationMode}
-          onChange={onPresentationModeChange}
-          label="Modo Apresentação"
-        />
-      </div>
+      {!readOnly ? (
+        <div className="flex justify-end">
+          <Toggle
+            checked={presentationMode}
+            onChange={onPresentationModeChange}
+            label="Modo Apresentação"
+          />
+        </div>
+      ) : null}
 
       {!presentationMode ? (
         <div className="space-y-6">
@@ -372,6 +377,8 @@ export function ResultView({
           {percentagePointLabel} na carga tributária
         </p>
       </div>
+
+      <ImpactChart input={input} year={year} />
 
       {isBusiness ? (
         <RegimeComparison input={input} year={year} presentationMode={presentationMode} />

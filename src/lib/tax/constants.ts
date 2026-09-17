@@ -6,17 +6,20 @@
  * regulamentação complementar. Todos os valores abaixo são configuráveis.
  */
 
+/* Os valores marcados como ajustáveis (export let) podem ser sobrescritos pelo
+   painel de configuração do escritório — ver applyTaxOverrides() no fim do arquivo. */
+
 /** Alíquota de referência cheia (CBS + IBS combinados). */
-export const REFERENCE_RATE = 0.265;
+export let REFERENCE_RATE = 0.265;
 
 /** Divisão estimada da alíquota de referência entre os dois tributos. */
-export const CBS_SHARE = 0.088; // federal (substitui PIS/COFINS)
-export const IBS_SHARE = 0.177; // estadual + municipal (substitui ICMS/ISS)
+export let CBS_SHARE = 0.088; // federal (substitui PIS/COFINS)
+export let IBS_SHARE = 0.177; // estadual + municipal (substitui ICMS/ISS)
 
 /** Alíquota simbólica de teste do IBS em 2026/2027. */
-export const IBS_TEST_RATE = 0.001;
+export let IBS_TEST_RATE = 0.001;
 /** Alíquota de teste da CBS em 2026 (compensável com PIS/COFINS). */
-export const CBS_TEST_RATE = 0.009;
+export let CBS_TEST_RATE = 0.009;
 
 /** Data de referência da legislação usada nas estimativas. */
 export const LEGAL_REFERENCE_DATE = "setembro de 2026";
@@ -145,7 +148,7 @@ export const UF_NAMES: Record<string, string> = {
 };
 
 /** ISS fixo usado para serviços (aproximação de alíquota municipal média). */
-export const ISS_RATE = 0.05;
+export let ISS_RATE = 0.05;
 
 /** DAS do MEI — valores de referência 2026 (configuráveis). */
 export const MEI_DAS = {
@@ -234,15 +237,15 @@ export const SIMPLES_TABLES: Record<string, SimplesBracket[]> = {
 
 /* ---------------- Lucro Presumido / Real ---------------- */
 
-export const PIS_CUMULATIVO = 0.0065;
-export const COFINS_CUMULATIVO = 0.03;
-export const PIS_NAO_CUMULATIVO = 0.0165;
-export const COFINS_NAO_CUMULATIVO = 0.076;
-export const IRPJ_RATE = 0.15;
+export let PIS_CUMULATIVO = 0.0065;
+export let COFINS_CUMULATIVO = 0.03;
+export let PIS_NAO_CUMULATIVO = 0.0165;
+export let COFINS_NAO_CUMULATIVO = 0.076;
+export let IRPJ_RATE = 0.15;
 export const IRPJ_ADICIONAL_RATE = 0.1;
 export const IRPJ_ADICIONAL_LIMIT_MONTHLY = 20000;
-export const CSLL_RATE = 0.09;
-export const CPP_RATE = 0.2;
+export let CSLL_RATE = 0.09;
+export let CPP_RATE = 0.2;
 /** Bases presumidas. */
 export const PRESUMIDO_IRPJ_BASE = { servico: 0.32, comercio: 0.08, industria: 0.08 };
 export const PRESUMIDO_CSLL_BASE = { servico: 0.32, comercio: 0.12, industria: 0.12 };
@@ -254,3 +257,77 @@ export const YEARS = [
 ] as const;
 
 export type YearId = (typeof YEARS)[number]["id"];
+
+/* ---------------- Configuração ajustável pelo escritório ---------------- */
+
+export interface TunableDef {
+  key: string;
+  label: string;
+  group: string;
+  /** Valor padrão (fração: 0,265 = 26,5%). */
+  fallback: number;
+}
+
+export const TUNABLES: TunableDef[] = [
+  { key: "REFERENCE_RATE", label: "Alíquota de referência (IBS + CBS)", group: "IBS / CBS", fallback: 0.265 },
+  { key: "CBS_SHARE", label: "Parcela da CBS (federal)", group: "IBS / CBS", fallback: 0.088 },
+  { key: "IBS_SHARE", label: "Parcela do IBS (estadual/municipal)", group: "IBS / CBS", fallback: 0.177 },
+  { key: "IBS_TEST_RATE", label: "IBS — alíquota de teste", group: "IBS / CBS", fallback: 0.001 },
+  { key: "CBS_TEST_RATE", label: "CBS — alíquota de teste (2026)", group: "IBS / CBS", fallback: 0.009 },
+  { key: "ISS_RATE", label: "ISS médio (serviços)", group: "Sistema atual", fallback: 0.05 },
+  { key: "PIS_CUMULATIVO", label: "PIS cumulativo", group: "Sistema atual", fallback: 0.0065 },
+  { key: "COFINS_CUMULATIVO", label: "COFINS cumulativo", group: "Sistema atual", fallback: 0.03 },
+  { key: "PIS_NAO_CUMULATIVO", label: "PIS não cumulativo", group: "Sistema atual", fallback: 0.0165 },
+  { key: "COFINS_NAO_CUMULATIVO", label: "COFINS não cumulativo", group: "Sistema atual", fallback: 0.076 },
+  { key: "IRPJ_RATE", label: "IRPJ", group: "Renda e folha", fallback: 0.15 },
+  { key: "CSLL_RATE", label: "CSLL", group: "Renda e folha", fallback: 0.09 },
+  { key: "CPP_RATE", label: "CPP sobre a folha", group: "Renda e folha", fallback: 0.2 },
+];
+
+const setters: Record<string, (v: number) => void> = {
+  REFERENCE_RATE: (v) => { REFERENCE_RATE = v; },
+  CBS_SHARE: (v) => { CBS_SHARE = v; },
+  IBS_SHARE: (v) => { IBS_SHARE = v; },
+  IBS_TEST_RATE: (v) => { IBS_TEST_RATE = v; },
+  CBS_TEST_RATE: (v) => { CBS_TEST_RATE = v; },
+  ISS_RATE: (v) => { ISS_RATE = v; },
+  PIS_CUMULATIVO: (v) => { PIS_CUMULATIVO = v; },
+  COFINS_CUMULATIVO: (v) => { COFINS_CUMULATIVO = v; },
+  PIS_NAO_CUMULATIVO: (v) => { PIS_NAO_CUMULATIVO = v; },
+  COFINS_NAO_CUMULATIVO: (v) => { COFINS_NAO_CUMULATIVO = v; },
+  IRPJ_RATE: (v) => { IRPJ_RATE = v; },
+  CSLL_RATE: (v) => { CSLL_RATE = v; },
+  CPP_RATE: (v) => { CPP_RATE = v; },
+};
+
+const getters: Record<string, () => number> = {
+  REFERENCE_RATE: () => REFERENCE_RATE,
+  CBS_SHARE: () => CBS_SHARE,
+  IBS_SHARE: () => IBS_SHARE,
+  IBS_TEST_RATE: () => IBS_TEST_RATE,
+  CBS_TEST_RATE: () => CBS_TEST_RATE,
+  ISS_RATE: () => ISS_RATE,
+  PIS_CUMULATIVO: () => PIS_CUMULATIVO,
+  COFINS_CUMULATIVO: () => COFINS_CUMULATIVO,
+  PIS_NAO_CUMULATIVO: () => PIS_NAO_CUMULATIVO,
+  COFINS_NAO_CUMULATIVO: () => COFINS_NAO_CUMULATIVO,
+  IRPJ_RATE: () => IRPJ_RATE,
+  CSLL_RATE: () => CSLL_RATE,
+  CPP_RATE: () => CPP_RATE,
+};
+
+/** Aplica os valores salvos pelo escritório; chaves ausentes voltam ao padrão. */
+export function applyTaxOverrides(overrides: Record<string, number>): void {
+  for (const def of TUNABLES) {
+    const raw = overrides[def.key];
+    const value = typeof raw === "number" && Number.isFinite(raw) ? raw : def.fallback;
+    setters[def.key]?.(value);
+  }
+}
+
+/** Valores em uso neste momento. */
+export function currentTaxConfig(): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const def of TUNABLES) out[def.key] = getters[def.key]?.() ?? def.fallback;
+  return out;
+}

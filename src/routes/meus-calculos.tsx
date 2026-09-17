@@ -1,9 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button, Field, Notice, TextInput } from "@/components/simulator/ui";
-import { listSimulations, type SavedSimulation } from "@/lib/simulations.functions";
+import {
+  deleteSimulation,
+  listSimulations,
+  renameSimulation,
+  setSimulationShare,
+  type SavedSimulation,
+} from "@/lib/simulations.functions";
 import { brl, pct } from "@/lib/tax/calc";
 import { getActivity } from "@/lib/tax/constants";
 import { RESTORE_KEY } from "@/lib/tax/session";
@@ -40,10 +46,19 @@ const TAXPAYER_LABELS: Record<string, string> = {
 function MyCalculations() {
   const navigate = useNavigate();
   const fetchList = useServerFn(listSimulations);
+  const removeItem = useServerFn(deleteSimulation);
+  const rename = useServerFn(renameSimulation);
+  const share = useServerFn(setSimulationShare);
+
   const [code, setCode] = useState("");
   const [items, setItems] = useState<SavedSimulation[] | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
 
   const load = async (accessCode: string) => {
     setLoading(true);
@@ -84,8 +99,64 @@ function MyCalculations() {
         clientName: item.client_name ?? "",
       }),
     );
-    void navigate({ to: "/" });
+    void navigate({ to: "/simulador" });
   };
+
+  const handleDelete = async (id: string) => {
+    const res = await removeItem({ data: { code, id } });
+    if (!res.ok) {
+      setError("Código de acesso inválido.");
+      return;
+    }
+    setConfirmId(null);
+    setItems((prev) => (prev ?? []).filter((i) => i.id !== id));
+  };
+
+  const handleRename = async (id: string) => {
+    const res = await rename({ data: { code, id, clientName: editingName } });
+    if (!res.ok) {
+      setError("Código de acesso inválido.");
+      return;
+    }
+    setItems((prev) =>
+      (prev ?? []).map((i) =>
+        i.id === id ? { ...i, client_name: editingName.trim() || null } : i,
+      ),
+    );
+    setEditingId(null);
+  };
+
+  const handleShare = async (item: SavedSimulation) => {
+    const enabled = !item.share_enabled;
+    const res = await share({ data: { code, id: item.id, enabled } });
+    if (!res.ok) {
+      setError("Código de acesso inválido.");
+      return;
+    }
+    setItems((prev) =>
+      (prev ?? []).map((i) =>
+        i.id === item.id ? { ...i, share_enabled: enabled, share_token: res.token } : i,
+      ),
+    );
+  };
+
+  const copyLink = async (token: string) => {
+    const url = `${window.location.origin}/s/${token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(token);
+      setTimeout(() => setCopied(null), 2500);
+    } catch {
+      window.prompt("Copie o link:", url);
+    }
+  };
+
+  const filtered = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!items) return [];
+    if (!term) return items;
+    return items.filter((i) => (i.client_name ?? "").toLowerCase().includes(term));
+  }, [items, query]);
 
   return (
     <main className="min-h-screen bg-background">
@@ -128,21 +199,32 @@ function MyCalculations() {
           </section>
         ) : (
           <section className="space-y-4">
+            <Field label="Buscar por nome do cliente ou empresa">
+              <TextInput
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Digite parte do nome"
+                autoComplete="off"
+              />
+            </Field>
+
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm text-muted-foreground">
-                {items.length} cálculo{items.length === 1 ? "" : "s"} salvo
-                {items.length === 1 ? "" : "s"}
+                {filtered.length} de {items.length} cálculo{items.length === 1 ? "" : "s"}
               </p>
               <Button variant="ghost" onClick={() => void load(code)}>
                 Atualizar
               </Button>
             </div>
 
-            {items.length === 0 ? (
-              <Notice>Nenhum cálculo salvo até agora.</Notice>
+            {error ? <Notice tone="warning">{error}</Notice> : null}
+
+            {filtered.length === 0 ? (
+              <Notice>Nenhum cálculo encontrado.</Notice>
             ) : (
               <ul className="space-y-3">
-                {items.map((item) => {
+                {filtered.map((item) => {
                   const diff = Number(item.reform_total) - Number(item.current_total);
                   const worse = diff > 0.004;
                   return (
@@ -151,10 +233,25 @@ function MyCalculations() {
                       className="rounded-xl border border-border bg-card p-4 sm:p-5"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-base font-semibold text-foreground">
-                            {item.client_name || "Sem identificação"}
-                          </p>
+                        <div className="min-w-0 flex-1">
+                          {editingId === item.id ? (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <input
+                                value={editingName}
+                                onChange={(event) => setEditingName(event.target.value)}
+                                placeholder="Nome do cliente ou empresa"
+                                className="min-w-48 flex-1 rounded-md border border-input bg-card px-3 py-2 text-sm outline-none focus:border-ring"
+                              />
+                              <Button onClick={() => void handleRename(item.id)}>Salvar</Button>
+                              <Button variant="ghost" onClick={() => setEditingId(null)}>
+                                Cancelar
+                              </Button>
+                            </div>
+                          ) : (
+                            <p className="truncate text-base font-semibold text-foreground">
+                              {item.client_name || "Sem identificação"}
+                            </p>
+                          )}
                           <p className="mt-1 text-xs text-muted-foreground">
                             {new Date(item.created_at).toLocaleString("pt-BR")} ·{" "}
                             {TAXPAYER_LABELS[item.taxpayer_type] ?? item.taxpayer_type} ·{" "}
@@ -170,10 +267,53 @@ function MyCalculations() {
                               {pct(Number(item.reform_rate))})
                             </span>
                           </p>
+
+                          {item.share_enabled && item.share_token ? (
+                            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-md border border-border bg-secondary px-3 py-2">
+                              <span className="truncate text-xs text-muted-foreground">
+                                /s/{item.share_token}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                onClick={() => void copyLink(item.share_token as string)}
+                              >
+                                {copied === item.share_token ? "Link copiado" : "Copiar link"}
+                              </Button>
+                            </div>
+                          ) : null}
                         </div>
-                        <Button variant="ghost" onClick={() => reopen(item)}>
-                          Reabrir
-                        </Button>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button variant="ghost" onClick={() => reopen(item)}>
+                            Reabrir
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingId(item.id);
+                              setEditingName(item.client_name ?? "");
+                            }}
+                          >
+                            Renomear
+                          </Button>
+                          <Button variant="ghost" onClick={() => void handleShare(item)}>
+                            {item.share_enabled ? "Desativar link" : "Compartilhar"}
+                          </Button>
+                          {confirmId === item.id ? (
+                            <>
+                              <Button onClick={() => void handleDelete(item.id)}>
+                                Confirmar exclusão
+                              </Button>
+                              <Button variant="ghost" onClick={() => setConfirmId(null)}>
+                                Cancelar
+                              </Button>
+                            </>
+                          ) : (
+                            <Button variant="ghost" onClick={() => setConfirmId(item.id)}>
+                              Excluir
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </li>
                   );
@@ -181,9 +321,14 @@ function MyCalculations() {
               </ul>
             )}
 
-            <Link to="/" className="inline-block text-sm font-semibold text-navy underline">
-              Voltar ao simulador
-            </Link>
+            <div className="flex flex-wrap gap-4 pt-2">
+              <Link to="/simulador" className="text-sm font-semibold text-navy underline">
+                Voltar ao simulador
+              </Link>
+              <Link to="/config-aliquotas" className="text-sm font-semibold text-navy underline">
+                Configuração de alíquotas
+              </Link>
+            </div>
           </section>
         )}
       </div>

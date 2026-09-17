@@ -10,11 +10,19 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ConfigAliquotasRouteImport } from './routes/config-aliquotas'
 import { Route as MeusCalculosRouteImport } from './routes/meus-calculos'
+import { Route as SimuladorRouteImport } from './routes/simulador'
+import { Route as STokenRouteImport } from './routes/s.$token'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfigAliquotasRoute = ConfigAliquotasRouteImport.update({
+  id: '/config-aliquotas',
+  path: '/config-aliquotas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MeusCalculosRoute = MeusCalculosRouteImport.update({
@@ -22,31 +30,60 @@ const MeusCalculosRoute = MeusCalculosRouteImport.update({
   path: '/meus-calculos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SimuladorRoute = SimuladorRouteImport.update({
+  id: '/simulador',
+  path: '/simulador',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const STokenRoute = STokenRouteImport.update({
+  id: '/s/$token',
+  path: '/s/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/config-aliquotas': typeof ConfigAliquotasRoute
   '/meus-calculos': typeof MeusCalculosRoute
+  '/simulador': typeof SimuladorRoute
+  '/s/$token': typeof STokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/config-aliquotas': typeof ConfigAliquotasRoute
   '/meus-calculos': typeof MeusCalculosRoute
+  '/simulador': typeof SimuladorRoute
+  '/s/$token': typeof STokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/config-aliquotas': typeof ConfigAliquotasRoute
   '/meus-calculos': typeof MeusCalculosRoute
+  '/simulador': typeof SimuladorRoute
+  '/s/$token': typeof STokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/meus-calculos'
+  fullPaths:
+    '/' | '/config-aliquotas' | '/meus-calculos' | '/simulador' | '/s/$token'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/meus-calculos'
-  id: '__root__' | '/' | '/meus-calculos'
+  to: '/' | '/config-aliquotas' | '/meus-calculos' | '/simulador' | '/s/$token'
+  id:
+    | '__root__'
+    | '/'
+    | '/config-aliquotas'
+    | '/meus-calculos'
+    | '/simulador'
+    | '/s/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ConfigAliquotasRoute: typeof ConfigAliquotasRoute
   MeusCalculosRoute: typeof MeusCalculosRoute
+  SimuladorRoute: typeof SimuladorRoute
+  STokenRoute: typeof STokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -58,6 +95,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/config-aliquotas': {
+      id: '/config-aliquotas'
+      path: '/config-aliquotas'
+      fullPath: '/config-aliquotas'
+      preLoaderRoute: typeof ConfigAliquotasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/meus-calculos': {
       id: '/meus-calculos'
       path: '/meus-calculos'
@@ -65,12 +109,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MeusCalculosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/simulador': {
+      id: '/simulador'
+      path: '/simulador'
+      fullPath: '/simulador'
+      preLoaderRoute: typeof SimuladorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/s/$token': {
+      id: '/s/$token'
+      path: '/s/$token'
+      fullPath: '/s/$token'
+      preLoaderRoute: typeof STokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ConfigAliquotasRoute: ConfigAliquotasRoute,
   MeusCalculosRoute: MeusCalculosRoute,
+  SimuladorRoute: SimuladorRoute,
+  STokenRoute: STokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

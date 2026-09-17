@@ -26,6 +26,8 @@ export type Database = {
           input: Json
           reform_rate: number
           reform_total: number
+          share_enabled: boolean
+          share_token: string | null
           taxpayer_type: string
           uf: string
           year_id: number
@@ -41,6 +43,8 @@ export type Database = {
           input: Json
           reform_rate?: number
           reform_total?: number
+          share_enabled?: boolean
+          share_token?: string | null
           taxpayer_type: string
           uf: string
           year_id: number
@@ -56,9 +60,29 @@ export type Database = {
           input?: Json
           reform_rate?: number
           reform_total?: number
+          share_enabled?: boolean
+          share_token?: string | null
           taxpayer_type?: string
           uf?: string
           year_id?: number
+        }
+        Relationships: []
+      }
+      tax_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: number
         }
         Relationships: []
       }
