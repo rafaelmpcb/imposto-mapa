@@ -53,14 +53,7 @@ export const Route = createFileRoute("/api/public/relatorio-pdf")({
           cnpj: parsed.data.cnpj ?? null,
         });
 
-        const slug = (parsed.data.clientName ?? "")
-          .trim()
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-+|-+$/g, "")
-          .slice(0, 60);
+        const slug = slugifyWords(parsed.data.clientName ?? "", 60);
         const filename = `relatorio-reforma-tributaria-${
           slug || new Date().toISOString().slice(0, 10)
         }.pdf`;
