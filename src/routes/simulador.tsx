@@ -60,6 +60,44 @@ function Simulator() {
   const [clientName, setClientName] = useState("");
   const [presentationMode, setPresentationMode] = useState(false);
   const persist = useServerFn(saveSimulation);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfError, setPdfError] = useState("");
+
+  const downloadPdf = async () => {
+    setPdfBusy(true);
+    setPdfError("");
+    try {
+      const response = await fetch("/api/public/relatorio-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input, year, clientName: clientName.trim() || null }),
+      });
+      if (!response.ok) throw new Error("falha");
+      const blob = await response.blob();
+      const slug = clientName.trim()
+        ? clientName
+            .trim()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "")
+            .slice(0, 60)
+        : new Date().toISOString().slice(0, 10);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `relatorio-reforma-tributaria-${slug || "simulacao"}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setPdfError("Não foi possível gerar o PDF agora. Tente novamente em alguns instantes.");
+    } finally {
+      setPdfBusy(false);
+    }
+  };
   const savedIdRef = useRef<string | null>(null);
 
   const bootstrappedRef = useRef(false);
