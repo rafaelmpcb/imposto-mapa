@@ -221,6 +221,7 @@ export interface RegimeComparisonItem {
   label: string;
   total: number;
   rate: number;
+  lines: { label: string; value: number }[];
   isCurrent: boolean;
   isBest: boolean;
   estimateNote?: string;
