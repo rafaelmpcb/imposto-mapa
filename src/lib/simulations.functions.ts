@@ -24,6 +24,8 @@ export interface SavedSimulation {
   current_rate: number;
   reform_rate: number;
   input: JsonValue;
+  cnpj?: string | null;
+  cnpj_data?: JsonValue | null;
 }
 
 type SavePayload = {
