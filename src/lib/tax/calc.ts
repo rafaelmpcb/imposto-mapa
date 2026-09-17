@@ -221,6 +221,7 @@ export interface RegimeComparisonItem {
   label: string;
   total: number;
   rate: number;
+  lines: { label: string; value: number }[];
   isCurrent: boolean;
   isBest: boolean;
   estimateNote?: string;
@@ -270,6 +271,7 @@ export function compareRegimes(
       label,
       total: reform.total,
       rate: reform.rate,
+      lines: reform.lines,
       isCurrent,
       isBest: false,
       ...(estimateNote ? { estimateNote } : {}),
