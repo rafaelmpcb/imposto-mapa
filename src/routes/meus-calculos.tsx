@@ -291,7 +291,6 @@ function MyCalculations() {
                         Cancelar
                       </Button>
                       <Button
-                        variant="danger"
                         disabled={deleting}
                         onClick={() => void handleBulkDelete()}
                       >
