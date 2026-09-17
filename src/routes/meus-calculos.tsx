@@ -254,6 +254,11 @@ function MyCalculations() {
                               {item.client_name || "Sem identificação"}
                             </p>
                           )}
+                          {item.cnpj ? (
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              CNPJ {item.cnpj}
+                            </p>
+                          ) : null}
                           <p className="mt-1 text-xs text-muted-foreground">
                             {new Date(item.created_at).toLocaleString("pt-BR")} ·{" "}
                             {TAXPAYER_LABELS[item.taxpayer_type] ?? item.taxpayer_type} ·{" "}
