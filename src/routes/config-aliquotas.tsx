@@ -95,6 +95,7 @@ function TaxConfigPage() {
       sessionStorage.setItem(CODE_KEY, code);
       setUnlocked(true);
       applyTaxOverrides(payload);
+      void loadMeta().then(setMeta);
       setMessage("Alíquotas atualizadas. As próximas simulações já usam esses valores.");
     } catch {
       setError("Não foi possível salvar agora. Tente novamente.");
@@ -117,6 +118,7 @@ function TaxConfigPage() {
       for (const def of TUNABLES) defaults[def.key] = def.fallback;
       fill(defaults);
       applyTaxOverrides(defaults);
+      setMeta({});
       setMessage("Valores padrão restaurados.");
     } catch {
       setError("Não foi possível restaurar agora. Tente novamente.");
