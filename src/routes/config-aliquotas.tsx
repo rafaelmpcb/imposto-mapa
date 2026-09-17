@@ -5,9 +5,11 @@ import { useEffect, useState } from "react";
 import { Button, Field, Notice, TextInput } from "@/components/simulator/ui";
 import {
   getTaxConfig,
+  getTaxConfigMeta,
   resetTaxConfig,
   saveTaxConfig,
   type TaxConfigMap,
+  type TaxConfigMeta,
 } from "@/lib/tax-config.functions";
 import { applyTaxOverrides, TUNABLES } from "@/lib/tax/constants";
 
