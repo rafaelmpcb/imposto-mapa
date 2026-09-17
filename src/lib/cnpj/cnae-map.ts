@@ -62,6 +62,6 @@ export function activityFromCnae(codigo: string, descricao: string): string {
   const div = Number(digits.slice(0, 2));
   if (div >= 10 && div <= 33) return "industria";
   if (/^49(1|2|3)/.test(digits)) return "servicos_gerais"; // transporte
-  for (const k of KEYWORDS) if (k.test(descricao || "")) return k.activity;
+  for (const k of KEYWORDS) if (k.test.test(descricao || "")) return k.activity;
   return "servicos_gerais";
 }
