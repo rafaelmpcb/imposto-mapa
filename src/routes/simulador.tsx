@@ -101,8 +101,10 @@ function Simulator() {
       setCnpjData(res.data);
       setCnpj(res.data.cnpj);
       setClientName(truncateWords(res.data.nome_fantasia || res.data.razao_social, 150));
+      // Nova empresa = novos números: zera todos os campos financeiros para o padrão.
       setInput((prev) => ({
-        ...prev,
+        ...defaultInput(),
+        taxpayerType: prev.taxpayerType,
         activityId: res.data.atividade_sugerida,
         ...(res.data.uf && UFS.includes(res.data.uf) ? { uf: res.data.uf } : {}),
       }));
@@ -179,9 +181,9 @@ function Simulator() {
         setStep(5);
         return;
       }
-      const saved = localStorage.getItem(STORAGE_KEY);
-      // A validação do benefício (Art. 127) nunca é restaurada: exige resposta explícita.
-      if (saved) setInput({ ...defaultInput(), ...JSON.parse(saved), benefitConfirmed: null });
+      // Nada é restaurado automaticamente: dados financeiros de uma empresa
+      // nunca podem vazar para a simulação da empresa seguinte.
+      localStorage.removeItem(STORAGE_KEY);
     } catch {
       /* ignora dados inválidos */
     }
@@ -222,13 +224,6 @@ function Simulator() {
   }, [step, input, year, clientName, cnpjData, persist]);
 
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(input));
-    } catch {
-      /* armazenamento indisponível */
-    }
-  }, [input]);
 
   const set = <K extends keyof SimulationInput>(key: K, value: SimulationInput[K]) =>
     setInput((prev) => ({ ...prev, [key]: value }));
@@ -619,6 +614,19 @@ function Simulator() {
                       <NumberInput
                         value={input.pjClientShare}
                         onChange={(v) => set("pjClientShare", v)}
+                        suffix="%"
+                        max={100}
+                      />
+                    </Field>
+                  )}
+                  {isCompany && input.taxpayerType !== "real" && (
+                    <Field
+                      label="Margem de lucro estimada (%)"
+                      hint="Usada apenas no cenário de Lucro Real da seção “Comparação entre regimes”. Padrão de 20% se você não tiver esse dado."
+                    >
+                      <NumberInput
+                        value={input.profitMargin}
+                        onChange={(v) => set("profitMargin", v)}
                         suffix="%"
                         max={100}
                       />
