@@ -100,6 +100,7 @@ function fromReceitaWs(raw: Record<string, unknown>, digits: string): CnpjData {
       uf: clean(raw["uf"]),
       cep: clean(raw["cep"]),
     }),
+    uf: clean(raw["uf"]).toUpperCase(),
     situacao_cadastral: clean(raw["situacao"]).toUpperCase(),
     cnae_codigo: codigo,
     cnae_descricao: descricao,
