@@ -67,6 +67,7 @@ export interface ReportPayload {
   input: SimulationInput;
   year: YearId;
   clientName?: string | null;
+  cnpj?: string | null;
   generatedAt?: Date;
 }
 
@@ -423,6 +424,9 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
   });
   if (payload.clientName?.trim()) {
     doc.text(`Cliente/empresa: ${payload.clientName.trim()}`, { size: 11, bold: true });
+  }
+  if (payload.cnpj?.trim()) {
+    doc.text(`CNPJ: ${payload.cnpj.trim()}`, { size: 10, color: MUTED });
   }
   doc.text(`Data da simulação: ${formatDate(generatedAt)}`, { size: 10, color: MUTED });
   doc.text(`Regime informado: ${regimeLabel} · Cenário de referência: ${year}`, {
