@@ -66,6 +66,7 @@ function fromBrasilApi(raw: Record<string, unknown>, digits: string): CnpjData {
       uf: clean(raw["uf"]),
       cep: String(raw["cep"] ?? ""),
     }),
+    uf: clean(raw["uf"]).toUpperCase(),
     situacao_cadastral: clean(raw["descricao_situacao_cadastral"]).toUpperCase(),
     cnae_codigo: codigo,
     cnae_descricao: descricao,
