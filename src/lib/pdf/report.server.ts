@@ -527,6 +527,8 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
   ]);
 
   /* 7. Avisos legais */
+  // Mantém o título com ao menos as primeiras linhas do primeiro aviso na mesma página.
+  doc.ensure(120);
   doc.heading("Avisos legais");
   doc.text(
     `Esta é uma estimativa baseada exclusivamente nos dados informados pelo usuário e na legislação vigente da Reforma Tributária (LC 214/2025) em ${LEGAL_REFERENCE_DATE}. Não substitui uma análise fiscal completa nem constitui aconselhamento jurídico ou tributário.`,
