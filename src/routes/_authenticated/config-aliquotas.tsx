@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 
 import { Button, Field, Notice, TextInput } from "@/components/simulator/ui";
+import { HelpButton } from "@/components/help/HelpPanel";
 import {
   getTaxConfig,
   getTaxConfigMeta,
@@ -164,9 +165,12 @@ function TaxConfigPage() {
     <main className="min-h-screen bg-background">
       <header className="bg-navy text-navy-foreground">
         <div className="mx-auto max-w-3xl px-5 py-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-navy-foreground/70">
-            Área restrita do escritório
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-navy-foreground/70">
+              Área restrita do escritório
+            </p>
+            <HelpButton />
+          </div>
           <h1 className="mt-3 text-3xl leading-tight sm:text-4xl">Configuração de alíquotas</h1>
           <p className="mt-3 max-w-2xl text-sm text-navy-foreground/80">
             Ajuste os percentuais usados nas estimativas conforme a regulamentação evoluir. Todos os

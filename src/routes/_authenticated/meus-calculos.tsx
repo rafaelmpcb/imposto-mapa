@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Button, Field, Notice, TextInput } from "@/components/simulator/ui";
 import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
+import { HelpButton } from "@/components/help/HelpPanel";
 import type { CnpjData } from "@/lib/cnpj/types";
 import {
   deleteSimulationsBulk,
@@ -224,6 +225,7 @@ function MyCalculations() {
           </p>
           <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-navy-foreground/80">
             {userEmail ? <span>Conectado como {userEmail}</span> : null}
+            <HelpButton />
             <button
               type="button"
               onClick={() => void signOut()}
