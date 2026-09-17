@@ -62,7 +62,11 @@ function Simulator() {
   const persist = useServerFn(saveSimulation);
   const savedIdRef = useRef<string | null>(null);
 
+  const bootstrappedRef = useRef(false);
+
   useEffect(() => {
+    if (bootstrappedRef.current) return;
+    bootstrappedRef.current = true;
     try {
       const restore = localStorage.getItem(RESTORE_KEY);
       if (restore) {

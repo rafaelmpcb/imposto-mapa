@@ -61,10 +61,12 @@ function RegimeDetail({
   currentItem,
   item,
   year,
+  presentationMode,
 }: {
   currentItem: RegimeComparisonItem;
   item: RegimeComparisonItem;
   year: YearId;
+  presentationMode: boolean;
 }) {
   const diff = item.total - currentItem.total;
   const rateDiff = item.rate - currentItem.rate;
