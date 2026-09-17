@@ -1,45 +1,61 @@
-# Melhorias sugeridas para o simulador
+# Melhorias selecionadas para o simulador
 
-Conheço o sistema: simulador de impacto da Reforma Tributária (IBS/CBS) usado como ferramenta de captação pelo escritório, com wizard de 5 etapas, cálculo por regime (PF, Simples, Presumido, Real, MEI), comparação entre regimes, Modo Apresentação, histórico salvo na nuvem ("Meus Cálculos") protegido por código de acesso.
+Escopo aprovado: itens 2, 4, 5, 6, 7 e 8 da lista anterior.
 
-Abaixo, as melhorias que considero mais valiosas, em ordem de prioridade. Aprovar este plano não obriga fazer tudo — você pode me dizer quais itens quer e eu implemento só eles.
+## 1. Gestão do histórico em "Meus Cálculos" (item 2)
 
-## Prioridade alta (valor imediato para o escritório)
+- Campo de busca no topo, filtrando por nome do cliente/empresa.
+- Botão "Excluir" em cada cálculo, com confirmação antes de apagar.
+- Edição do nome de identificação direto na lista, sem precisar reabrir o cálculo.
+- Todas as ações passam pelo mesmo código de acesso do advogado.
 
-1. **Exportar/imprimir o resultado em PDF**
-   Hoje o resultado só existe na tela. Um botão "Gerar PDF" (ou versão de impressão bem formatada) permitiria ao advogado entregar um relatório com o nome do cliente, data, estimativas e os avisos legais — reforça o caráter profissional e gera um artefato que o cliente leva da reunião.
+## 2. Página de entrada explicativa + busca no Google (item 4)
 
-2. **Gestão do histórico em "Meus Cálculos"**
-   Hoje a lista só cresce. Adicionar: excluir um cálculo, editar o nome/identificação depois de salvo, e busca/filtro por nome do cliente. Evita que testes e simulações antigas poluam a lista.
+- Nova página inicial explicando a Reforma: o que muda, cronograma 2026–2033, quem é afetado, e o que o simulador entrega.
+- Botão de destaque levando ao simulador.
+- Títulos e descrições otimizados para buscas como "calculadora reforma tributária" e "simulador IBS CBS".
+- O simulador passa a viver em seu próprio endereço; quem já usa o link atual continua chegando ao lugar certo.
 
-3. **Link do CTA "Avançar para o diagnóstico completo"**
-   O botão ainda é um placeholder sem destino. Assim que você me passar o link real (WhatsApp, agenda, formulário), conecto em minutos — é o principal ponto de conversão da ferramenta.
+## 3. Gráfico visual antes/depois (item 5)
 
-## Prioridade média (crescimento e confiabilidade)
+- Gráfico de barras no resultado comparando a carga atual com a projetada.
+- Segunda visão com a evolução ao longo de 2026, 2027 e 2033, mostrando a transição.
+- Visível também no Modo Apresentação, por ser resumo de alto nível.
 
-4. **SEO + página de entrada explicativa**
-   Como lead magnet, a ferramenta precisa ser encontrada. Criar uma página inicial com texto sobre a Reforma (o que muda, cronograma 2026–2033) que conduz ao simulador, com título/descrição otimizados para buscas como "calculadora reforma tributária".
+## 4. Testes automatizados das fórmulas (item 6)
 
-5. **Gráfico visual antes/depois**
-   Um gráfico de barras simples (carga atual × pós-reforma, ou evolução 2026/2027/2033) torna o resultado mais impactante em reunião do que números soltos.
+- Bateria de testes cobrindo: Pessoa Física (CLT), Simples por anexo, Lucro Presumido, Lucro Real, MEI.
+- Testes das reduções de 30% (Art. 127) e 60% (Art. 125) e das regras de transição por ano.
+- Testes da comparação entre regimes (inferência de anexo e margem padrão de 20%).
+- Objetivo: mudanças futuras na legislação não quebram resultados em silêncio.
 
-6. **Testes automatizados das fórmulas**
-   O coração do produto é o cálculo. Adicionar testes unitários das alíquotas, reduções (Art. 125/127) e transição por ano, para que futuras alterações na legislação não quebrem resultados silenciosamente.
+## 5. Painel de ajuste de alíquotas e constantes (item 7)
 
-## Prioridade baixa (refinos)
+- Tela acessível pelo mesmo código de acesso do advogado, para editar as alíquotas de referência (IBS, CBS, percentuais de transição, reduções).
+- Valores guardados na nuvem, com botão "Restaurar padrão".
+- O simulador passa a usar esses valores; se nada for alterado, usa os padrões atuais.
 
-7. **Painel simples para ajustar alíquotas e constantes**
-   Hoje as alíquotas de referência do IBS/CBS estão no código. Um pequeno painel (ou arquivo editável) permitiria atualizar os percentuais conforme a regulamentação evoluir, sem precisar me chamar.
+## 6. Compartilhamento por link (item 8)
 
-8. **Compartilhamento por link**
-   Gerar um link somente-leitura de uma simulação salva, para o advogado enviar ao cliente antes/depois da reunião (com aviso de estimativa).
+- Botão "Compartilhar" em um cálculo salvo, gerando um link somente-leitura.
+- Quem abre o link vê o resultado (resumo, cards, diferença, comparação entre regimes) sem poder editar nem ver os outros cálculos.
+- Avisos legais e o texto de estimativa aparecem na página compartilhada.
+- Possibilidade de revogar o link depois.
 
-9. **Fortalecer o acesso ao histórico**
-   O código de acesso funciona, mas é compartilhado e fixo. Se o escritório crescer, dá para evoluir para login individual por advogado (cada um vendo só seus cálculos).
+## Detalhes técnicos
 
-## O que eu NÃO faria (respeitando suas decisões anteriores)
+- Banco: novas colunas/tabelas para token público de compartilhamento (`share_token`, `share_enabled`) e uma tabela de configuração de alíquotas; nenhuma leitura direta por `anon` além do registro compartilhado com token válido.
+- Leitura/escrita do histórico continua por server functions protegidas pelo código (`ADVOGADO_ACCESS_CODE`); acréscimo de `deleteSimulation`, `renameSimulation`, `toggleShare`, além de `getSharedSimulation` (pública, só por token).
+- Constantes: `src/lib/tax/constants.ts` passa a ter um carregador que mescla overrides vindos do banco, mantendo os padrões como fallback.
+- Gráficos com Recharts, já disponível no stack.
+- Testes com Vitest em `src/lib/tax/__tests__/`.
+- Rotas novas: `/` (landing), `/simulador`, `/config-aliquotas`, `/s/$token`; cada uma com `head()` próprio (título, descrição, OG).
 
-- Não adicionaria captura de e-mail/formulário de lead — você deixou claro que não é uma lista de follow-up comercial.
-- Não adicionaria login completo para os clientes — o código simples atende ao uso atual.
+## Ordem de execução
 
-Me diga quais itens quer implementar (ex.: "1, 2 e 3") e eu executo.
+1. Testes das fórmulas (rede de segurança antes de mexer no resto)
+2. Gestão do histórico
+3. Gráfico antes/depois
+4. Compartilhamento por link
+5. Painel de alíquotas
+6. Landing + SEO
