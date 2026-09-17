@@ -5,9 +5,11 @@ import { useEffect, useState } from "react";
 import { Button, Field, Notice, TextInput } from "@/components/simulator/ui";
 import {
   getTaxConfig,
+  getTaxConfigMeta,
   resetTaxConfig,
   saveTaxConfig,
   type TaxConfigMap,
+  type TaxConfigMeta,
 } from "@/lib/tax-config.functions";
 import { applyTaxOverrides, TUNABLES } from "@/lib/tax/constants";
 
@@ -37,14 +39,19 @@ const toPercentText = (fraction: number) =>
 
 const fromPercentText = (text: string) => Number(text.replace(",", ".")) / 100;
 
+const formatUpdatedAt = (iso: string) =>
+  new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+
 function TaxConfigPage() {
   const load = useServerFn(getTaxConfig);
+  const loadMeta = useServerFn(getTaxConfigMeta);
   const save = useServerFn(saveTaxConfig);
   const reset = useServerFn(resetTaxConfig);
 
   const [code, setCode] = useState("");
   const [unlocked, setUnlocked] = useState(false);
   const [values, setValues] = useState<Record<string, string>>({});
+  const [meta, setMeta] = useState<TaxConfigMeta>({});
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -67,6 +74,7 @@ function TaxConfigPage() {
         setUnlocked(true);
       }
     });
+    void loadMeta().then(setMeta);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -90,6 +98,7 @@ function TaxConfigPage() {
       sessionStorage.setItem(CODE_KEY, code);
       setUnlocked(true);
       applyTaxOverrides(payload);
+      void loadMeta().then(setMeta);
       setMessage("Alíquotas atualizadas. As próximas simulações já usam esses valores.");
     } catch {
       setError("Não foi possível salvar agora. Tente novamente.");
@@ -112,6 +121,7 @@ function TaxConfigPage() {
       for (const def of TUNABLES) defaults[def.key] = def.fallback;
       fill(defaults);
       applyTaxOverrides(defaults);
+      setMeta({});
       setMessage("Valores padrão restaurados.");
     } catch {
       setError("Não foi possível restaurar agora. Tente novamente.");
@@ -153,7 +163,13 @@ function TaxConfigPage() {
             <h2 className="text-lg font-semibold">{group}</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {TUNABLES.filter((t) => t.group === group).map((def) => (
-                <Field key={def.key} label={def.label} hint={`Padrão: ${toPercentText(def.fallback)}%`}>
+                <Field
+                  key={def.key}
+                  label={def.label}
+                  hint={`Padrão: ${toPercentText(def.fallback)}%${
+                    meta[def.key] ? ` · Última alteração: ${formatUpdatedAt(meta[def.key]!)}` : ""
+                  }`}
+                >
                   <div className="flex items-stretch overflow-hidden rounded-md border border-input bg-card">
                     <input
                       inputMode="decimal"
