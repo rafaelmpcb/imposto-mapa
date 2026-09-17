@@ -386,6 +386,10 @@ export function ResultView({
         <RegimeComparison input={input} year={year} presentationMode={presentationMode} />
       ) : null}
 
+      {!presentationMode && !readOnly ? (
+        <RateMatrix year={year} onRatesChange={() => setRatesVersion((v) => v + 1)} />
+      ) : null}
+
       <div className="rounded-xl border border-border bg-card p-5">
         <h3 className="text-lg font-semibold">Resumo executivo</h3>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
