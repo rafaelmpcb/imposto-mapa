@@ -50,6 +50,10 @@ export interface SimulationInput {
   // Etapa 4
   monofasicoShare: number; // %
   purchases: number;
+  /** % das compras vindas de fornecedores optantes pelo Simples Nacional. */
+  simplesSupplierShare: number; // %
+  /** % da receita vinda de clientes PJ que aproveitam crédito (não entra no cálculo). */
+  pjClientShare: number; // %
 }
 
 export interface TaxLine {
@@ -88,6 +92,8 @@ export const defaultInput = (): SimulationInput => ({
   benefitConfirmed: null,
   monofasicoShare: 0,
   purchases: 0,
+  simplesSupplierShare: 0,
+  pjClientShare: 0,
 });
 
 export const brl = (v: number) =>
