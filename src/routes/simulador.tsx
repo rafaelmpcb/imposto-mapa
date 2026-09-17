@@ -20,6 +20,7 @@ import {
   type TaxpayerType,
 } from "@/lib/tax/calc";
 import { ResultView } from "@/components/simulator/ResultView";
+import { OfficeContactCta } from "@/components/contact/OfficeContactCta";
 import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
 import { lookupCnpj } from "@/lib/cnpj.functions";
 import type { CnpjData } from "@/lib/cnpj/types";
