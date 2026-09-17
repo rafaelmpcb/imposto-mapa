@@ -1,5 +1,14 @@
+import { useState } from "react";
 import { LEGAL_REFERENCE_DATE, YEARS, type YearId } from "@/lib/tax/constants";
-import { brl, compareRegimes, pct, simulate, type SimulationInput, type TaxpayerType } from "@/lib/tax/calc";
+import {
+  brl,
+  compareRegimes,
+  pct,
+  simulate,
+  type RegimeComparisonItem,
+  type SimulationInput,
+  type TaxpayerType,
+} from "@/lib/tax/calc";
 import { Field, Notice, TextInput, Toggle } from "./ui";
 
 const REGIME_LABELS: Record<TaxpayerType, string> = {
@@ -10,47 +19,172 @@ const REGIME_LABELS: Record<TaxpayerType, string> = {
   mei: "MEI",
 };
 
+function DifferenceCard({
+  diff,
+  rateDiff,
+  caption,
+}: {
+  diff: number;
+  rateDiff: number;
+  caption?: string;
+}) {
+  const worse = diff > 0;
+  const unchanged = Math.abs(diff) < 0.005;
+  const tone = unchanged
+    ? "border-border bg-secondary text-foreground"
+    : worse
+      ? "border-danger/35 bg-danger-soft text-danger"
+      : "border-success/35 bg-success-soft text-success";
+  const label = unchanged
+    ? "Sem alteração estimada"
+    : worse
+      ? "Aumento estimado"
+      : "Economia estimada";
+  const pp = `${rateDiff > 0 ? "+" : ""}${(rateDiff * 100).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} p.p.`;
+  return (
+    <div className={`mx-auto max-w-xl rounded-xl border-2 p-6 text-center ${tone}`}>
+      <p className="text-sm font-semibold uppercase tracking-wide">{label}</p>
+      <p className="mt-2 text-4xl font-bold tabular-nums">{brl(Math.abs(diff))}</p>
+      <p className="mt-1 text-sm font-medium">por mês</p>
+      <p className="mt-4 border-t border-current/20 pt-4 text-base font-semibold tabular-nums">
+        {pp} na carga tributária
+      </p>
+      {caption ? <p className="mt-2 text-xs font-medium opacity-80">{caption}</p> : null}
+    </div>
+  );
+}
+
+function RegimeDetail({
+  currentItem,
+  item,
+  year,
+}: {
+  currentItem: RegimeComparisonItem;
+  item: RegimeComparisonItem;
+  year: YearId;
+}) {
+  const diff = item.total - currentItem.total;
+  const rateDiff = item.rate - currentItem.rate;
+  return (
+    <div className="mt-4 space-y-4 rounded-lg border border-border bg-card p-4">
+      <p className="text-sm text-muted-foreground">
+        Comparação das duas projeções pós-reforma em {year}: {currentItem.label} (seu regime atual)
+        e {item.label}.
+      </p>
+      <div className="grid gap-4 md:grid-cols-2">
+        <ScenarioCard
+          title={currentItem.label}
+          subtitle={`Cenário ${year} — seu regime atual`}
+          tone="current"
+          total={currentItem.total}
+          rate={currentItem.rate}
+          lines={currentItem.lines}
+        />
+        <ScenarioCard
+          title={item.label}
+          subtitle={`Cenário ${year} — regime alternativo`}
+          tone="reform"
+          total={item.total}
+          rate={item.rate}
+          lines={item.lines}
+        />
+      </div>
+      <DifferenceCard
+        diff={diff}
+        rateDiff={rateDiff}
+        caption={`${item.label} em relação a ${currentItem.label}`}
+      />
+    </div>
+  );
+}
+
 function RegimeComparison({ input, year }: { input: SimulationInput; year: YearId }) {
   const items = compareRegimes(input, year);
+  const currentItem = items.find((i) => i.isCurrent);
+  const [openRegime, setOpenRegime] = useState<string | null>(null);
+
   return (
     <section className="rounded-xl border border-border bg-card p-5">
       <h3 className="text-lg font-semibold">Comparação entre regimes</h3>
       <p className="mt-1 text-sm text-muted-foreground">
-        Carga tributária mensal estimada em {year}, após a reforma, nos três regimes.
+        Carga tributária mensal estimada em {year}, após a reforma, nos três regimes. Clique em um
+        regime alternativo para ver a comparação detalhada com o seu regime atual.
       </p>
       <div className="mt-4 grid gap-4 md:grid-cols-3">
-        {items.map((item) => (
-          <div
-            key={item.regime}
-            className={`rounded-lg border p-4 ${
-              item.isBest ? "border-success/50 bg-success-soft" : "border-border bg-secondary"
-            }`}
-          >
-            <div className="flex flex-wrap items-center gap-2">
-              <h4 className="text-base font-semibold text-foreground">{item.label}</h4>
-              {item.isCurrent ? (
-                <span className="rounded-full border border-navy/40 bg-card px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-navy">
-                  Seu regime atual
-                </span>
+        {items.map((item) => {
+          const expandable = !item.isCurrent && !!currentItem;
+          const isOpen = openRegime === item.regime;
+          const cardClass = `w-full rounded-lg border p-4 text-left transition-colors ${
+            item.isBest ? "border-success/50 bg-success-soft" : "border-border bg-secondary"
+          } ${isOpen ? "ring-2 ring-navy/40" : ""}`;
+          const content = (
+            <>
+              <div className="flex flex-wrap items-center gap-2">
+                <h4 className="text-base font-semibold text-foreground">{item.label}</h4>
+                {item.isCurrent ? (
+                  <span className="rounded-full border border-navy/40 bg-card px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-navy">
+                    Seu regime atual
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-3 text-2xl font-bold tabular-nums text-foreground">
+                {brl(item.total)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                por mês · {pct(item.rate)} do faturamento
+              </p>
+              {item.isBest ? (
+                <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-success">
+                  Mais vantajoso após a reforma
+                </p>
               ) : null}
+              {item.estimateNote ? (
+                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                  {item.estimateNote}
+                </p>
+              ) : null}
+              {expandable ? (
+                <p className="mt-3 text-xs font-semibold text-navy">
+                  {isOpen ? "Ocultar comparação detalhada" : "Ver comparação detalhada"}
+                </p>
+              ) : null}
+            </>
+          );
+
+          return expandable ? (
+            <button
+              key={item.regime}
+              type="button"
+              aria-expanded={isOpen}
+              onClick={() => setOpenRegime(isOpen ? null : item.regime)}
+              className={cardClass}
+            >
+              {content}
+            </button>
+          ) : (
+            <div key={item.regime} className={cardClass}>
+              {content}
             </div>
-            <p className="mt-3 text-2xl font-bold tabular-nums text-foreground">
-              {brl(item.total)}
-            </p>
-            <p className="text-xs text-muted-foreground">por mês · {pct(item.rate)} do faturamento</p>
-            {item.isBest ? (
-              <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-success">
-                Mais vantajoso após a reforma
-              </p>
-            ) : null}
-            {item.estimateNote ? (
-              <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                {item.estimateNote}
-              </p>
-            ) : null}
-          </div>
-        ))}
+          );
+        })}
       </div>
+
+      {currentItem
+        ? items
+            .filter((item) => !item.isCurrent && openRegime === item.regime)
+            .map((item) => (
+              <RegimeDetail
+                key={item.regime}
+                currentItem={currentItem}
+                item={item}
+                year={year}
+              />
+            ))
+        : null}
+
       <div className="mt-4">
         <Notice>
           Simples Nacional exige faturamento anual de até R$ 4,8 milhões e não é permitido para
