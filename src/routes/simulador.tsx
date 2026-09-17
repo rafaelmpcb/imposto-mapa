@@ -159,10 +159,15 @@ function Simulator() {
           input?: Partial<SimulationInput>;
           year?: YearId;
           clientName?: string;
+          cnpjData?: CnpjData | null;
         };
         setInput({ ...defaultInput(), ...(parsed.input ?? {}) });
         if (parsed.year) setYear(parsed.year);
         setClientName(parsed.clientName ?? "");
+        if (parsed.cnpjData) {
+          setCnpjData(parsed.cnpjData);
+          setCnpj(parsed.cnpjData.cnpj);
+        }
         savedIdRef.current = parsed.id ?? null;
         setStep(5);
         return;
