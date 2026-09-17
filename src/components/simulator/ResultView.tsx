@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { LEGAL_REFERENCE_DATE, YEARS, type YearId } from "@/lib/tax/constants";
 import {
   brl,
@@ -277,8 +277,9 @@ export function ResultView({
   readOnly?: boolean;
 }) {
   const [ratesVersion, setRatesVersion] = useState(0);
-  void ratesVersion;
-  const result = simulate(input, year);
+  // ratesVersion entra como dependência porque as alíquotas editadas na tabela
+  // são constantes de módulo, não parte de `input`.
+  const result = useMemo(() => simulate(input, year), [input, year, ratesVersion]);
   const isBusiness =
     input.taxpayerType === "simples" ||
     input.taxpayerType === "presumido" ||
