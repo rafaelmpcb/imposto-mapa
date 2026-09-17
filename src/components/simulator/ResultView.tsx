@@ -10,6 +10,7 @@ import {
   type TaxpayerType,
 } from "@/lib/tax/calc";
 import { ImpactChart } from "./ImpactChart";
+import { RateMatrix } from "./RateMatrix";
 import { Field, Notice, TextInput, Toggle } from "./ui";
 
 const REGIME_LABELS: Record<TaxpayerType, string> = {
