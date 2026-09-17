@@ -40,6 +40,8 @@ type SavePayload = {
   currentRate: number;
   reformRate: number;
   input: JsonValue;
+  cnpj?: string | null;
+  cnpjData?: JsonValue | null;
   id?: string | undefined;
 };
 
@@ -59,6 +61,8 @@ export const saveSimulation = createServerFn({ method: "POST" })
       current_rate: data.currentRate,
       reform_rate: data.reformRate,
       input: data.input,
+      cnpj: data.cnpj ?? null,
+      cnpj_data: data.cnpjData ?? null,
     };
 
     if (data.id) {
