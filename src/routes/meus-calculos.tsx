@@ -263,14 +263,49 @@ function MyCalculations() {
               />
             </Field>
 
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-muted-foreground">
                 {filtered.length} de {items.length} cálculo{items.length === 1 ? "" : "s"}
+                {selected.size > 0 ? ` · ${selected.size} selecionado${selected.size === 1 ? "" : "s"}` : ""}
               </p>
               <Button variant="ghost" onClick={() => void load(code)}>
                 Atualizar
               </Button>
             </div>
+
+            {filtered.length > 0 ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-secondary px-4 py-3">
+                <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-foreground">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-[var(--color-navy,#1e3a5f)]"
+                    checked={filtered.length > 0 && filtered.every((i) => selected.has(i.id))}
+                    onChange={toggleAll}
+                  />
+                  Selecionar todos
+                </label>
+                {selected.size > 0 ? (
+                  confirmBulk ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button variant="ghost" onClick={() => setConfirmBulk(false)}>
+                        Cancelar
+                      </Button>
+                      <Button
+                        variant="danger"
+                        disabled={deleting}
+                        onClick={() => void handleBulkDelete()}
+                      >
+                        {deleting ? "Excluindo..." : `Confirmar exclusão (${selected.size})`}
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button variant="ghost" onClick={() => setConfirmBulk(true)}>
+                      Excluir selecionados ({selected.size})
+                    </Button>
+                  )
+                ) : null}
+              </div>
+            ) : null}
 
             {error ? <Notice tone="warning">{error}</Notice> : null}
 
