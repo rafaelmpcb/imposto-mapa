@@ -120,7 +120,50 @@ function MyCalculations() {
       return;
     }
     setConfirmId(null);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
     setItems((prev) => (prev ?? []).filter((i) => i.id !== id));
+  };
+
+  const toggleSelected = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    setConfirmBulk(false);
+  };
+
+  const toggleAll = () => {
+    setSelected((prev) => {
+      const allSelected = filtered.length > 0 && filtered.every((i) => prev.has(i.id));
+      return allSelected ? new Set() : new Set(filtered.map((i) => i.id));
+    });
+    setConfirmBulk(false);
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    setDeleting(true);
+    try {
+      const res = await removeBulk({ data: { code, ids } });
+      if (!res.ok) {
+        setError("Código de acesso inválido.");
+        return;
+      }
+      setSelected(new Set());
+      setConfirmBulk(false);
+      setItems((prev) => (prev ?? []).filter((i) => !ids.includes(i.id)));
+    } catch {
+      setError("Não foi possível excluir os cálculos selecionados. Tente novamente.");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleRename = async (id: string) => {
