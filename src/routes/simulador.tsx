@@ -179,9 +179,9 @@ function Simulator() {
         setStep(5);
         return;
       }
-      const saved = localStorage.getItem(STORAGE_KEY);
-      // A validação do benefício (Art. 127) nunca é restaurada: exige resposta explícita.
-      if (saved) setInput({ ...defaultInput(), ...JSON.parse(saved), benefitConfirmed: null });
+      // Nada é restaurado automaticamente: dados financeiros de uma empresa
+      // nunca podem vazar para a simulação da empresa seguinte.
+      localStorage.removeItem(STORAGE_KEY);
     } catch {
       /* ignora dados inválidos */
     }
@@ -222,13 +222,6 @@ function Simulator() {
   }, [step, input, year, clientName, cnpjData, persist]);
 
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(input));
-    } catch {
-      /* armazenamento indisponível */
-    }
-  }, [input]);
 
   const set = <K extends keyof SimulationInput>(key: K, value: SimulationInput[K]) =>
     setInput((prev) => ({ ...prev, [key]: value }));
