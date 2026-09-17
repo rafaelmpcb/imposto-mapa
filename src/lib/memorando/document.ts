@@ -45,7 +45,7 @@ const body = (text: string, opts: { bold?: boolean; align?: "center" } = {}) =>
   new Paragraph({
     alignment: opts.align === "center" ? AlignmentType.CENTER : AlignmentType.JUSTIFIED,
     spacing: { after: 180, line: 300 },
-    children: [new TextRun({ text, bold: opts.bold, font: FONT, size: 22 })],
+    children: [new TextRun({ text, bold: opts.bold === true, font: FONT, size: 22 })],
   });
 
 /** Parágrafo com prefixo em negrito ("ESCRITÓRIO: ..."). */
