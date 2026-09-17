@@ -669,6 +669,13 @@ function Simulator() {
               >
                 {pdfBusy ? "Gerando PDF..." : "Baixar PDF"}
               </button>
+              <button
+                type="button"
+                onClick={() => setMemoOpen(true)}
+                className="inline-flex items-center justify-center rounded-md border border-navy-foreground/40 px-6 py-3 text-sm font-semibold text-navy-foreground transition-colors hover:bg-navy-foreground/10"
+              >
+                Gerar Memorando
+              </button>
             </div>
             {pdfError ? (
               <p className="mt-3 text-xs font-medium text-navy-foreground/80">{pdfError}</p>
