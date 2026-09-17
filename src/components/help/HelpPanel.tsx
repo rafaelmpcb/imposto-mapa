@@ -86,6 +86,44 @@ const SECTIONS: Section[] = [
   },
 ];
 
+const SIMULATOR_SECTIONS: Section[] = [
+  {
+    id: "sobre-simulacao",
+    title: "Sobre esta simulação",
+    paragraphs: [
+      "O Reforma Fácil é uma calculadora que estima, a partir dos dados informados aqui, como a carga tributária da empresa pode mudar com a Reforma Tributária (IBS/CBS). Os valores mostrados são uma estimativa inicial, com base nas informações preenchidas nesta simulação.",
+    ],
+  },
+  {
+    id: "passo-a-passo",
+    title: "Passo a passo",
+    steps: [
+      'Etapa 1 — Identificação: informe o CNPJ da empresa, ou clique em "Pular e preencher manualmente" se preferir. Informando o CNPJ, alguns dados (razão social, CNAE, sugestão de Atividade) são preenchidos automaticamente — você pode ajustar qualquer um deles.',
+      "Etapa 2 — Atividade e regime: confirme ou ajuste a Atividade principal e informe o regime tributário atual (Simples Nacional, Lucro Presumido, Lucro Real, MEI ou Pessoa Física). Dependendo da Atividade, pode aparecer uma etapa perguntando sobre registro em conselho profissional — essa resposta é sempre preenchida manualmente.",
+      "Etapas seguintes — Faturamento e dados financeiros: informe faturamento, despesas e demais dados pedidos, de acordo com o regime selecionado. O número total de etapas pode variar dependendo das suas respostas — isso é normal.",
+      "Etapa final — Resultado: mostra o comparativo entre a carga tributária atual e a estimada com a reforma, a diferença entre elas e, quando o CNPJ foi informado, um contexto sobre o setor da empresa. A partir daqui é possível baixar o relatório em PDF, gerar o Memorando de Entendimento e, quando disponível, falar diretamente pelo WhatsApp ou e-mail.",
+    ],
+  },
+  {
+    id: "faq",
+    title: "Perguntas frequentes",
+    faq: [
+      {
+        q: "O CNAE preenche automaticamente minha Atividade ou o meu regime?",
+        a: "Não. O CNAE só sugere a Atividade (você pode alterar) e aparece como contexto no resultado final; ele nunca decide sozinho o Anexo do Simples, o regime ou a resposta sobre registro em conselho profissional.",
+      },
+      {
+        q: "Por que o número de etapas muda?",
+        a: "A etapa sobre registro em conselho profissional só aparece quando a Atividade selecionada exige esse tipo de validação — por isso o total de etapas pode variar.",
+      },
+      {
+        q: "Preciso criar login para fazer essa simulação?",
+        a: "Não. A simulação é aberta e não exige login.",
+      },
+    ],
+  },
+];
+
 const sectionText = (s: Section) =>
   [
     s.title,
