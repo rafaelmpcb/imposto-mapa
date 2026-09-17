@@ -101,8 +101,10 @@ function Simulator() {
       setCnpjData(res.data);
       setCnpj(res.data.cnpj);
       setClientName(truncateWords(res.data.nome_fantasia || res.data.razao_social, 150));
+      // Nova empresa = novos números: zera todos os campos financeiros para o padrão.
       setInput((prev) => ({
-        ...prev,
+        ...defaultInput(),
+        taxpayerType: prev.taxpayerType,
         activityId: res.data.atividade_sugerida,
         ...(res.data.uf && UFS.includes(res.data.uf) ? { uf: res.data.uf } : {}),
       }));
