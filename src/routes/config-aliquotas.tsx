@@ -252,6 +252,42 @@ function TaxConfigPage() {
           </Button>
         </div>
 
+        <section className="rounded-xl border border-border bg-card p-5">
+          <h2 className="text-lg font-semibold">Dados do escritório</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Usados nos memorandos de entendimento e confidencialidade.
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {OFFICE_FIELDS.map((field) => (
+              <Field
+                key={field.key}
+                label={field.label}
+                {...(officeMeta[field.key]
+                  ? { hint: `Última alteração: ${formatUpdatedAt(officeMeta[field.key]!)}` }
+                  : {})}
+              >
+                <TextInput
+                  value={office[field.key] ?? ""}
+                  placeholder={field.placeholder}
+                  onChange={(event) =>
+                    setOffice((prev) => ({ ...prev, [field.key]: event.target.value }))
+                  }
+                />
+              </Field>
+            ))}
+          </div>
+          {officeError ? <Notice tone="warning">{officeError}</Notice> : null}
+          {officeMessage ? <Notice>{officeMessage}</Notice> : null}
+          <div className="mt-4">
+            <Button
+              onClick={() => void handleSaveOffice()}
+              disabled={officeBusy || code.trim().length === 0}
+            >
+              {officeBusy ? "Salvando..." : "Salvar dados do escritório"}
+            </Button>
+          </div>
+        </section>
+
         <Link to="/meus-calculos" className="inline-block text-sm font-semibold text-navy underline">
           Voltar para Meus Cálculos
         </Link>
