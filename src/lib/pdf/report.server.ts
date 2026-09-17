@@ -259,6 +259,34 @@ class Doc {
     void colA;
   }
 
+  /** Linha de tabela com quatro colunas: rótulo + três valores alinhados à direita. */
+  row4(
+    label: string,
+    a: string,
+    b: string,
+    c: string,
+    opts: { bold?: boolean; color?: ReturnType<typeof rgb> } = {},
+  ): void {
+    const size = 9.5;
+    const font = opts.bold ? this.bold : this.regular;
+    this.ensure(18);
+    this.y -= 15;
+    const color = opts.color ?? TEXT;
+    this.page.drawText(safe(label), { x: MARGIN, y: this.y, size, font, color });
+    const stops = [0.5, 0.75, 1].map((f) => MARGIN + CONTENT_WIDTH * f);
+    [a, b, c].forEach((value, i) => {
+      const text = safe(value);
+      this.page.drawText(text, {
+        x: (stops[i] as number) - font.widthOfTextAtSize(text, size),
+        y: this.y,
+        size,
+        font,
+        color,
+      });
+    });
+  }
+
+
   /** Duas colunas independentes: cada cenário com seus próprios tributos. */
   dualRow(
     left: { label: string; value: string } | null,
