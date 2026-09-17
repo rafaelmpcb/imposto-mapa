@@ -23,6 +23,7 @@ import { ResultView } from "@/components/simulator/ResultView";
 import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
 import { lookupCnpj } from "@/lib/cnpj.functions";
 import type { CnpjData } from "@/lib/cnpj/types";
+import { slugifyWords, truncateWords } from "@/lib/text";
 import {
   Button,
   Field,
