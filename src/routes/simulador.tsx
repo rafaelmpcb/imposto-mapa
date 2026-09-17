@@ -176,7 +176,8 @@ function Simulator() {
         return;
       }
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) setInput({ ...defaultInput(), ...JSON.parse(saved) });
+      // A validação do benefício (Art. 127) nunca é restaurada: exige resposta explícita.
+      if (saved) setInput({ ...defaultInput(), ...JSON.parse(saved), benefitConfirmed: null });
     } catch {
       /* ignora dados inválidos */
     }
