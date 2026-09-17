@@ -80,6 +80,8 @@ function MyCalculations() {
         return;
       }
       setItems(res.items);
+      setSelected(new Set());
+      setConfirmBulk(false);
       sessionStorage.setItem(CODE_KEY, accessCode);
     } catch {
       setError("Não foi possível carregar o histórico agora. Tente novamente.");
