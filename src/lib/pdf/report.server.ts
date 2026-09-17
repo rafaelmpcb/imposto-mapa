@@ -2,6 +2,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf
 
 import {
   compareRegimes,
+  pjClientAdvisory,
   simulate,
   type SimulationInput,
   type TaxpayerType,

@@ -16,6 +16,8 @@ const schema = z.object({
     purchases: z.number().finite().min(0).max(1e12).optional(),
     profitMargin: z.number().finite().min(0).max(100).optional(),
     monophasicShare: z.number().finite().min(0).max(100).optional(),
+    simplesSupplierShare: z.number().finite().min(0).max(100).optional(),
+    pjClientShare: z.number().finite().min(0).max(100).optional(),
     simplesAnexo: z.string().max(10).optional(),
     benefitConfirmed: z.boolean().optional(),
   }).passthrough(),
