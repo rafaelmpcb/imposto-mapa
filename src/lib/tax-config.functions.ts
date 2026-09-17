@@ -12,6 +12,20 @@ export const getTaxConfig = createServerFn({ method: "GET" }).handler(async () =
   return out;
 });
 
+export type TaxConfigMeta = Record<string, string>;
+
+/** Leitura pública: data da última alteração de cada alíquota salva. */
+export const getTaxConfigMeta = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin.from("tax_config").select("key, updated_at");
+  if (error) return {} as TaxConfigMeta;
+  const out: TaxConfigMeta = {};
+  for (const row of data ?? []) {
+    if (row.updated_at) out[row.key as string] = row.updated_at as string;
+  }
+  return out;
+});
+
 function checkCode(code: string): boolean {
   const expected = process.env["ADVOGADO_ACCESS_CODE"] ?? "";
   return Boolean(expected) && code.trim() === expected;
