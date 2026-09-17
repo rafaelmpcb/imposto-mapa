@@ -63,6 +63,40 @@ function Simulator() {
   const [pdfBusy, setPdfBusy] = useState(false);
   const [pdfError, setPdfError] = useState("");
 
+  const searchCnpjFn = useServerFn(lookupCnpj);
+  const [cnpj, setCnpj] = useState("");
+  const [cnpjData, setCnpjData] = useState<CnpjData | null>(null);
+  const [cnpjBusy, setCnpjBusy] = useState(false);
+  const [cnpjError, setCnpjError] = useState("");
+  const [manualName, setManualName] = useState(false);
+  const [activitySuggested, setActivitySuggested] = useState(false);
+  const [memoOpen, setMemoOpen] = useState(false);
+
+  const searchCnpj = async () => {
+    setCnpjBusy(true);
+    setCnpjError("");
+    try {
+      const res = await searchCnpjFn({ data: { cnpj } });
+      if (!res.ok) {
+        setCnpjData(null);
+        setCnpjError(`${res.error} Você pode preencher o nome manualmente.`);
+        setManualName(true);
+        return;
+      }
+      setCnpjData(res.data);
+      setCnpj(res.data.cnpj);
+      setClientName(res.data.nome_fantasia || res.data.razao_social);
+      setInput((prev) => ({ ...prev, activityId: res.data.atividade_sugerida }));
+      setActivitySuggested(true);
+    } catch {
+      setCnpjData(null);
+      setCnpjError("Não foi possível consultar o CNPJ agora. Preencha o nome manualmente.");
+      setManualName(true);
+    } finally {
+      setCnpjBusy(false);
+    }
+  };
+
   const downloadPdf = async () => {
     setPdfBusy(true);
     setPdfError("");
