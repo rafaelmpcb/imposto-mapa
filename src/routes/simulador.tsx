@@ -97,7 +97,7 @@ function Simulator() {
       }
       setCnpjData(res.data);
       setCnpj(res.data.cnpj);
-      setClientName(res.data.nome_fantasia || res.data.razao_social);
+      setClientName(truncateWords(res.data.nome_fantasia || res.data.razao_social, 150));
       setInput((prev) => ({ ...prev, activityId: res.data.atividade_sugerida }));
       setActivitySuggested(true);
     } catch {
