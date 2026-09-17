@@ -321,6 +321,15 @@ function MyCalculations() {
                       className="rounded-xl border border-border bg-card p-4 sm:p-5"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
+                        <label className="flex cursor-pointer items-center pt-1">
+                          <input
+                            type="checkbox"
+                            aria-label={`Selecionar ${item.client_name || "cálculo sem identificação"}`}
+                            className="h-4 w-4 accent-[var(--color-navy,#1e3a5f)]"
+                            checked={selected.has(item.id)}
+                            onChange={() => toggleSelected(item.id)}
+                          />
+                        </label>
                         <div className="min-w-0 flex-1">
                           {editingId === item.id ? (
                             <div className="flex flex-wrap items-center gap-2">
