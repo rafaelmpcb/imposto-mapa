@@ -1,4 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+
+import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 
@@ -35,8 +37,6 @@ export const Route = createFileRoute("/_authenticated/meus-calculos")({
   }),
   component: MyCalculations,
 });
-
-const TAXPAYER_LABELS_PLACEHOLDER = null;
 
 const TAXPAYER_LABELS: Record<string, string> = {
   pf: "Pessoa Física (CLT)",
@@ -113,9 +113,9 @@ function MyCalculations() {
   };
 
   const handleDelete = async (id: string) => {
-    const res = await removeItem({ data: { code, id } });
+    const res = await removeItem({ data: { id } });
     if (!res.ok) {
-      setError("Código de acesso inválido.");
+      setError("Não foi possível concluir a ação.");
       return;
     }
     setConfirmId(null);
@@ -150,9 +150,9 @@ function MyCalculations() {
     if (ids.length === 0) return;
     setDeleting(true);
     try {
-      const res = await removeBulk({ data: { code, ids } });
+      const res = await removeBulk({ data: { ids } });
       if (!res.ok) {
-        setError("Código de acesso inválido.");
+        setError("Não foi possível concluir a ação.");
         return;
       }
       setSelected(new Set());
@@ -166,9 +166,9 @@ function MyCalculations() {
   };
 
   const handleRename = async (id: string) => {
-    const res = await rename({ data: { code, id, clientName: editingName } });
+    const res = await rename({ data: { id, clientName: editingName } });
     if (!res.ok) {
-      setError("Código de acesso inválido.");
+      setError("Não foi possível concluir a ação.");
       return;
     }
     setItems((prev) =>
@@ -181,9 +181,9 @@ function MyCalculations() {
 
   const handleShare = async (item: SavedSimulation) => {
     const enabled = !item.share_enabled;
-    const res = await share({ data: { code, id: item.id, enabled } });
+    const res = await share({ data: { id: item.id, enabled } });
     if (!res.ok) {
-      setError("Código de acesso inválido.");
+      setError("Não foi possível concluir a ação.");
       return;
     }
     setItems((prev) =>
@@ -232,7 +232,7 @@ function MyCalculations() {
               className="space-y-5"
               onSubmit={(event) => {
                 event.preventDefault();
-                void load(code);
+                void load();
               }}
             >
               <Field label="Código de acesso">
@@ -267,7 +267,7 @@ function MyCalculations() {
                 {filtered.length} de {items.length} cálculo{items.length === 1 ? "" : "s"}
                 {selected.size > 0 ? ` · ${selected.size} selecionado${selected.size === 1 ? "" : "s"}` : ""}
               </p>
-              <Button variant="ghost" onClick={() => void load(code)}>
+              <Button variant="ghost" onClick={() => void load()}>
                 Atualizar
               </Button>
             </div>
