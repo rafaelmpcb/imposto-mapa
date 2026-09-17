@@ -18,7 +18,15 @@ import { YEARS, type YearId } from "@/lib/tax/constants";
 const compact = (v: number) =>
   v.toLocaleString("pt-BR", { notation: "compact", maximumFractionDigits: 1 });
 
-export function ImpactChart({ input, year }: { input: SimulationInput; year: YearId }) {
+export function ImpactChart({
+  input,
+  year,
+  presentationMode = false,
+}: {
+  input: SimulationInput;
+  year: YearId;
+  presentationMode?: boolean;
+}) {
   const result = simulate(input, year);
   const comparison = [
     { name: "Hoje", valor: Math.round(result.current.total), tone: "atual" },
@@ -34,8 +42,16 @@ export function ImpactChart({ input, year }: { input: SimulationInput; year: Yea
   });
 
   return (
-    <section className="rounded-xl border border-border bg-card p-5">
-      <h3 className="text-lg font-semibold">Visão gráfica</h3>
+    <section
+      className={
+        presentationMode
+          ? "border-t border-border px-0 py-10"
+          : "rounded-xl border border-border bg-card p-5"
+      }
+    >
+      <h3 className={presentationMode ? "font-presentation-display text-xl font-semibold" : "text-lg font-semibold"}>
+        Visão gráfica
+      </h3>
       <p className="mt-1 text-sm text-muted-foreground">
         Carga tributária mensal estimada: comparação direta e evolução ao longo da transição.
       </p>
