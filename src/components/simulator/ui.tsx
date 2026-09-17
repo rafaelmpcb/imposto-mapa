@@ -25,8 +25,8 @@ export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
   return <select {...props} className={controlClass} />;
 }
 
-export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={controlClass} />;
+export function TextInput({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
+  return <input {...props} className={`${controlClass}${className ? ` ${className}` : ""}`} />;
 }
 
 export function Toggle({

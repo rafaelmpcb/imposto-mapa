@@ -14,6 +14,7 @@ import { Route as ConfigAliquotasRouteImport } from './routes/config-aliquotas'
 import { Route as MeusCalculosRouteImport } from './routes/meus-calculos'
 import { Route as SimuladorRouteImport } from './routes/simulador'
 import { Route as STokenRouteImport } from './routes/s.$token'
+import { Route as ApiPublicRelatorioPdfRouteImport } from './routes/api/public/relatorio-pdf'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +41,11 @@ const STokenRoute = STokenRouteImport.update({
   path: '/s/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicRelatorioPdfRoute = ApiPublicRelatorioPdfRouteImport.update({
+  id: '/api/public/relatorio-pdf',
+  path: '/api/public/relatorio-pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/meus-calculos': typeof MeusCalculosRoute
   '/simulador': typeof SimuladorRoute
   '/s/$token': typeof STokenRoute
+  '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/meus-calculos': typeof MeusCalculosRoute
   '/simulador': typeof SimuladorRoute
   '/s/$token': typeof STokenRoute
+  '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +70,25 @@ export interface FileRoutesById {
   '/meus-calculos': typeof MeusCalculosRoute
   '/simulador': typeof SimuladorRoute
   '/s/$token': typeof STokenRoute
+  '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/config-aliquotas' | '/meus-calculos' | '/simulador' | '/s/$token'
+    | '/'
+    | '/config-aliquotas'
+    | '/meus-calculos'
+    | '/simulador'
+    | '/s/$token'
+    | '/api/public/relatorio-pdf'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/config-aliquotas' | '/meus-calculos' | '/simulador' | '/s/$token'
+  to:
+    | '/'
+    | '/config-aliquotas'
+    | '/meus-calculos'
+    | '/simulador'
+    | '/s/$token'
+    | '/api/public/relatorio-pdf'
   id:
     | '__root__'
     | '/'
@@ -76,6 +96,7 @@ export interface FileRouteTypes {
     | '/meus-calculos'
     | '/simulador'
     | '/s/$token'
+    | '/api/public/relatorio-pdf'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -84,6 +105,7 @@ export interface RootRouteChildren {
   MeusCalculosRoute: typeof MeusCalculosRoute
   SimuladorRoute: typeof SimuladorRoute
   STokenRoute: typeof STokenRoute
+  ApiPublicRelatorioPdfRoute: typeof ApiPublicRelatorioPdfRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -123,6 +145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof STokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/relatorio-pdf': {
+      id: '/api/public/relatorio-pdf'
+      path: '/api/public/relatorio-pdf'
+      fullPath: '/api/public/relatorio-pdf'
+      preLoaderRoute: typeof ApiPublicRelatorioPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -132,6 +161,7 @@ const rootRouteChildren: RootRouteChildren = {
   MeusCalculosRoute: MeusCalculosRoute,
   SimuladorRoute: SimuladorRoute,
   STokenRoute: STokenRoute,
+  ApiPublicRelatorioPdfRoute: ApiPublicRelatorioPdfRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

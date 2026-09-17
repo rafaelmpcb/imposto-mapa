@@ -60,6 +60,44 @@ function Simulator() {
   const [clientName, setClientName] = useState("");
   const [presentationMode, setPresentationMode] = useState(false);
   const persist = useServerFn(saveSimulation);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfError, setPdfError] = useState("");
+
+  const downloadPdf = async () => {
+    setPdfBusy(true);
+    setPdfError("");
+    try {
+      const response = await fetch("/api/public/relatorio-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input, year, clientName: clientName.trim() || null }),
+      });
+      if (!response.ok) throw new Error("falha");
+      const blob = await response.blob();
+      const slug = clientName.trim()
+        ? clientName
+            .trim()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "")
+            .slice(0, 60)
+        : new Date().toISOString().slice(0, 10);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `relatorio-reforma-tributaria-${slug || "simulacao"}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setPdfError("Não foi possível gerar o PDF agora. Tente novamente em alguns instantes.");
+    } finally {
+      setPdfBusy(false);
+    }
+  };
   const savedIdRef = useRef<string | null>(null);
 
   const bootstrappedRef = useRef(false);
@@ -448,15 +486,28 @@ function Simulator() {
               diagnóstico completo — com base em documentos fiscais reais — que começa com a
               assinatura de um Memorando de Entendimento e Confidencialidade.
             </p>
-            <a
-              href={DIAGNOSIS_URL || "#"}
-              onClick={(event) => {
-                if (!DIAGNOSIS_URL) event.preventDefault();
-              }}
-              className="mt-5 inline-flex items-center justify-center rounded-md bg-background px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-            >
-              Avançar para o diagnóstico completo
-            </a>
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <a
+                href={DIAGNOSIS_URL || "#"}
+                onClick={(event) => {
+                  if (!DIAGNOSIS_URL) event.preventDefault();
+                }}
+                className="inline-flex items-center justify-center rounded-md bg-background px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+              >
+                Avançar para o diagnóstico completo
+              </a>
+              <button
+                type="button"
+                onClick={() => void downloadPdf()}
+                disabled={pdfBusy}
+                className="inline-flex items-center justify-center rounded-md border border-navy-foreground/40 px-6 py-3 text-sm font-semibold text-navy-foreground transition-colors hover:bg-navy-foreground/10 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {pdfBusy ? "Gerando PDF..." : "Baixar PDF"}
+              </button>
+            </div>
+            {pdfError ? (
+              <p className="mt-3 text-xs font-medium text-navy-foreground/80">{pdfError}</p>
+            ) : null}
           </section>
         )}
 

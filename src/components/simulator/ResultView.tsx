@@ -10,6 +10,7 @@ import {
   type TaxpayerType,
 } from "@/lib/tax/calc";
 import { ImpactChart } from "./ImpactChart";
+import { RateMatrix } from "./RateMatrix";
 import { Field, Notice, TextInput, Toggle } from "./ui";
 
 const REGIME_LABELS: Record<TaxpayerType, string> = {
@@ -275,6 +276,8 @@ export function ResultView({
   onPresentationModeChange: (active: boolean) => void;
   readOnly?: boolean;
 }) {
+  const [ratesVersion, setRatesVersion] = useState(0);
+  void ratesVersion;
   const result = simulate(input, year);
   const isBusiness =
     input.taxpayerType === "simples" ||
@@ -382,6 +385,10 @@ export function ResultView({
 
       {isBusiness ? (
         <RegimeComparison input={input} year={year} presentationMode={presentationMode} />
+      ) : null}
+
+      {!presentationMode && !readOnly ? (
+        <RateMatrix year={year} onRatesChange={() => setRatesVersion((v) => v + 1)} />
       ) : null}
 
       <div className="rounded-xl border border-border bg-card p-5">
