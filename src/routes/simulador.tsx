@@ -367,6 +367,7 @@ function Simulator() {
                     <Field label="Nome do cliente/empresa">
                       <TextInput
                         value={clientName}
+                        maxLength={150}
                         onChange={(event) => setClientName(event.target.value)}
                       />
                     </Field>
