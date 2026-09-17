@@ -126,14 +126,7 @@ function Simulator() {
       if (!response.ok) throw new Error("falha");
       const blob = await response.blob();
       const slug = clientName.trim()
-        ? clientName
-            .trim()
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "")
-            .slice(0, 60)
+        ? slugifyWords(clientName, 60)
         : new Date().toISOString().slice(0, 10);
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
