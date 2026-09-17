@@ -33,7 +33,7 @@ export function buildIdentifiedProfile(
   const activity = getActivity(input.activityId);
   const result = simulate(input, year);
   const companyName =
-    (typeof cnpjData.nome_fantasia === "string" ? cnpjData.nome_fantasia.trim() : "") ||
+    (typeof cnpjData?.nome_fantasia === "string" ? cnpjData.nome_fantasia.trim() : "") ||
     razaoSocial;
   const reduction = Math.round(activity.reduction * 100);
   let treatment: string;
