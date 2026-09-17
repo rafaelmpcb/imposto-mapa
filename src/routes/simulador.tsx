@@ -448,15 +448,28 @@ function Simulator() {
               diagnóstico completo — com base em documentos fiscais reais — que começa com a
               assinatura de um Memorando de Entendimento e Confidencialidade.
             </p>
-            <a
-              href={DIAGNOSIS_URL || "#"}
-              onClick={(event) => {
-                if (!DIAGNOSIS_URL) event.preventDefault();
-              }}
-              className="mt-5 inline-flex items-center justify-center rounded-md bg-background px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-            >
-              Avançar para o diagnóstico completo
-            </a>
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <a
+                href={DIAGNOSIS_URL || "#"}
+                onClick={(event) => {
+                  if (!DIAGNOSIS_URL) event.preventDefault();
+                }}
+                className="inline-flex items-center justify-center rounded-md bg-background px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+              >
+                Avançar para o diagnóstico completo
+              </a>
+              <button
+                type="button"
+                onClick={() => void downloadPdf()}
+                disabled={pdfBusy}
+                className="inline-flex items-center justify-center rounded-md border border-navy-foreground/40 px-6 py-3 text-sm font-semibold text-navy-foreground transition-colors hover:bg-navy-foreground/10 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {pdfBusy ? "Gerando PDF..." : "Baixar PDF"}
+              </button>
+            </div>
+            {pdfError ? (
+              <p className="mt-3 text-xs font-medium text-navy-foreground/80">{pdfError}</p>
+            ) : null}
           </section>
         )}
 
