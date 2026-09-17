@@ -298,7 +298,7 @@ export function RateMatrix({
         <Button type="button" onClick={() => void saveForAll()} disabled={busy || !code.trim()}>
           Salvar para todas as simulações
         </Button>
-        <Button type="button" variant="secondary" onClick={() => void restore()} disabled={busy}>
+        <Button type="button" variant="ghost" onClick={() => void restore()} disabled={busy}>
           Restaurar valores salvos
         </Button>
       </div>
