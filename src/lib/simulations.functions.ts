@@ -157,7 +157,7 @@ export const getSharedSimulation = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
       .from("simulations")
-      .select("id, created_at, client_name, year_id, input, share_enabled")
+      .select("id, created_at, client_name, year_id, input, cnpj, cnpj_data, share_enabled")
       .eq("share_token", data.token)
       .maybeSingle();
     if (error || !row || !row.share_enabled) return { found: false as const, item: null };
@@ -169,6 +169,8 @@ export const getSharedSimulation = createServerFn({ method: "GET" })
         client_name: (row.client_name as string | null) ?? null,
         year_id: row.year_id as number,
         input: row.input as JsonValue,
+        cnpj: (row.cnpj as string | null) ?? null,
+        cnpj_data: (row.cnpj_data as JsonValue | null) ?? null,
       },
     };
   });

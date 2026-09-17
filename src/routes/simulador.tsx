@@ -123,6 +123,7 @@ function Simulator() {
           year,
           clientName: clientName.trim() || null,
           cnpj: cnpjData?.cnpj ?? null,
+          cnpjData,
         }),
       });
       if (!response.ok) throw new Error("falha");
@@ -616,6 +617,7 @@ function Simulator() {
               onClientNameChange={setClientName}
               presentationMode={presentationMode}
               onPresentationModeChange={setPresentationMode}
+              cnpjData={cnpjData}
             />
           )}
 

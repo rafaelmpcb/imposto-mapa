@@ -6,6 +6,7 @@ import { Notice } from "@/components/simulator/ui";
 import { getSharedSimulation } from "@/lib/simulations.functions";
 import { defaultInput, type SimulationInput } from "@/lib/tax/calc";
 import { LEGAL_REFERENCE_DATE, type YearId } from "@/lib/tax/constants";
+import type { CnpjData } from "@/lib/cnpj/types";
 
 const TITLE = "Simulação compartilhada — impacto da Reforma Tributária";
 const DESCRIPTION =
@@ -60,6 +61,7 @@ function SharedSimulation() {
     ...(item.input as unknown as Partial<SimulationInput>),
   } as SimulationInput;
   const year = item.year_id as YearId;
+  const cnpjData = item.cnpj_data as unknown as CnpjData | null;
 
   return (
     <main className="min-h-screen bg-background">
@@ -87,6 +89,7 @@ function SharedSimulation() {
             onClientNameChange={() => {}}
             presentationMode
             onPresentationModeChange={() => {}}
+            cnpjData={cnpjData}
             readOnly
           />
         </section>

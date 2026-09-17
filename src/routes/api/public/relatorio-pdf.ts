@@ -5,9 +5,22 @@ import { defaultInput, type SimulationInput } from "@/lib/tax/calc";
 import { slugifyWords } from "@/lib/text";
 import type { YearId } from "@/lib/tax/constants";
 
+const cnpjDataSchema = z.object({
+  cnpj: z.string().max(30),
+  razao_social: z.string().max(300),
+  nome_fantasia: z.string().max(300),
+  endereco: z.string().max(500),
+  situacao_cadastral: z.string().max(100),
+  cnae_codigo: z.string().max(30),
+  cnae_descricao: z.string().max(500),
+  representante_sugerido: z.string().max(300),
+  atividade_sugerida: z.string().max(100),
+});
+
 const schema = z.object({
   clientName: z.string().max(200).optional().nullable(),
   cnpj: z.string().max(30).optional().nullable(),
+  cnpjData: cnpjDataSchema.optional().nullable(),
   year: z.union([z.literal(2026), z.literal(2027), z.literal(2033)]),
   input: z.object({
     taxpayerType: z.enum(["pf", "simples", "presumido", "real", "mei"]),
@@ -21,7 +34,7 @@ const schema = z.object({
     simplesSupplierShare: z.number().finite().min(0).max(100).optional(),
     pjClientShare: z.number().finite().min(0).max(100).optional(),
     simplesAnexo: z.string().max(10).optional(),
-    benefitConfirmed: z.boolean().optional(),
+    benefitConfirmed: z.boolean().nullable().optional(),
   }).passthrough(),
 });
 
@@ -52,6 +65,7 @@ export const Route = createFileRoute("/api/public/relatorio-pdf")({
           year: parsed.data.year as YearId,
           clientName: parsed.data.clientName ?? null,
           cnpj: parsed.data.cnpj ?? null,
+          cnpjData: parsed.data.cnpjData ?? null,
         });
 
         const slug = slugifyWords(parsed.data.clientName ?? "", 60);

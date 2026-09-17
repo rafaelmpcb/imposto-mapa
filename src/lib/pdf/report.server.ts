@@ -8,6 +8,8 @@ import {
   type TaxpayerType,
 } from "@/lib/tax/calc";
 import { LEGAL_REFERENCE_DATE, YEARS, type YearId } from "@/lib/tax/constants";
+import type { CnpjData } from "@/lib/cnpj/types";
+import { buildIdentifiedProfile } from "@/lib/tax/identified-profile";
 
 const REGIME_LABELS: Record<TaxpayerType, string> = {
   pf: "Pessoa Física (CLT)",
@@ -68,6 +70,7 @@ export interface ReportPayload {
   year: YearId;
   clientName?: string | null;
   cnpj?: string | null;
+  cnpjData?: CnpjData | null;
   generatedAt?: Date;
 }
 
@@ -433,6 +436,12 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
     size: 10,
     color: MUTED,
   });
+
+  const identifiedProfile = buildIdentifiedProfile(payload.cnpjData, input, year);
+  if (identifiedProfile) {
+    doc.heading("Perfil identificado");
+    doc.text(identifiedProfile, { size: 10 });
+  }
 
   /* 2. Sistema atual x cenário pós-reforma */
   doc.heading(`Sistema atual x Cenário ${year} — comparativo tributo a tributo`);
