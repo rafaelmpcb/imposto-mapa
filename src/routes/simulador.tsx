@@ -53,8 +53,7 @@ export const Route = createFileRoute("/simulador")({
 });
 
 const STORAGE_KEY = "reforma-simulador-v1";
-// TODO: substituir pelo link real do diagnóstico completo quando ele for definido.
-const DIAGNOSIS_URL = "";
+
 
 const TAXPAYERS: { id: TaxpayerType; label: string }[] = [
   { id: "pf", label: "Pessoa Física (CLT)" },
@@ -654,18 +653,11 @@ function Simulator() {
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-navy-foreground/80">
               Esse é o retrato estimado do impacto da reforma no seu negócio. O próximo passo é o
               diagnóstico completo — com base em documentos fiscais reais — que começa com a
-              assinatura de um Memorando de Entendimento e Confidencialidade.
+              assinatura de um Memorando de Entendimento e Confidencialidade. Clique em "Gerar
+              Memorando" para começar.
             </p>
             <div className="mt-5 flex flex-wrap items-center gap-3">
-              <a
-                href={DIAGNOSIS_URL || "#"}
-                onClick={(event) => {
-                  if (!DIAGNOSIS_URL) event.preventDefault();
-                }}
-                className="inline-flex items-center justify-center rounded-md bg-background px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-              >
-                Avançar para o diagnóstico completo
-              </a>
+
               <button
                 type="button"
                 onClick={() => void downloadPdf()}
