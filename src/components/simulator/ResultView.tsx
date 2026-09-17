@@ -191,6 +191,7 @@ function RegimeComparison({
                 currentItem={currentItem}
                 item={item}
                 year={year}
+                presentationMode={presentationMode}
               />
             ))
         : null}
@@ -372,7 +373,9 @@ export function ResultView({
         </p>
       </div>
 
-      {isBusiness ? <RegimeComparison input={input} year={year} /> : null}
+      {isBusiness ? (
+        <RegimeComparison input={input} year={year} presentationMode={presentationMode} />
+      ) : null}
 
       <div className="rounded-xl border border-border bg-card p-5">
         <h3 className="text-lg font-semibold">Resumo executivo</h3>
