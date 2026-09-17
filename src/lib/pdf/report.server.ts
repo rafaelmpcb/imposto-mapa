@@ -473,6 +473,46 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
     { text: `${pp} na carga tributária · ${money(Math.abs(diff) * 12)} por ano`, size: 9.5, color: MUTED },
   ]);
 
+  /* 3b. Evolução ao longo da transição */
+  doc.heading("Evolução da carga ao longo da transição");
+  doc.text(
+    "Mesma projeção do gráfico da tela de resultado, com os valores informados por você, nos três marcos da transição.",
+    { size: 9, color: MUTED, after: 4 },
+  );
+  const evolution = YEARS.map((y) => {
+    const r = simulate(input, y.id);
+    return { id: y.id, label: y.label, current: r.current, reform: r.reform };
+  });
+  doc.row4("Ano", "Sistema atual", "Pos-reforma", "Diferença", { bold: true, color: MUTED });
+  doc.rule();
+  for (const e of evolution) {
+    const d = e.reform.total - e.current.total;
+    doc.row4(
+      String(e.id),
+      money(e.current.total),
+      money(e.reform.total),
+      `${d > 0.005 ? "+" : d < -0.005 ? "-" : ""}${money(Math.abs(d))}`,
+      { color: d > 0.005 ? DANGER : d < -0.005 ? SUCCESS : TEXT },
+    );
+  }
+  doc.rule();
+  doc.row4("Carga sobre a base", "", "", "", { bold: true, color: MUTED });
+  for (const e of evolution) {
+    const dp = (e.reform.rate - e.current.rate) * 100;
+    doc.row4(
+      String(e.id),
+      percent(e.current.rate),
+      percent(e.reform.rate),
+      `${dp > 0.005 ? "+" : ""}${dp.toFixed(2).replace(".", ",")} p.p.`,
+      { color: dp > 0.005 ? DANGER : dp < -0.005 ? SUCCESS : TEXT },
+    );
+  }
+  doc.gap(6);
+  doc.text(
+    `Marcos: ${YEARS.map((y) => y.label).join(" · ")}.`,
+    { size: 8.5, color: MUTED },
+  );
+
   /* 4. Comparação entre regimes */
   if (isBusiness) {
     const items = compareRegimes(input, year);
