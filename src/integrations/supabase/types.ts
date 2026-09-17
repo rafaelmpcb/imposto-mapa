@@ -14,11 +14,31 @@ export type Database = {
   }
   public: {
     Tables: {
+      office_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       simulations: {
         Row: {
           activity_id: string
           base_amount: number
           client_name: string | null
+          cnpj: string | null
+          cnpj_data: Json | null
           created_at: string
           current_rate: number
           current_total: number
@@ -36,6 +56,8 @@ export type Database = {
           activity_id: string
           base_amount?: number
           client_name?: string | null
+          cnpj?: string | null
+          cnpj_data?: Json | null
           created_at?: string
           current_rate?: number
           current_total?: number
@@ -53,6 +75,8 @@ export type Database = {
           activity_id?: string
           base_amount?: number
           client_name?: string | null
+          cnpj?: string | null
+          cnpj_data?: Json | null
           created_at?: string
           current_rate?: number
           current_total?: number
