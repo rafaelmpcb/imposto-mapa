@@ -50,6 +50,7 @@ function MyCalculations() {
   const navigate = useNavigate();
   const fetchList = useServerFn(listSimulations);
   const removeItem = useServerFn(deleteSimulation);
+  const removeBulk = useServerFn(deleteSimulationsBulk);
   const rename = useServerFn(renameSimulation);
   const share = useServerFn(setSimulationShare);
 
@@ -61,6 +62,9 @@ function MyCalculations() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [confirmBulk, setConfirmBulk] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [memoFor, setMemoFor] = useState<SavedSimulation | null>(null);
 
