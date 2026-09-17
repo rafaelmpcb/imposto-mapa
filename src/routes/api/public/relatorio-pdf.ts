@@ -34,7 +34,7 @@ const schema = z.object({
     simplesSupplierShare: z.number().finite().min(0).max(100).optional(),
     pjClientShare: z.number().finite().min(0).max(100).optional(),
     simplesAnexo: z.string().max(10).optional(),
-    benefitConfirmed: z.boolean().optional(),
+    benefitConfirmed: z.boolean().nullable().optional(),
   }).passthrough(),
 });
 
