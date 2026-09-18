@@ -180,7 +180,7 @@ describe("Comparação entre regimes", () => {
   it("infere o anexo a partir da atividade", () => {
     expect(inferSimplesAnexo("varejo")).toBe("I");
     expect(inferSimplesAnexo("industria")).toBe("II");
-    expect(inferSimplesAnexo("advocacia")).toBe("V");
+    expect(inferSimplesAnexo("advocacia")).toBe("IV");
     expect(inferSimplesAnexo("saude")).toBe("III");
   });
 
