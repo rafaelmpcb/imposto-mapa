@@ -40,10 +40,37 @@ function AuthPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const signInEmail = async (event: React.FormEvent) => {
+  const submitEmail = async (event: React.FormEvent) => {
     event.preventDefault();
     setBusy(true);
     setError("");
+    setInfo("");
+
+    if (mode === "signup") {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      setBusy(false);
+      if (signUpError) {
+        const message = signUpError.message.toLowerCase();
+        if (message.includes("already")) setError("Esse e-mail já tem conta. Use a aba Entrar.");
+        else if (message.includes("password"))
+          setError("Senha muito curta ou insegura. Use ao menos 8 caracteres.");
+        else if (message.includes("email")) setError("E-mail inválido.");
+        else setError("Não foi possível criar a conta agora. Tente de novo.");
+        return;
+      }
+      if (!data.session) {
+        setInfo("Conta criada. Confirme pelo link enviado ao seu e-mail e depois entre.");
+        setMode("signin");
+        return;
+      }
+      void navigate({ to: "/meus-calculos", replace: true });
+      return;
+    }
+
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (authError) {
@@ -56,6 +83,7 @@ function AuthPage() {
   const signInGoogle = async () => {
     setBusy(true);
     setError("");
+    setInfo("");
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
     });
