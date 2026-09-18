@@ -1,53 +1,61 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { PARAMETERS, defaultParameterValues } from "@/lib/tax/parameters";
+import { getParameters } from "@/lib/tax-parameters.functions";
 
 export type TaxConfigMap = Record<string, number>;
-
-/** Leitura pública: os percentuais usados nas estimativas. */
-export const getTaxConfig = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.from("tax_config").select("key, value");
-  if (error) return {} as TaxConfigMap;
-  const out: TaxConfigMap = {};
-  for (const row of data ?? []) out[row.key as string] = Number(row.value);
-  return out;
-});
-
 export type TaxConfigMeta = Record<string, string>;
 
-/** Leitura pública: data da última alteração de cada alíquota salva. */
+/** Leitura pública: os percentuais e faixas vigentes usados nas estimativas. */
+export const getTaxConfig = createServerFn({ method: "GET" }).handler(async () => {
+  const snapshot = await getParameters();
+  return snapshot.values as TaxConfigMap;
+});
+
+/** Leitura pública: data da última alteração de cada parâmetro. */
 export const getTaxConfigMeta = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.from("tax_config").select("key, updated_at");
-  if (error) return {} as TaxConfigMeta;
+  const snapshot = await getParameters();
   const out: TaxConfigMeta = {};
-  for (const row of data ?? []) {
-    if (row.updated_at) out[row.key as string] = row.updated_at as string;
-  }
+  for (const [key, version] of Object.entries(snapshot.current)) out[key] = version.createdAt;
   return out;
 });
+
+async function insertVersions(
+  values: TaxConfigMap,
+  source: string,
+  userId: string | undefined,
+): Promise<void> {
+  const snapshot = await getParameters();
+  const rows = Object.entries(values)
+    .filter(([key, value]) => Number.isFinite(value) && snapshot.values[key] !== value)
+    .map(([key, value]) => ({
+      param_key: key,
+      value,
+      effective_from: new Date().toISOString().slice(0, 10),
+      source,
+      created_by: userId ?? null,
+    }));
+  if (!rows.length) return;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await supabaseAdmin.from("tax_parameters").insert(rows);
+  if (error) throw new Error(error.message);
+}
 
 export const saveTaxConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { values: TaxConfigMap }) => input)
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const rows = Object.entries(data.values)
-      .filter(([, v]) => Number.isFinite(v))
-      .map(([key, value]) => ({ key, value, updated_at: new Date().toISOString() }));
-    if (rows.length) {
-      const { error } = await supabaseAdmin.from("tax_config").upsert(rows, { onConflict: "key" });
-      if (error) throw new Error(error.message);
-    }
+  .handler(async ({ data, context }) => {
+    await insertVersions(data.values, "Ajuste manual no painel do escritório", context.userId);
     return { ok: true as const };
   });
 
 export const resetTaxConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("tax_config").delete().neq("key", "");
-    if (error) throw new Error(error.message);
+  .handler(async ({ context }) => {
+    const defaults = defaultParameterValues();
+    const only: TaxConfigMap = {};
+    for (const def of PARAMETERS) only[def.key] = defaults[def.key]!;
+    await insertVersions(only, "Restauração dos valores padrão (LC 214/2025)", context.userId);
     return { ok: true as const };
   });
