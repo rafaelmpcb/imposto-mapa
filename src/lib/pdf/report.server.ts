@@ -7,7 +7,10 @@ import {
   type SimulationInput,
   type TaxpayerType,
 } from "@/lib/tax/calc";
-import { LEGAL_REFERENCE_DATE, YEARS, type YearId } from "@/lib/tax/constants";
+import { LEGAL_REFERENCE_DATE, YEARS, getActivity, type YearId } from "@/lib/tax/constants";
+
+/** Atividades tipicamente exercidas por sociedades uniprofissionais (ISS fixo). */
+const UNIPROFISSIONAL_ACTIVITIES = ["advocacia", "contabilidade", "saude", "engenharia"];
 import type { CnpjData } from "@/lib/cnpj/types";
 import { buildIdentifiedProfile } from "@/lib/tax/identified-profile";
 
@@ -173,13 +176,21 @@ class Doc {
       width?: number;
       leading?: number;
       after?: number;
+      /** Impede que o parágrafo seja cortado por quebra de página (padrão: true). */
+      keepTogether?: boolean;
     } = {},
   ): void {
     const size = opts.size ?? 10;
     const font = opts.bold ? this.bold : this.regular;
     const width = opts.width ?? CONTENT_WIDTH;
     const leading = opts.leading ?? size * 1.42;
-    for (const line of this.wrap(content, font, size, width)) {
+    const allLines = this.wrap(content, font, size, width);
+    const blockHeight = allLines.length * leading;
+    // Um parágrafo nunca é cortado no meio: se não couber inteiro, vai para a próxima página.
+    if (opts.keepTogether !== false && blockHeight <= BODY_TOP - BODY_BOTTOM) {
+      this.ensure(blockHeight);
+    }
+    for (const line of allLines) {
       this.ensure(leading);
       this.y -= leading;
       this.page.drawText(line, {
@@ -440,8 +451,42 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
   const identifiedProfile = buildIdentifiedProfile(payload.cnpjData, input, year);
   if (identifiedProfile) {
     doc.heading("Perfil identificado");
-    doc.text(identifiedProfile, { size: 10 });
+    doc.text(identifiedProfile, { size: 10, keepTogether: true });
   }
+
+  /* 1b. Premissas utilizadas */
+  const activity = getActivity(input.activityId);
+  const pctText = (v: number) => `${(v || 0).toFixed(2).replace(".", ",")}%`;
+  const premissas: string[] = [`Atividade principal informada: ${activity.label}`];
+  if (input.taxpayerType === "pf") {
+    premissas.push(`Salário bruto mensal informado: ${money(input.salary)}`);
+    premissas.push(`Dependentes informados: ${input.dependents || 0}`);
+  } else {
+    premissas.push(`Faturamento bruto mensal informado: ${money(input.revenue)}`);
+    if (input.taxpayerType === "simples") {
+      premissas.push(`Anexo do Simples Nacional selecionado: Anexo ${input.simplesAnexo}`);
+    }
+    premissas.push(`Folha de pagamento mensal informada: ${money(input.payroll)}`);
+    premissas.push(`Compras/insumos do mês informados: ${money(input.purchases)}`);
+    premissas.push(
+      `Compras de fornecedores do Simples Nacional: ${pctText(input.simplesSupplierShare)} das compras`,
+    );
+    premissas.push(`Receita monofásica informada: ${pctText(input.monofasicoShare)} da receita`);
+    premissas.push(`Receita de clientes PJ informada: ${pctText(input.pjClientShare)} da receita`);
+    premissas.push(
+      `Margem de lucro estimada (usada no cenário de Lucro Real): ${pctText(input.profitMargin)}`,
+    );
+  }
+  doc.heading("Premissas utilizadas nesta simulação");
+  doc.bullets(premissas);
+  doc.gap(4);
+  doc.text(
+    input.taxpayerType === "pf"
+      ? "A “carga sobre a base” é calculada sobre a base = salário bruto mensal informado."
+      : "A “carga sobre a base” é calculada sobre a base = faturamento bruto mensal informado.",
+    { size: 9, color: MUTED, keepTogether: true },
+  );
+
 
   /* 2. Sistema atual x cenário pós-reforma */
   doc.heading(`Sistema atual x Cenário ${year} — comparativo tributo a tributo`);
@@ -612,6 +657,14 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
     "Planejamento societário, distribuição de lucros e tributação de dividendos",
     "Particularidades contratuais e reprecificação com clientes e fornecedores",
   ]);
+  if (UNIPROFISSIONAL_ACTIVITIES.includes(activity.id)) {
+    doc.gap(4);
+    doc.text(
+      "Para sociedades uniprofissionais (advocacia, contabilidade, medicina etc.), o regime de ISS fixo por profissional, quando aplicável no município, pode alterar significativamente a comparação com Lucro Presumido e Lucro Real mostrada acima — não verificado nesta simulação.",
+      { size: 9, color: MUTED, keepTogether: true },
+    );
+  }
+
 
   /* 7. Avisos legais */
   // Mantém o título com ao menos as primeiras linhas do primeiro aviso na mesma página.
@@ -633,10 +686,11 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
   );
 
   /* 8. Próximo passo */
+  doc.ensure(130);
   doc.heading("Próximo passo");
   doc.text(
     "Esse é o retrato estimado do impacto da reforma no seu negócio. O próximo passo é o diagnóstico completo — com base em documentos fiscais reais — que começa com a assinatura de um Memorando de Entendimento e Confidencialidade. Clique em \"Gerar Memorando\" para começar.",
-    { size: 10 },
+    { size: 10, keepTogether: true },
   );
 
   /* 9. Contato do escritório */
