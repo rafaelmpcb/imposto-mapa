@@ -306,7 +306,9 @@ export function ResultView({
   readOnly?: boolean;
 }) {
   const loadOfficeContact = useServerFn(getOfficeContact);
+  const loadParameters = useServerFn(getParameters);
   const [officeName, setOfficeName] = useState("");
+  const [ratesUpdatedAt, setRatesUpdatedAt] = useState<string | null>(null);
   const [ratesVersion, setRatesVersion] = useState(0);
   // ratesVersion entra como dependência porque as alíquotas editadas na tabela
   // são constantes de módulo, não parte de `input`.
@@ -339,8 +341,18 @@ export function ResultView({
     void loadOfficeContact()
       .then((contact) => setOfficeName(contact.nome))
       .catch(() => setOfficeName(emptyOfficeContact().nome));
+    void loadParameters()
+      .then((snapshot) => setRatesUpdatedAt(snapshot.lastUpdatedAt))
+      .catch(() => setRatesUpdatedAt(null));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const referenceLabel = ratesUpdatedAt
+    ? new Date(ratesUpdatedAt).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
+    : LEGAL_REFERENCE_DATE;
+  const ratesUpdatedLabel = ratesUpdatedAt
+    ? new Date(ratesUpdatedAt).toLocaleDateString("pt-BR")
+    : null;
 
   if (presentationMode) {
     const clientDisplayName = clientName.trim() || cnpjData?.nome_fantasia || cnpjData?.razao_social;
