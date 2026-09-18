@@ -173,13 +173,17 @@ class Doc {
       width?: number;
       leading?: number;
       after?: number;
+      /** Impede que o parágrafo seja cortado por quebra de página. */
+      keepTogether?: boolean;
     } = {},
   ): void {
     const size = opts.size ?? 10;
     const font = opts.bold ? this.bold : this.regular;
     const width = opts.width ?? CONTENT_WIDTH;
     const leading = opts.leading ?? size * 1.42;
-    for (const line of this.wrap(content, font, size, width)) {
+    const allLines = this.wrap(content, font, size, width);
+    if (opts.keepTogether) this.ensure(allLines.length * leading);
+    for (const line of allLines) {
       this.ensure(leading);
       this.y -= leading;
       this.page.drawText(line, {
