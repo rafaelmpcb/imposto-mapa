@@ -239,12 +239,29 @@ export const DEFAULT_PROFIT_MARGIN = 20;
 /** Anexo do Simples mais provável a partir da atividade informada. */
 export function inferSimplesAnexo(activityId: string): keyof typeof SIMPLES_TABLES {
   const activity = getActivity(activityId);
+  const typical = TYPICAL_SIMPLES_ANEXO[activity.id];
+  if (typical) return typical;
   if (activity.sector === "comercio") return "I";
   if (activity.sector === "industria") return "II";
-  return ["advocacia", "contabilidade", "engenharia", "tecnologia"].includes(activity.id)
-    ? "V"
-    : "III";
+  return "III";
 }
+
+/** A CPP patronal fica fora do DAS neste anexo? */
+export function cppOutsideDas(anexo: string): boolean {
+  return ANEXOS_CPP_FORA_DAS.includes(anexo);
+}
+
+/** Aviso quando o anexo escolhido diverge do enquadramento típico da atividade. */
+export function simplesAnexoWarning(
+  activityId: string,
+  anexo: string,
+): string | null {
+  const activity = getActivity(activityId);
+  const typical = TYPICAL_SIMPLES_ANEXO[activity.id];
+  if (!typical || typical === anexo) return null;
+  return `${activity.label} normalmente se enquadra no Anexo ${typical} — confirme se essa empresa realmente está no Anexo ${anexo}.`;
+}
+
 
 /** Compara a carga pós-reforma nos três regimes empresariais. */
 export function compareRegimes(
