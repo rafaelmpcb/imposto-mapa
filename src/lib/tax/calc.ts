@@ -454,9 +454,10 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
       );
     } else {
       notes.push(
-        "Comparação com a hipótese de saída do Simples e apuração regular de IBS/CBS. A empresa também pode permanecer no Simples.",
+        "Comparação com a hipótese de saída do Simples e apuração regular em 2033. O IBS/CBS substitui apenas os tributos sobre consumo (PIS, COFINS, ICMS e ISS): IRPJ, CSLL e CPP, hoje embutidos no DAS, continuam devidos e estão somados ao cenário pós-reforma (IRPJ/CSLL estimados pelas bases do Lucro Presumido). A empresa também pode permanecer no Simples.",
       );
     }
+
     return {
       base: input.revenue,
       current: scenario(
