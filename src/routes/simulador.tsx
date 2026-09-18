@@ -239,6 +239,14 @@ function Simulator() {
     setInput((prev) => ({ ...prev, [key]: value }));
 
   const showBenefitStep = useMemo(() => needsBenefitValidation(input), [input]);
+  const anexoMismatch = useMemo(
+    () =>
+      input.taxpayerType === "simples"
+        ? simplesAnexoWarning(input.activityId, input.simplesAnexo)
+        : null,
+    [input.taxpayerType, input.activityId, input.simplesAnexo],
+  );
+
   const steps = useMemo(
     () => [1, 2, ...(showBenefitStep ? [3] : []), 4, 5],
     [showBenefitStep],
