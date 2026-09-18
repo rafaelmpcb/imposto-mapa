@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LEGAL_REFERENCE_DATE, YEARS, type YearId } from "@/lib/tax/constants";
 import type { CnpjData } from "@/lib/cnpj/types";
 import { emptyOfficeContact, getOfficeContact } from "@/lib/office-config.functions";
+import { getParameters } from "@/lib/tax-parameters.functions";
 import { buildIdentifiedProfile } from "@/lib/tax/identified-profile";
 import {
   brl,
