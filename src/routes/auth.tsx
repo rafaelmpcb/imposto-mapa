@@ -102,12 +102,33 @@ function AuthPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           Área restrita do escritório
         </p>
-        <h1 className="mt-2 text-2xl">Entrar</h1>
+        <h1 className="mt-2 text-2xl">{mode === "signin" ? "Entrar" : "Criar conta"}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Acesso exclusivo da equipe. As contas são criadas pelo escritório.
+          Acesso da equipe do escritório. Entre com sua conta ou crie uma agora.
         </p>
 
-        <form className="mt-6 space-y-4" onSubmit={(e) => void signInEmail(e)}>
+        <div className="mt-5 grid grid-cols-2 gap-1 rounded-lg border border-border p-1">
+          {(["signin", "signup"] as const).map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => {
+                setMode(item);
+                setError("");
+                setInfo("");
+              }}
+              className={`rounded-md px-3 py-2 text-sm transition ${
+                mode === item
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {item === "signin" ? "Entrar" : "Criar conta"}
+            </button>
+          ))}
+        </div>
+
+        <form className="mt-6 space-y-4" onSubmit={(e) => void submitEmail(e)}>
           <Field label="E-mail">
             <TextInput
               type="email"
@@ -117,18 +138,25 @@ function AuthPage() {
               placeholder="voce@escritorio.com.br"
             />
           </Field>
-          <Field label="Senha">
+          <Field label={mode === "signin" ? "Senha" : "Crie uma senha (mín. 8 caracteres)"}>
             <TextInput
               type="password"
               value={password}
-              autoComplete="current-password"
+              autoComplete={mode === "signin" ? "current-password" : "new-password"}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Sua senha"
             />
           </Field>
           {error ? <Notice tone="warning">{error}</Notice> : null}
+          {info ? <Notice>{info}</Notice> : null}
           <Button type="submit" disabled={busy || !email.trim() || !password}>
-            {busy ? "Entrando..." : "Entrar"}
+            {busy
+              ? mode === "signin"
+                ? "Entrando..."
+                : "Criando conta..."
+              : mode === "signin"
+                ? "Entrar"
+                : "Criar conta"}
           </Button>
         </form>
 
