@@ -176,7 +176,7 @@ class Doc {
       width?: number;
       leading?: number;
       after?: number;
-      /** Impede que o parágrafo seja cortado por quebra de página. */
+      /** Impede que o parágrafo seja cortado por quebra de página (padrão: true). */
       keepTogether?: boolean;
     } = {},
   ): void {
