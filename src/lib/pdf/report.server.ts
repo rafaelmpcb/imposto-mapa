@@ -7,7 +7,10 @@ import {
   type SimulationInput,
   type TaxpayerType,
 } from "@/lib/tax/calc";
-import { LEGAL_REFERENCE_DATE, YEARS, type YearId } from "@/lib/tax/constants";
+import { LEGAL_REFERENCE_DATE, YEARS, getActivity, type YearId } from "@/lib/tax/constants";
+
+/** Atividades tipicamente exercidas por sociedades uniprofissionais (ISS fixo). */
+const UNIPROFISSIONAL_ACTIVITIES = ["advocacia", "contabilidade", "saude", "engenharia"];
 import type { CnpjData } from "@/lib/cnpj/types";
 import { buildIdentifiedProfile } from "@/lib/tax/identified-profile";
 
