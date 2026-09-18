@@ -424,8 +424,19 @@ function Simulator() {
               >
                 <Select
                   value={input.activityId}
-                  onChange={(e) => set("activityId", e.target.value)}
+                  onChange={(e) => {
+                    const activityId = e.target.value;
+                    setAnexoSuggested(true);
+                    setInput((prev) => ({
+                      ...prev,
+                      activityId,
+                      simplesAnexo: inferSimplesAnexo(
+                        activityId,
+                      ) as SimulationInput["simplesAnexo"],
+                    }));
+                  }}
                 >
+
                   {ACTIVITIES.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.label}
