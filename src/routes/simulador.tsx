@@ -15,10 +15,13 @@ import {
 } from "@/lib/tax/constants";
 import {
   defaultInput,
+  inferSimplesAnexo,
   needsBenefitValidation,
+  simplesAnexoWarning,
   type SimulationInput,
   type TaxpayerType,
 } from "@/lib/tax/calc";
+
 import { ResultView } from "@/components/simulator/ResultView";
 import { OfficeContactCta } from "@/components/contact/OfficeContactCta";
 import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
@@ -83,6 +86,8 @@ function Simulator() {
   const [cnpjError, setCnpjError] = useState("");
   const [manualName, setManualName] = useState(false);
   const [activitySuggested, setActivitySuggested] = useState(false);
+  const [anexoSuggested, setAnexoSuggested] = useState(false);
+
   const [memoOpen, setMemoOpen] = useState(false);
 
   const searchCnpj = async () => {
