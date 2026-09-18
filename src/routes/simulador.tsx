@@ -106,9 +106,14 @@ function Simulator() {
         ...defaultInput(),
         taxpayerType: prev.taxpayerType,
         activityId: res.data.atividade_sugerida,
+        simplesAnexo: inferSimplesAnexo(
+          res.data.atividade_sugerida,
+        ) as SimulationInput["simplesAnexo"],
         ...(res.data.uf && UFS.includes(res.data.uf) ? { uf: res.data.uf } : {}),
       }));
       setActivitySuggested(true);
+      setAnexoSuggested(true);
+
     } catch {
       setCnpjData(null);
       setCnpjError("Não foi possível consultar o CNPJ agora. Preencha o nome manualmente.");
