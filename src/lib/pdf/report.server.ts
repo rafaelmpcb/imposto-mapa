@@ -653,6 +653,14 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
     "Planejamento societário, distribuição de lucros e tributação de dividendos",
     "Particularidades contratuais e reprecificação com clientes e fornecedores",
   ]);
+  if (UNIPROFISSIONAL_ACTIVITIES.includes(activity.id)) {
+    doc.gap(4);
+    doc.text(
+      "Para sociedades uniprofissionais (advocacia, contabilidade, medicina etc.), o regime de ISS fixo por profissional, quando aplicável no município, pode alterar significativamente a comparação com Lucro Presumido e Lucro Real mostrada acima — não verificado nesta simulação.",
+      { size: 9, color: MUTED, keepTogether: true },
+    );
+  }
+
 
   /* 7. Avisos legais */
   // Mantém o título com ao menos as primeiras linhas do primeiro aviso na mesma página.
