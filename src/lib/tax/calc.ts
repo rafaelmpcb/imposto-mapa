@@ -416,19 +416,27 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
     const cppLine: TaxLine[] = cppFora
       ? [{ label: `CPP patronal via GPS (${pct(CPP_RATE)} da folha)`, value: cppValue }]
       : [];
+    // Em 2033 o IBS/CBS substitui apenas os tributos sobre consumo. IRPJ, CSLL e CPP,
+    // hoje embutidos no DAS, continuam existindo na apuração regular e entram na conta.
+    const simplesSupplierShare2033 = Math.min(100, Math.max(0, input.simplesSupplierShare || 0));
+    const purchases2033 = Math.min(Math.max(0, input.purchases), input.revenue);
+    const credits2033 = purchases2033 * (1 - simplesSupplierShare2033 / 100) * newRate;
+    const profitBase2033 = input.revenue * PRESUMIDO_IRPJ_BASE[activity.sector];
+    const csllBase2033 = input.revenue * PRESUMIDO_CSLL_BASE[activity.sector];
     const reformLines: TaxLine[] =
       year === 2033
         ? [
             {
               label: `IBS + CBS (${pct(newRate)})`,
-              value: input.revenue * taxableShare * newRate,
+              value: Math.max(0, input.revenue * taxableShare * newRate - credits2033),
             },
-            ...cppLine,
+            ...irpjCsll(input, profitBase2033, csllBase2033),
           ]
         : [
             { label: `Simples Nacional (${pct(simplesRate)})`, value: currentTax },
             ...cppLine,
           ];
+
     if (cppFora) {
       notes.push(
         `No Anexo ${input.simplesAnexo} a contribuição previdenciária patronal (CPP, ${pct(
@@ -446,9 +454,10 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
       );
     } else {
       notes.push(
-        "Comparação com a hipótese de saída do Simples e apuração regular de IBS/CBS. A empresa também pode permanecer no Simples.",
+        "Comparação com a hipótese de saída do Simples e apuração regular em 2033. O IBS/CBS substitui apenas os tributos sobre consumo (PIS, COFINS, ICMS e ISS): IRPJ, CSLL e CPP, hoje embutidos no DAS, continuam devidos e estão somados ao cenário pós-reforma (IRPJ/CSLL estimados pelas bases do Lucro Presumido). A empresa também pode permanecer no Simples.",
       );
     }
+
     return {
       base: input.revenue,
       current: scenario(

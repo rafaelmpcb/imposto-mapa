@@ -121,7 +121,13 @@ function RegimeComparison({
   year: YearId;
   presentationMode: boolean;
 }) {
-  const items = compareRegimes(input, year);
+  const yearOptions: YearId[] = year === 2033 ? [2033] : [year, 2033];
+  const [comparisonYear, setComparisonYear] = useState<YearId>(year);
+  useEffect(() => {
+    setComparisonYear(year);
+  }, [year]);
+  const activeYear = yearOptions.includes(comparisonYear) ? comparisonYear : year;
+  const items = compareRegimes(input, activeYear);
   const advisory = pjClientAdvisory(input, items);
   const currentItem = items.find((i) => i.isCurrent);
   const [openRegime, setOpenRegime] = useState<string | null>(null);
@@ -144,9 +150,33 @@ function RegimeComparison({
         Comparação entre regimes
       </h3>
       <p className="mt-1 text-sm text-muted-foreground">
-        Carga tributária mensal estimada em {year}, após a reforma, nos três regimes. Clique em um
-        regime alternativo para ver a comparação detalhada com o seu regime atual.
+        Carga tributária mensal estimada nos três regimes. Escolha o ano do cenário — 2033 é o
+        regime pleno da reforma, quando a mudança de fato acontece. Clique em um regime alternativo
+        para ver a comparação detalhada com o seu regime atual.
       </p>
+      {yearOptions.length > 1 ? (
+        <div className="mt-4 inline-flex rounded-lg border border-border bg-secondary p-1">
+          {yearOptions.map((y) => (
+            <button
+              key={y}
+              type="button"
+              onClick={() => {
+                setComparisonYear(y);
+                setOpenRegime(null);
+              }}
+              aria-pressed={activeYear === y}
+              className={`rounded-md px-3 py-1.5 text-sm font-semibold transition-colors ${
+                activeYear === y
+                  ? "bg-card text-navy shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Cenário {y}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       <div className="mt-4 grid gap-4 md:grid-cols-3">
         {items.map((item) => {
           const expandable = !item.isCurrent && !!currentItem;
@@ -172,9 +202,10 @@ function RegimeComparison({
               </p>
               {item.isBest ? (
                 <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-success">
-                  Mais vantajoso após a reforma
+                  Mais vantajoso em {activeYear}
                 </p>
               ) : null}
+
               {item.estimateNote ? (
                 <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
                   {item.estimateNote}
@@ -214,7 +245,8 @@ function RegimeComparison({
                 key={item.regime}
                 currentItem={currentItem}
                 item={item}
-                year={year}
+                year={activeYear}
+
                 presentationMode={presentationMode}
               />
             ))

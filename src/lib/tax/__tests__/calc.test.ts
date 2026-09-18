@@ -150,6 +150,17 @@ describe("Simples Nacional", () => {
     expect(r.reform.lines[0]?.label).toContain("IBS + CBS");
   });
 
+  it("mantém IRPJ, CSLL e CPP no cenário de 2033", () => {
+    const r = simulate(company({ taxpayerType: "simples", payroll: 20000 }), 2033);
+    const labels = r.reform.lines.map((l) => l.label).join(" | ");
+    expect(labels).toContain("IRPJ");
+    expect(labels).toContain("CSLL");
+    expect(labels).toContain("CPP");
+    const ibsCbs = r.reform.lines.find((l) => l.label.includes("IBS + CBS"))!.value;
+    expect(r.reform.total).toBeGreaterThan(ibsCbs);
+  });
+
+
   it("anexo V é mais caro que o anexo I no mesmo faturamento", () => {
     const i = simulate(company({ taxpayerType: "simples", simplesAnexo: "I" }), 2026).current.total;
     const v = simulate(company({ taxpayerType: "simples", simplesAnexo: "V" }), 2026).current.total;
