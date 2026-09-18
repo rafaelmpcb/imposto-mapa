@@ -433,6 +433,9 @@ function MyCalculations() {
               <Link to="/config-aliquotas" className="text-sm font-semibold text-navy underline">
                 Configuração de alíquotas
               </Link>
+              <Link to="/parametros" className="text-sm font-semibold text-navy underline">
+                Parâmetros e base legal
+              </Link>
             </div>
           </section>
         )}

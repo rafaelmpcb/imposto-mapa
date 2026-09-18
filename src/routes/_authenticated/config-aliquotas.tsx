@@ -264,9 +264,14 @@ function TaxConfigPage() {
           </div>
         </section>
 
-        <Link to="/meus-calculos" className="inline-block text-sm font-semibold text-navy underline">
-          Voltar para Meus Cálculos
-        </Link>
+        <div className="flex flex-wrap gap-4">
+          <Link to="/meus-calculos" className="text-sm font-semibold text-navy underline">
+            Voltar para Meus Cálculos
+          </Link>
+          <Link to="/parametros" className="text-sm font-semibold text-navy underline">
+            Parâmetros, vigência e base legal
+          </Link>
+        </div>
       </div>
     </main>
   );
