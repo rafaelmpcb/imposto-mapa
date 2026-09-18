@@ -411,6 +411,11 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
   if (input.taxpayerType === "simples") {
     const simplesRate = simplesEffectiveRate(input.simplesAnexo, input.revenue);
     const currentTax = input.revenue * simplesRate;
+    const cppFora = cppOutsideDas(input.simplesAnexo);
+    const cppValue = cppFora ? Math.max(0, input.payroll) * CPP_RATE : 0;
+    const cppLine: TaxLine[] = cppFora
+      ? [{ label: `CPP patronal via GPS (${pct(CPP_RATE)} da folha)`, value: cppValue }]
+      : [];
     const reformLines: TaxLine[] =
       year === 2033
         ? [
@@ -418,8 +423,23 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
               label: `IBS + CBS (${pct(newRate)})`,
               value: input.revenue * taxableShare * newRate,
             },
+            ...cppLine,
           ]
-        : [{ label: `Simples Nacional (${pct(simplesRate)})`, value: currentTax }];
+        : [
+            { label: `Simples Nacional (${pct(simplesRate)})`, value: currentTax },
+            ...cppLine,
+          ];
+    if (cppFora) {
+      notes.push(
+        `No Anexo ${input.simplesAnexo} a contribuição previdenciária patronal (CPP, ${pct(
+          CPP_RATE,
+        )} sobre a folha) NÃO está incluída no DAS: ela é recolhida à parte, em GPS. Diferente do Anexo III, em que a CPP já vem embutida na guia única.${
+          input.payroll > 0
+            ? ""
+            : " Informe a folha de pagamento mensal para estimar esse valor."
+        }`,
+      );
+    }
     if (year !== 2033) {
       notes.push(
         "Até 2032 o Simples Nacional permanece como está. A comparação com o regime regular de IBS/CBS aparece no cenário de 2033.",
@@ -432,7 +452,13 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
     return {
       base: input.revenue,
       current: scenario(
-        [{ label: `Simples — Anexo ${input.simplesAnexo} (${pct(simplesRate)})`, value: currentTax }],
+        [
+          {
+            label: `DAS — Simples Anexo ${input.simplesAnexo} (${pct(simplesRate)})`,
+            value: currentTax,
+          },
+          ...cppLine,
+        ],
         input.revenue,
       ),
       reform: scenario(reformLines, input.revenue),
@@ -442,6 +468,7 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
       notes,
     };
   }
+
 
   /* ---------- Lucro Presumido / Real ---------- */
   const isReal = input.taxpayerType === "real";
