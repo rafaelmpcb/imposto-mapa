@@ -245,7 +245,8 @@ function RegimeComparison({
                 key={item.regime}
                 currentItem={currentItem}
                 item={item}
-                year={year}
+                year={activeYear}
+
                 presentationMode={presentationMode}
               />
             ))
