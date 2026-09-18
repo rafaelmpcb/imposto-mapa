@@ -126,6 +126,28 @@ export const ACTIVITIES: Activity[] = [
 export const getActivity = (id: string): Activity =>
   ACTIVITIES.find((a) => a.id === id) ?? ACTIVITIES[ACTIVITIES.length - 1]!;
 
+/**
+ * Enquadramento típico no Simples Nacional por atividade (LC 123/2006, art. 18).
+ * É apenas uma sugestão: o usuário pode ajustar (há exceções, como o Fator R).
+ */
+export const TYPICAL_SIMPLES_ANEXO: Record<string, string> = {
+  advocacia: "IV", // art. 18, §5º-C, V — CPP fora do DAS
+  engenharia: "IV", // art. 18, §5º-C, II (serviços de engenharia)
+  contabilidade: "III",
+  saude: "III",
+  educacao: "III",
+  cultura: "III",
+  tecnologia: "V",
+  varejo: "I",
+  agro: "I",
+  industria: "II",
+  servicos_gerais: "III",
+};
+
+/** Anexos em que a CPP patronal fica FORA do DAS (recolhida por GPS). */
+export const ANEXOS_CPP_FORA_DAS = ["IV"];
+
+
 /** Alíquota interna padrão de ICMS por UF (%). */
 export const ICMS_BY_UF: Record<string, number> = {
   AC: 19.0, AL: 21.5, AP: 18.0, AM: 20.0, BA: 20.5, CE: 20.0, DF: 20.0,

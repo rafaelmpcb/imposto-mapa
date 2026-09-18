@@ -1,6 +1,9 @@
 import {
   ACTIVITIES,
+  ANEXOS_CPP_FORA_DAS,
+  TYPICAL_SIMPLES_ANEXO,
   CBS_SHARE,
+
   CBS_TEST_RATE,
   COFINS_CUMULATIVO,
   COFINS_NAO_CUMULATIVO,
@@ -239,12 +242,29 @@ export const DEFAULT_PROFIT_MARGIN = 20;
 /** Anexo do Simples mais provável a partir da atividade informada. */
 export function inferSimplesAnexo(activityId: string): keyof typeof SIMPLES_TABLES {
   const activity = getActivity(activityId);
+  const typical = TYPICAL_SIMPLES_ANEXO[activity.id];
+  if (typical) return typical;
   if (activity.sector === "comercio") return "I";
   if (activity.sector === "industria") return "II";
-  return ["advocacia", "contabilidade", "engenharia", "tecnologia"].includes(activity.id)
-    ? "V"
-    : "III";
+  return "III";
 }
+
+/** A CPP patronal fica fora do DAS neste anexo? */
+export function cppOutsideDas(anexo: string): boolean {
+  return ANEXOS_CPP_FORA_DAS.includes(anexo);
+}
+
+/** Aviso quando o anexo escolhido diverge do enquadramento típico da atividade. */
+export function simplesAnexoWarning(
+  activityId: string,
+  anexo: string,
+): string | null {
+  const activity = getActivity(activityId);
+  const typical = TYPICAL_SIMPLES_ANEXO[activity.id];
+  if (!typical || typical === anexo) return null;
+  return `${activity.label} normalmente se enquadra no Anexo ${typical} — confirme se essa empresa realmente está no Anexo ${anexo}.`;
+}
+
 
 /** Compara a carga pós-reforma nos três regimes empresariais. */
 export function compareRegimes(
@@ -391,6 +411,11 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
   if (input.taxpayerType === "simples") {
     const simplesRate = simplesEffectiveRate(input.simplesAnexo, input.revenue);
     const currentTax = input.revenue * simplesRate;
+    const cppFora = cppOutsideDas(input.simplesAnexo);
+    const cppValue = cppFora ? Math.max(0, input.payroll) * CPP_RATE : 0;
+    const cppLine: TaxLine[] = cppFora
+      ? [{ label: `CPP patronal via GPS (${pct(CPP_RATE)} da folha)`, value: cppValue }]
+      : [];
     const reformLines: TaxLine[] =
       year === 2033
         ? [
@@ -398,8 +423,23 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
               label: `IBS + CBS (${pct(newRate)})`,
               value: input.revenue * taxableShare * newRate,
             },
+            ...cppLine,
           ]
-        : [{ label: `Simples Nacional (${pct(simplesRate)})`, value: currentTax }];
+        : [
+            { label: `Simples Nacional (${pct(simplesRate)})`, value: currentTax },
+            ...cppLine,
+          ];
+    if (cppFora) {
+      notes.push(
+        `No Anexo ${input.simplesAnexo} a contribuição previdenciária patronal (CPP, ${pct(
+          CPP_RATE,
+        )} sobre a folha) NÃO está incluída no DAS: ela é recolhida à parte, em GPS. Diferente do Anexo III, em que a CPP já vem embutida na guia única.${
+          input.payroll > 0
+            ? ""
+            : " Informe a folha de pagamento mensal para estimar esse valor."
+        }`,
+      );
+    }
     if (year !== 2033) {
       notes.push(
         "Até 2032 o Simples Nacional permanece como está. A comparação com o regime regular de IBS/CBS aparece no cenário de 2033.",
@@ -412,7 +452,13 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
     return {
       base: input.revenue,
       current: scenario(
-        [{ label: `Simples — Anexo ${input.simplesAnexo} (${pct(simplesRate)})`, value: currentTax }],
+        [
+          {
+            label: `DAS — Simples Anexo ${input.simplesAnexo} (${pct(simplesRate)})`,
+            value: currentTax,
+          },
+          ...cppLine,
+        ],
         input.revenue,
       ),
       reform: scenario(reformLines, input.revenue),
@@ -422,6 +468,7 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
       notes,
     };
   }
+
 
   /* ---------- Lucro Presumido / Real ---------- */
   const isReal = input.taxpayerType === "real";

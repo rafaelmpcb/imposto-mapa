@@ -15,10 +15,13 @@ import {
 } from "@/lib/tax/constants";
 import {
   defaultInput,
+  inferSimplesAnexo,
   needsBenefitValidation,
+  simplesAnexoWarning,
   type SimulationInput,
   type TaxpayerType,
 } from "@/lib/tax/calc";
+
 import { ResultView } from "@/components/simulator/ResultView";
 import { OfficeContactCta } from "@/components/contact/OfficeContactCta";
 import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
@@ -83,6 +86,8 @@ function Simulator() {
   const [cnpjError, setCnpjError] = useState("");
   const [manualName, setManualName] = useState(false);
   const [activitySuggested, setActivitySuggested] = useState(false);
+  const [anexoSuggested, setAnexoSuggested] = useState(false);
+
   const [memoOpen, setMemoOpen] = useState(false);
 
   const searchCnpj = async () => {
@@ -106,9 +111,14 @@ function Simulator() {
         ...defaultInput(),
         taxpayerType: prev.taxpayerType,
         activityId: res.data.atividade_sugerida,
+        simplesAnexo: inferSimplesAnexo(
+          res.data.atividade_sugerida,
+        ) as SimulationInput["simplesAnexo"],
         ...(res.data.uf && UFS.includes(res.data.uf) ? { uf: res.data.uf } : {}),
       }));
       setActivitySuggested(true);
+      setAnexoSuggested(true);
+
     } catch {
       setCnpjData(null);
       setCnpjError("Não foi possível consultar o CNPJ agora. Preencha o nome manualmente.");
@@ -229,6 +239,14 @@ function Simulator() {
     setInput((prev) => ({ ...prev, [key]: value }));
 
   const showBenefitStep = useMemo(() => needsBenefitValidation(input), [input]);
+  const anexoMismatch = useMemo(
+    () =>
+      input.taxpayerType === "simples"
+        ? simplesAnexoWarning(input.activityId, input.simplesAnexo)
+        : null,
+    [input.taxpayerType, input.activityId, input.simplesAnexo],
+  );
+
   const steps = useMemo(
     () => [1, 2, ...(showBenefitStep ? [3] : []), 4, 5],
     [showBenefitStep],
@@ -414,8 +432,19 @@ function Simulator() {
               >
                 <Select
                   value={input.activityId}
-                  onChange={(e) => set("activityId", e.target.value)}
+                  onChange={(e) => {
+                    const activityId = e.target.value;
+                    setAnexoSuggested(true);
+                    setInput((prev) => ({
+                      ...prev,
+                      activityId,
+                      simplesAnexo: inferSimplesAnexo(
+                        activityId,
+                      ) as SimulationInput["simplesAnexo"],
+                    }));
+                  }}
                 >
+
                   {ACTIVITIES.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.label}
@@ -456,12 +485,18 @@ function Simulator() {
                   <Field label="Faturamento bruto mensal">
                     <MoneyInput value={input.revenue} onChange={(v) => set("revenue", v)} />
                   </Field>
-                  <Field label="Anexo do Simples Nacional">
+                  <Field
+                    label="Anexo do Simples Nacional"
+                    {...(anexoSuggested
+                      ? { hint: "Sugerido a partir da atividade — confirme ou ajuste." }
+                      : {})}
+                  >
                     <Select
                       value={input.simplesAnexo}
-                      onChange={(e) =>
-                        set("simplesAnexo", e.target.value as SimulationInput["simplesAnexo"])
-                      }
+                      onChange={(e) => {
+                        setAnexoSuggested(false);
+                        set("simplesAnexo", e.target.value as SimulationInput["simplesAnexo"]);
+                      }}
                     >
                       <option value="I">Anexo I — Comércio</option>
                       <option value="II">Anexo II — Indústria</option>
@@ -470,8 +505,25 @@ function Simulator() {
                       <option value="V">Anexo V — Serviços</option>
                     </Select>
                   </Field>
+                  {anexoMismatch && (
+                    <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-foreground">
+                      {anexoMismatch}
+                    </p>
+                  )}
+                  {input.simplesAnexo === "IV" && (
+                    <Field
+                      label="Folha de pagamento mensal"
+                      hint="No Anexo IV a contribuição previdenciária patronal (20% sobre a folha) fica fora do DAS e é paga em GPS. Informe a folha para estimar esse custo."
+                    >
+                      <MoneyInput
+                        value={input.payroll}
+                        onChange={(v) => set("payroll", v)}
+                      />
+                    </Field>
+                  )}
                 </>
               )}
+
 
               {(input.taxpayerType === "presumido" || input.taxpayerType === "real") && (
                 <>
