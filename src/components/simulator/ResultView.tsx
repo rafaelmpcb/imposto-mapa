@@ -660,9 +660,14 @@ export function ResultView({
 
           <Notice>
             Esta é uma estimativa baseada nos dados informados e na legislação vigente da Reforma
-            Tributária (LC 214/2025) em {LEGAL_REFERENCE_DATE}. Não substitui uma análise fiscal
-            completa nem constitui aconselhamento jurídico ou tributário.
+            Tributária (LC 214/2025) em {referenceLabel}. Não substitui uma análise fiscal completa
+            nem constitui aconselhamento jurídico ou tributário.
           </Notice>
+          {ratesUpdatedLabel ? (
+            <p className="text-center text-xs text-muted-foreground">
+              Alíquotas atualizadas em {ratesUpdatedLabel}.
+            </p>
+          ) : null}
         </>
       ) : null}
     </div>
