@@ -235,6 +235,25 @@ export const SIMPLES_TABLES: Record<string, SimplesBracket[]> = {
   ],
 };
 
+/** Cópia imutável dos valores originais das faixas do Simples (usada como padrão). */
+export const SIMPLES_DEFAULTS: Record<string, SimplesBracket[]> = JSON.parse(
+  JSON.stringify(SIMPLES_TABLES),
+);
+
+export const SIMPLES_ANEXOS = ["I", "II", "III", "IV", "V"] as const;
+
+/** Sobrescreve um campo de uma faixa do Simples com o valor vigente cadastrado. */
+export function setSimplesBracket(
+  anexo: string,
+  index: number,
+  field: keyof SimplesBracket,
+  value: number,
+): void {
+  const bracket = SIMPLES_TABLES[anexo]?.[index];
+  if (!bracket || !Number.isFinite(value)) return;
+  bracket[field] = value;
+}
+
 /* ---------------- Lucro Presumido / Real ---------------- */
 
 export let PIS_CUMULATIVO = 0.0065;

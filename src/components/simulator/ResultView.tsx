@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LEGAL_REFERENCE_DATE, YEARS, type YearId } from "@/lib/tax/constants";
 import type { CnpjData } from "@/lib/cnpj/types";
 import { emptyOfficeContact, getOfficeContact } from "@/lib/office-config.functions";
+import { getParameters } from "@/lib/tax-parameters.functions";
 import { buildIdentifiedProfile } from "@/lib/tax/identified-profile";
 import {
   brl,
@@ -306,7 +307,9 @@ export function ResultView({
   readOnly?: boolean;
 }) {
   const loadOfficeContact = useServerFn(getOfficeContact);
+  const loadParameters = useServerFn(getParameters);
   const [officeName, setOfficeName] = useState("");
+  const [ratesUpdatedAt, setRatesUpdatedAt] = useState<string | null>(null);
   const [ratesVersion, setRatesVersion] = useState(0);
   // ratesVersion entra como dependência porque as alíquotas editadas na tabela
   // são constantes de módulo, não parte de `input`.
@@ -339,8 +342,18 @@ export function ResultView({
     void loadOfficeContact()
       .then((contact) => setOfficeName(contact.nome))
       .catch(() => setOfficeName(emptyOfficeContact().nome));
+    void loadParameters()
+      .then((snapshot) => setRatesUpdatedAt(snapshot.lastUpdatedAt))
+      .catch(() => setRatesUpdatedAt(null));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const referenceLabel = ratesUpdatedAt
+    ? new Date(ratesUpdatedAt).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
+    : LEGAL_REFERENCE_DATE;
+  const ratesUpdatedLabel = ratesUpdatedAt
+    ? new Date(ratesUpdatedAt).toLocaleDateString("pt-BR")
+    : null;
 
   if (presentationMode) {
     const clientDisplayName = clientName.trim() || cnpjData?.nome_fantasia || cnpjData?.razao_social;
@@ -647,9 +660,14 @@ export function ResultView({
 
           <Notice>
             Esta é uma estimativa baseada nos dados informados e na legislação vigente da Reforma
-            Tributária (LC 214/2025) em {LEGAL_REFERENCE_DATE}. Não substitui uma análise fiscal
-            completa nem constitui aconselhamento jurídico ou tributário.
+            Tributária (LC 214/2025) em {referenceLabel}. Não substitui uma análise fiscal completa
+            nem constitui aconselhamento jurídico ou tributário.
           </Notice>
+          {ratesUpdatedLabel ? (
+            <p className="text-center text-xs text-muted-foreground">
+              Alíquotas atualizadas em {ratesUpdatedLabel}.
+            </p>
+          ) : null}
         </>
       ) : null}
     </div>

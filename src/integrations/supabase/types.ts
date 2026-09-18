@@ -113,6 +113,39 @@ export type Database = {
         }
         Relationships: []
       }
+      tax_parameters: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          effective_from: string
+          id: string
+          note: string | null
+          param_key: string
+          source: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          effective_from?: string
+          id?: string
+          note?: string | null
+          param_key: string
+          source?: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          effective_from?: string
+          id?: string
+          note?: string | null
+          param_key?: string
+          source?: string
+          value?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -11,7 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { getTaxConfig } from "../lib/tax-config.functions";
-import { applyTaxOverrides } from "../lib/tax/constants";
+import { applyParameters } from "../lib/tax/parameters";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
@@ -77,7 +77,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   loader: async () => {
     const overrides = await getTaxConfig();
-    applyTaxOverrides(overrides);
+    applyParameters(overrides);
     return { overrides };
   },
   head: () => ({
@@ -139,7 +139,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const { overrides } = Route.useLoaderData();
 
-  applyTaxOverrides(overrides);
+  applyParameters(overrides);
 
   return (
     <QueryClientProvider client={queryClient}>

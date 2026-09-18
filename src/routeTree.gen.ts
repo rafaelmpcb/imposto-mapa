@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as SimuladorRouteImport } from './routes/simulador'
 import { Route as AuthenticatedConfigAliquotasRouteImport } from './routes/_authenticated/config-aliquotas'
 import { Route as AuthenticatedMeusCalculosRouteImport } from './routes/_authenticated/meus-calculos'
+import { Route as AuthenticatedParametrosRouteImport } from './routes/_authenticated/parametros'
 import { Route as STokenRouteImport } from './routes/s.$token'
 import { Route as ApiPublicRelatorioPdfRouteImport } from './routes/api/public/relatorio-pdf'
 
@@ -49,6 +50,11 @@ const AuthenticatedMeusCalculosRoute =
     path: '/meus-calculos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedParametrosRoute = AuthenticatedParametrosRouteImport.update({
+  id: '/parametros',
+  path: '/parametros',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const STokenRoute = STokenRouteImport.update({
   id: '/s/$token',
   path: '/s/$token',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/simulador': typeof SimuladorRoute
   '/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
   '/meus-calculos': typeof AuthenticatedMeusCalculosRoute
+  '/parametros': typeof AuthenticatedParametrosRoute
   '/s/$token': typeof STokenRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
 }
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/simulador': typeof SimuladorRoute
   '/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
   '/meus-calculos': typeof AuthenticatedMeusCalculosRoute
+  '/parametros': typeof AuthenticatedParametrosRoute
   '/s/$token': typeof STokenRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
 }
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/simulador': typeof SimuladorRoute
   '/_authenticated/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
   '/_authenticated/meus-calculos': typeof AuthenticatedMeusCalculosRoute
+  '/_authenticated/parametros': typeof AuthenticatedParametrosRoute
   '/s/$token': typeof STokenRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
 }
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/simulador'
     | '/config-aliquotas'
     | '/meus-calculos'
+    | '/parametros'
     | '/s/$token'
     | '/api/public/relatorio-pdf'
   fileRoutesByTo: FileRoutesByTo
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/simulador'
     | '/config-aliquotas'
     | '/meus-calculos'
+    | '/parametros'
     | '/s/$token'
     | '/api/public/relatorio-pdf'
   id:
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/simulador'
     | '/_authenticated/config-aliquotas'
     | '/_authenticated/meus-calculos'
+    | '/_authenticated/parametros'
     | '/s/$token'
     | '/api/public/relatorio-pdf'
   fileRoutesById: FileRoutesById
@@ -173,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMeusCalculosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/parametros': {
+      id: '/_authenticated/parametros'
+      path: '/parametros'
+      fullPath: '/parametros'
+      preLoaderRoute: typeof AuthenticatedParametrosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/s/$token': {
       id: '/s/$token'
       path: '/s/$token'
@@ -193,11 +212,13 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedConfigAliquotasRoute: typeof AuthenticatedConfigAliquotasRoute
   AuthenticatedMeusCalculosRoute: typeof AuthenticatedMeusCalculosRoute
+  AuthenticatedParametrosRoute: typeof AuthenticatedParametrosRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedConfigAliquotasRoute: AuthenticatedConfigAliquotasRoute,
   AuthenticatedMeusCalculosRoute: AuthenticatedMeusCalculosRoute,
+  AuthenticatedParametrosRoute: AuthenticatedParametrosRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
