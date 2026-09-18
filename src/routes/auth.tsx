@@ -26,9 +26,11 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -38,10 +40,37 @@ function AuthPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const signInEmail = async (event: React.FormEvent) => {
+  const submitEmail = async (event: React.FormEvent) => {
     event.preventDefault();
     setBusy(true);
     setError("");
+    setInfo("");
+
+    if (mode === "signup") {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      setBusy(false);
+      if (signUpError) {
+        const message = signUpError.message.toLowerCase();
+        if (message.includes("already")) setError("Esse e-mail já tem conta. Use a aba Entrar.");
+        else if (message.includes("password"))
+          setError("Senha muito curta ou insegura. Use ao menos 8 caracteres.");
+        else if (message.includes("email")) setError("E-mail inválido.");
+        else setError("Não foi possível criar a conta agora. Tente de novo.");
+        return;
+      }
+      if (!data.session) {
+        setInfo("Conta criada. Confirme pelo link enviado ao seu e-mail e depois entre.");
+        setMode("signin");
+        return;
+      }
+      void navigate({ to: "/meus-calculos", replace: true });
+      return;
+    }
+
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (authError) {
@@ -54,6 +83,7 @@ function AuthPage() {
   const signInGoogle = async () => {
     setBusy(true);
     setError("");
+    setInfo("");
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
     });
@@ -72,12 +102,33 @@ function AuthPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           Área restrita do escritório
         </p>
-        <h1 className="mt-2 text-2xl">Entrar</h1>
+        <h1 className="mt-2 text-2xl">{mode === "signin" ? "Entrar" : "Criar conta"}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Acesso exclusivo da equipe. As contas são criadas pelo escritório.
+          Acesso da equipe do escritório. Entre com sua conta ou crie uma agora.
         </p>
 
-        <form className="mt-6 space-y-4" onSubmit={(e) => void signInEmail(e)}>
+        <div className="mt-5 grid grid-cols-2 gap-1 rounded-lg border border-border p-1">
+          {(["signin", "signup"] as const).map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => {
+                setMode(item);
+                setError("");
+                setInfo("");
+              }}
+              className={`rounded-md px-3 py-2 text-sm transition ${
+                mode === item
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {item === "signin" ? "Entrar" : "Criar conta"}
+            </button>
+          ))}
+        </div>
+
+        <form className="mt-6 space-y-4" onSubmit={(e) => void submitEmail(e)}>
           <Field label="E-mail">
             <TextInput
               type="email"
@@ -87,18 +138,25 @@ function AuthPage() {
               placeholder="voce@escritorio.com.br"
             />
           </Field>
-          <Field label="Senha">
+          <Field label={mode === "signin" ? "Senha" : "Crie uma senha (mín. 8 caracteres)"}>
             <TextInput
               type="password"
               value={password}
-              autoComplete="current-password"
+              autoComplete={mode === "signin" ? "current-password" : "new-password"}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Sua senha"
             />
           </Field>
           {error ? <Notice tone="warning">{error}</Notice> : null}
+          {info ? <Notice>{info}</Notice> : null}
           <Button type="submit" disabled={busy || !email.trim() || !password}>
-            {busy ? "Entrando..." : "Entrar"}
+            {busy
+              ? mode === "signin"
+                ? "Entrando..."
+                : "Criando conta..."
+              : mode === "signin"
+                ? "Entrar"
+                : "Criar conta"}
           </Button>
         </form>
 
