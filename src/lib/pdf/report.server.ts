@@ -185,7 +185,11 @@ class Doc {
     const width = opts.width ?? CONTENT_WIDTH;
     const leading = opts.leading ?? size * 1.42;
     const allLines = this.wrap(content, font, size, width);
-    if (opts.keepTogether) this.ensure(allLines.length * leading);
+    const blockHeight = allLines.length * leading;
+    // Um parágrafo nunca é cortado no meio: se não couber inteiro, vai para a próxima página.
+    if (opts.keepTogether !== false && blockHeight <= BODY_TOP - BODY_BOTTOM) {
+      this.ensure(blockHeight);
+    }
     for (const line of allLines) {
       this.ensure(leading);
       this.y -= leading;
