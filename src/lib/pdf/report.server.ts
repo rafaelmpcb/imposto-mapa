@@ -682,10 +682,11 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
   );
 
   /* 8. Próximo passo */
+  doc.ensure(130);
   doc.heading("Próximo passo");
   doc.text(
     "Esse é o retrato estimado do impacto da reforma no seu negócio. O próximo passo é o diagnóstico completo — com base em documentos fiscais reais — que começa com a assinatura de um Memorando de Entendimento e Confidencialidade. Clique em \"Gerar Memorando\" para começar.",
-    { size: 10 },
+    { size: 10, keepTogether: true },
   );
 
   /* 9. Contato do escritório */
