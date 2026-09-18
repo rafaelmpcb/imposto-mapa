@@ -202,9 +202,10 @@ function RegimeComparison({
               </p>
               {item.isBest ? (
                 <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-success">
-                  Mais vantajoso após a reforma
+                  Mais vantajoso em {activeYear}
                 </p>
               ) : null}
+
               {item.estimateNote ? (
                 <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
                   {item.estimateNote}
