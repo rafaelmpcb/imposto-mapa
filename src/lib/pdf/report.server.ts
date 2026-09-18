@@ -447,8 +447,42 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
   const identifiedProfile = buildIdentifiedProfile(payload.cnpjData, input, year);
   if (identifiedProfile) {
     doc.heading("Perfil identificado");
-    doc.text(identifiedProfile, { size: 10 });
+    doc.text(identifiedProfile, { size: 10, keepTogether: true });
   }
+
+  /* 1b. Premissas utilizadas */
+  const activity = getActivity(input.activityId);
+  const pctText = (v: number) => `${(v || 0).toFixed(2).replace(".", ",")}%`;
+  const premissas: string[] = [`Atividade principal informada: ${activity.label}`];
+  if (input.taxpayerType === "pf") {
+    premissas.push(`Salário bruto mensal informado: ${money(input.salary)}`);
+    premissas.push(`Dependentes informados: ${input.dependents || 0}`);
+  } else {
+    premissas.push(`Faturamento bruto mensal informado: ${money(input.revenue)}`);
+    if (input.taxpayerType === "simples") {
+      premissas.push(`Anexo do Simples Nacional selecionado: Anexo ${input.simplesAnexo}`);
+    }
+    premissas.push(`Folha de pagamento mensal informada: ${money(input.payroll)}`);
+    premissas.push(`Compras/insumos do mês informados: ${money(input.purchases)}`);
+    premissas.push(
+      `Compras de fornecedores do Simples Nacional: ${pctText(input.simplesSupplierShare)} das compras`,
+    );
+    premissas.push(`Receita monofásica informada: ${pctText(input.monofasicoShare)} da receita`);
+    premissas.push(`Receita de clientes PJ informada: ${pctText(input.pjClientShare)} da receita`);
+    premissas.push(
+      `Margem de lucro estimada (usada no cenário de Lucro Real): ${pctText(input.profitMargin)}`,
+    );
+  }
+  doc.heading("Premissas utilizadas nesta simulação");
+  doc.bullets(premissas);
+  doc.gap(4);
+  doc.text(
+    input.taxpayerType === "pf"
+      ? "A “carga sobre a base” é calculada sobre a base = salário bruto mensal informado."
+      : "A “carga sobre a base” é calculada sobre a base = faturamento bruto mensal informado.",
+    { size: 9, color: MUTED, keepTogether: true },
+  );
+
 
   /* 2. Sistema atual x cenário pós-reforma */
   doc.heading(`Sistema atual x Cenário ${year} — comparativo tributo a tributo`);
