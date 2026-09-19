@@ -103,3 +103,84 @@ export const deleteCase = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
+
+export interface StageStat {
+  stage: CaseStage;
+  /** Casos atualmente nesta etapa. */
+  count: number;
+  /** Tempo médio, em milissegundos, que os casos passaram nesta etapa antes de avançar. */
+  avgDurationMs: number | null;
+  /** Quantas passagens concluídas geraram essa média. */
+  samples: number;
+  /** Tempo médio, em ms, dos casos que estão parados nesta etapa agora. */
+  avgCurrentAgeMs: number | null;
+}
+
+/** Métricas do funil: casos por etapa e tempo médio entre etapas. */
+export const getFunnelStats = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { ALL_STAGES } = await import("@/lib/cases/stages");
+
+    const [casesRes, eventsRes] = await Promise.all([
+      supabaseAdmin.from("cases").select("id,stage").limit(2000),
+      supabaseAdmin
+        .from("case_stage_events")
+        .select("case_id,to_stage,changed_at")
+        .order("changed_at", { ascending: true })
+        .limit(10000),
+    ]);
+    if (casesRes.error) throw new Error(casesRes.error.message);
+    if (eventsRes.error) throw new Error(eventsRes.error.message);
+
+    const now = Date.now();
+    const counts = new Map<CaseStage, number>();
+    for (const row of casesRes.data ?? []) {
+      const stage = row.stage as CaseStage;
+      counts.set(stage, (counts.get(stage) ?? 0) + 1);
+    }
+
+    const byCase = new Map<string, { stage: CaseStage; at: number }[]>();
+    for (const ev of eventsRes.data ?? []) {
+      const list = byCase.get(ev.case_id as string) ?? [];
+      list.push({ stage: ev.to_stage as CaseStage, at: new Date(ev.changed_at as string).getTime() });
+      byCase.set(ev.case_id as string, list);
+    }
+
+    const totals = new Map<CaseStage, { sum: number; n: number }>();
+    const current = new Map<CaseStage, { sum: number; n: number }>();
+    for (const list of byCase.values()) {
+      list.sort((a, b) => a.at - b.at);
+      for (let i = 0; i < list.length; i += 1) {
+        const entry = list[i]!;
+        const next = list[i + 1];
+        if (next) {
+          const acc = totals.get(entry.stage) ?? { sum: 0, n: 0 };
+          acc.sum += Math.max(0, next.at - entry.at);
+          acc.n += 1;
+          totals.set(entry.stage, acc);
+        } else {
+          const acc = current.get(entry.stage) ?? { sum: 0, n: 0 };
+          acc.sum += Math.max(0, now - entry.at);
+          acc.n += 1;
+          current.set(entry.stage, acc);
+        }
+      }
+    }
+
+    const stages: StageStat[] = ALL_STAGES.map((stage) => {
+      const done = totals.get(stage);
+      const open = current.get(stage);
+      return {
+        stage,
+        count: counts.get(stage) ?? 0,
+        avgDurationMs: done && done.n > 0 ? done.sum / done.n : null,
+        samples: done?.n ?? 0,
+        avgCurrentAgeMs: open && open.n > 0 ? open.sum / open.n : null,
+      };
+    });
+
+    const totalCases = (casesRes.data ?? []).length;
+    return { ok: true as const, stages, totalCases };
+  });
