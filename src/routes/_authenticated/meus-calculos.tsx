@@ -62,6 +62,7 @@ const TAXPAYER_LABELS: Record<string, string> = {
 function MyCalculations() {
   const navigate = useNavigate();
   const fetchList = useServerFn(listCases);
+  const fetchFunnel = useServerFn(getFunnelStats);
   const changeStage = useServerFn(updateCaseStage);
   const renameCaseFn = useServerFn(renameCase);
   const removeCase = useServerFn(deleteCase);
