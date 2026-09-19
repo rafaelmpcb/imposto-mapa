@@ -499,14 +499,19 @@ function Simulator() {
 
               {input.taxpayerType === "simples" && (
                 <>
-                  <Field label="Faturamento bruto mensal">
+                  <Field
+                    label="Faturamento bruto mensal"
+                    hint="É a base de todo o cálculo: define a faixa do Simples e o valor de IBS/CBS. Sem esse dado não há estimativa."
+                  >
                     <MoneyInput value={input.revenue} onChange={(v) => set("revenue", v)} />
                   </Field>
                   <Field
                     label="Anexo do Simples Nacional"
-                    {...(anexoSuggested
-                      ? { hint: "Sugerido a partir da atividade — confirme ou ajuste." }
-                      : {})}
+                    hint={
+                      anexoSuggested
+                        ? "Sugerido a partir da atividade — confirme ou ajuste. O Anexo define a tabela de alíquotas e se a CPP patronal está ou não dentro do DAS."
+                        : "O Anexo define a tabela de alíquotas e se a CPP patronal está ou não dentro do DAS. Um Anexo errado muda bastante a carga estimada."
+                    }
                   >
                     <Select
                       value={input.simplesAnexo}
@@ -553,7 +558,7 @@ function Simulator() {
                   {input.taxpayerType === "real" && (
                     <Field
                       label="Margem de lucro estimada"
-                      hint="Percentual do faturamento que sobra como lucro antes de IRPJ/CSLL."
+                      hint="Percentual do faturamento que sobra como lucro antes de IRPJ/CSLL. É o que define IRPJ e CSLL no Lucro Real — deixada no padrão de 20%, o resultado pode ficar longe da realidade."
                     >
                       <NumberInput
                         value={input.profitMargin}
