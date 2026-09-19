@@ -87,6 +87,8 @@ function Simulator() {
   const [manualName, setManualName] = useState(false);
   const [activitySuggested, setActivitySuggested] = useState(false);
   const [anexoSuggested, setAnexoSuggested] = useState(false);
+  // O tipo de contribuinte nunca nasce pré-selecionado: exige escolha ativa.
+  const [taxpayerChosen, setTaxpayerChosen] = useState(false);
 
   const [memoOpen, setMemoOpen] = useState(false);
 
@@ -188,6 +190,7 @@ function Simulator() {
           setCnpj(parsed.cnpjData.cnpj);
         }
         savedIdRef.current = parsed.id ?? null;
+        setTaxpayerChosen(true);
         setStep(5);
         return;
       }
@@ -271,7 +274,7 @@ function Simulator() {
   const isCompany = input.taxpayerType !== "pf";
   const canAdvance =
     step === 1
-      ? Boolean(input.taxpayerType && input.activityId && input.uf)
+      ? Boolean(taxpayerChosen && input.taxpayerType && input.activityId && input.uf)
       : step === 2
         ? input.taxpayerType === "pf"
           ? input.salary > 0
@@ -412,11 +415,25 @@ function Simulator() {
                 </div>
               )}
 
-              <Field label="Tipo de contribuinte">
+              <Field
+                label="Tipo de contribuinte"
+                hint="A Receita Federal não informa publicamente o regime tributário — confirme com o cliente. Essa escolha muda todo o cálculo."
+              >
                 <Select
-                  value={input.taxpayerType}
-                  onChange={(e) => set("taxpayerType", e.target.value as TaxpayerType)}
+                  value={taxpayerChosen ? input.taxpayerType : ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (!value) {
+                      setTaxpayerChosen(false);
+                      return;
+                    }
+                    setTaxpayerChosen(true);
+                    set("taxpayerType", value as TaxpayerType);
+                  }}
                 >
+                  <option value="" disabled>
+                    Selecione o regime tributário desta empresa
+                  </option>
                   {TAXPAYERS.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.label}
@@ -482,14 +499,19 @@ function Simulator() {
 
               {input.taxpayerType === "simples" && (
                 <>
-                  <Field label="Faturamento bruto mensal">
+                  <Field
+                    label="Faturamento bruto mensal"
+                    hint="É a base de todo o cálculo: define a faixa do Simples e o valor de IBS/CBS. Sem esse dado não há estimativa."
+                  >
                     <MoneyInput value={input.revenue} onChange={(v) => set("revenue", v)} />
                   </Field>
                   <Field
                     label="Anexo do Simples Nacional"
-                    {...(anexoSuggested
-                      ? { hint: "Sugerido a partir da atividade — confirme ou ajuste." }
-                      : {})}
+                    hint={
+                      anexoSuggested
+                        ? "Sugerido a partir da atividade — confirme ou ajuste. O Anexo define a tabela de alíquotas e se a CPP patronal está ou não dentro do DAS."
+                        : "O Anexo define a tabela de alíquotas e se a CPP patronal está ou não dentro do DAS. Um Anexo errado muda bastante a carga estimada."
+                    }
                   >
                     <Select
                       value={input.simplesAnexo}
@@ -536,7 +558,7 @@ function Simulator() {
                   {input.taxpayerType === "real" && (
                     <Field
                       label="Margem de lucro estimada"
-                      hint="Percentual do faturamento que sobra como lucro antes de IRPJ/CSLL."
+                      hint="Percentual do faturamento que sobra como lucro antes de IRPJ/CSLL. É o que define IRPJ e CSLL no Lucro Real — deixada no padrão de 20%, o resultado pode ficar longe da realidade."
                     >
                       <NumberInput
                         value={input.profitMargin}
@@ -628,7 +650,7 @@ function Simulator() {
                 <div className="space-y-5 pt-2">
                   <Field
                     label="% da receita vinda de produtos monofásicos"
-                    hint="Produtos com PIS/COFINS já recolhido na cadeia."
+                    hint="Produtos com PIS/COFINS já recolhido na cadeia: essa fatia sai da base tributável da estimativa. Em branco, consideramos que toda a receita é tributada normalmente."
                   >
                     <NumberInput
                       value={input.monofasicoShare}
@@ -640,10 +662,17 @@ function Simulator() {
                   {isCompany && (
                     <Field
                       label="Compras e insumos do mês"
-                      hint="Usado para estimar créditos de IBS/CBS."
+                      hint="Usado para estimar créditos de IBS/CBS: quanto maior a compra de fornecedores tributados, menor o imposto a pagar depois da reforma."
                     >
                       <MoneyInput value={input.purchases} onChange={(v) => set("purchases", v)} />
                     </Field>
+                  )}
+                  {isCompany && !(input.purchases > 0) && (
+                    <Notice tone="warning">
+                      Sem informar as compras e insumos do mês, não conseguimos estimar os créditos
+                      de IBS/CBS sobre essas compras — a carga projetada depois da reforma tende a
+                      ficar superestimada. Você pode seguir assim mesmo.
+                    </Notice>
                   )}
                   {isCompany && input.purchases > 0 && (
                     <Field
@@ -661,7 +690,7 @@ function Simulator() {
                   {isCompany && (
                     <Field
                       label="Aproximadamente que % da sua receita vem de clientes PJ (empresas) que aproveitam o crédito de IBS/CBS que você recolhe?"
-                      hint="Não altera o cálculo — serve para avaliar competitividade entre regimes."
+                      hint="Não altera nenhum valor do cálculo — serve para avaliar competitividade entre regimes. Em branco, apenas deixamos de exibir esse alerta."
                     >
                       <NumberInput
                         value={input.pjClientShare}
@@ -674,7 +703,7 @@ function Simulator() {
                   {isCompany && input.taxpayerType !== "real" && (
                     <Field
                       label="Margem de lucro estimada (%)"
-                      hint="Usada apenas no cenário de Lucro Real da seção “Comparação entre regimes”. Padrão de 20% se você não tiver esse dado."
+                      hint="Lucro líquido ÷ faturamento. Usada apenas no cenário de Lucro Real da seção “Comparação entre regimes” — mantida no padrão de 20%, esse comparativo pode ficar bem distante da realidade da empresa."
                     >
                       <NumberInput
                         value={input.profitMargin}
@@ -717,6 +746,7 @@ function Simulator() {
                   savedIdRef.current = null;
                   setClientName("");
                   setInput(defaultInput());
+                  setTaxpayerChosen(false);
                   setCnpj("");
                   setCnpjData(null);
                   setCnpjError("");
