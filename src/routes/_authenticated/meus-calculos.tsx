@@ -161,6 +161,7 @@ function MyCalculations() {
     try {
       const res = await changeStage({ data: { id, stage } });
       if (!res.ok) throw new Error("fail");
+      void loadFunnel();
     } catch {
       setCases(previous);
       setError("Não foi possível mover o caso de etapa.");
