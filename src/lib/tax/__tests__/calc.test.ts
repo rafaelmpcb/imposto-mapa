@@ -145,9 +145,11 @@ describe("Simples Nacional", () => {
     expect(r.reform.total).toBeCloseTo(r.current.total, 6);
   });
 
-  it("passa a IBS/CBS na projeção de 2033", () => {
+  it("calcula IBS/CBS apenas na hipótese de saída para o regime regular em 2033", () => {
     const r = simulate(company({ taxpayerType: "simples" }), 2033);
     expect(r.reform.lines[0]?.label).toContain("IBS + CBS");
+    expect(r.notes.join(" ")).toContain("exclusivamente a hipótese de saída do Simples");
+    expect(r.notes.join(" ")).toContain("não exibir um valor estimado");
   });
 
   it("mantém IRPJ, CSLL e CPP no cenário de 2033", () => {
@@ -175,12 +177,25 @@ describe("Comparação entre regimes", () => {
     expect(items.filter((i) => i.isCurrent)).toHaveLength(1);
     expect(items.find((i) => i.isCurrent)?.regime).toBe("presumido");
     expect(items.filter((i) => i.isBest).length).toBeGreaterThanOrEqual(1);
-    const min = Math.min(...items.map((i) => i.total));
+    const totals = items.flatMap((item) => item.total === null ? [] : [item.total]);
+    const min = Math.min(...totals);
     expect(items.find((i) => i.isBest)?.total).toBeCloseTo(min, 6);
   });
 
+  it("não estima a permanência no Simples em 2033 nem a marca como mais vantajosa", () => {
+    const simples = compareRegimes(company({ taxpayerType: "simples" }), 2033).find(
+      (item) => item.regime === "simples",
+    );
+    expect(simples?.label).toBe("Permanecer no Simples em 2033");
+    expect(simples?.isAvailable).toBe(false);
+    expect(simples?.total).toBeNull();
+    expect(simples?.rate).toBeNull();
+    expect(simples?.lines).toEqual([]);
+    expect(simples?.isBest).toBe(false);
+  });
+
   it("estima o anexo do Simples e a margem do Lucro Real quando não são o regime atual", () => {
-    const items = compareRegimes(company({ taxpayerType: "presumido" }), 2033);
+    const items = compareRegimes(company({ taxpayerType: "presumido" }), 2027);
     expect(items.find((i) => i.regime === "simples")?.estimateNote).toContain("Anexo");
     expect(items.find((i) => i.regime === "real")?.estimateNote).toContain(
       String(DEFAULT_PROFIT_MARGIN),
@@ -196,7 +211,7 @@ describe("Comparação entre regimes", () => {
   });
 
   it("cada item traz o detalhamento tributo a tributo", () => {
-    for (const item of compareRegimes(company(), 2033)) {
+    for (const item of compareRegimes(company(), 2027)) {
       expect(item.lines.length).toBeGreaterThan(0);
     }
   });

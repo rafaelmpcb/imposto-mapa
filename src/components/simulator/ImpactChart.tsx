@@ -12,7 +12,13 @@ import {
   YAxis,
 } from "recharts";
 
-import { brl, simulate, type SimulationInput } from "@/lib/tax/calc";
+import {
+  brl,
+  isSimplesRegularExitScenario,
+  SIMPLES_REGULAR_EXIT_2033_LABEL,
+  simulate,
+  type SimulationInput,
+} from "@/lib/tax/calc";
 import { YEARS, type YearId } from "@/lib/tax/constants";
 
 const compact = (v: number) =>
@@ -28,16 +34,20 @@ export function ImpactChart({
   presentationMode?: boolean;
 }) {
   const result = simulate(input, year);
+  const isRegularExit = isSimplesRegularExitScenario(input, year);
+  const projectedLabel = isRegularExit
+    ? SIMPLES_REGULAR_EXIT_2033_LABEL
+    : `Reforma ${year}`;
   const comparison = [
     { name: "Hoje", valor: Math.round(result.current.total), tone: "atual" },
-    { name: `Reforma ${year}`, valor: Math.round(result.reform.total), tone: "reforma" },
+    { name: projectedLabel, valor: Math.round(result.reform.total), tone: "reforma" },
   ];
   const evolution = YEARS.map((y) => {
     const r = simulate(input, y.id);
     return {
       name: String(y.id),
       Atual: Math.round(r.current.total),
-      Reforma: Math.round(r.reform.total),
+       Projetado: Math.round(r.reform.total),
     };
   });
 
@@ -55,6 +65,12 @@ export function ImpactChart({
       <p className="mt-1 text-sm text-muted-foreground">
         Carga tributária mensal estimada: comparação direta e evolução ao longo da transição.
       </p>
+      {input.taxpayerType === "simples" ? (
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          Em 2033, a linha projetada representa “{SIMPLES_REGULAR_EXIT_2033_LABEL}” e não a
+          permanência no DAS.
+        </p>
+      ) : null}
 
       <div className="mt-5 grid gap-6 lg:grid-cols-2">
         <div>
@@ -106,7 +122,8 @@ export function ImpactChart({
                 />
                 <Line
                   type="monotone"
-                  dataKey="Reforma"
+                   dataKey="Projetado"
+                   name="Cenário projetado"
                   stroke="var(--color-success, #15803d)"
                   strokeWidth={2}
                   dot

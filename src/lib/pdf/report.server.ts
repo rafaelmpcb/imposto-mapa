@@ -2,7 +2,9 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf
 
 import {
   compareRegimes,
+  isSimplesRegularExitScenario,
   pjClientAdvisory,
+  SIMPLES_REGULAR_EXIT_2033_LABEL,
   simulate,
   type SimulationInput,
   type TaxpayerType,
@@ -422,6 +424,10 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
   const worse = diff > 0.005;
   const unchanged = Math.abs(diff) <= 0.005;
   const regimeLabel = REGIME_LABELS[input.taxpayerType];
+  const isRegularExit = isSimplesRegularExitScenario(input, year);
+  const reformScenarioLabel = isRegularExit
+    ? SIMPLES_REGULAR_EXIT_2033_LABEL
+    : regimeLabel;
   const isBusiness =
     input.taxpayerType === "simples" ||
     input.taxpayerType === "presumido" ||
@@ -492,7 +498,7 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
   doc.heading(`Sistema atual x Cenário ${year} — comparativo tributo a tributo`);
   doc.dualRow(
     { label: `Sistema atual — ${regimeLabel}`, value: "" },
-    { label: `Cenário ${year} — ${regimeLabel}`, value: "" },
+    { label: `Cenário ${year} — ${reformScenarioLabel}`, value: "" },
     { bold: true, color: MUTED },
   );
   doc.rule();
@@ -571,6 +577,12 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
     `Marcos: ${YEARS.map((y) => y.label).join(" · ")}.`,
     { size: 8.5, color: MUTED },
   );
+  if (input.taxpayerType === "simples") {
+    doc.text(
+      `Em 2033, o valor projetado representa “${SIMPLES_REGULAR_EXIT_2033_LABEL}” e não a permanência no DAS.`,
+      { size: 8.5, color: MUTED, keepTogether: true },
+    );
+  }
 
   /* 4. Comparação entre regimes */
   if (isBusiness) {
@@ -589,10 +601,15 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
         item.isBest ? "mais vantajoso após a reforma" : null,
       ].filter(Boolean);
       const label = marks.length ? `${item.label} (${marks.join("; ")})` : item.label;
-      doc.row(label, money(item.total), percent(item.rate), {
+      doc.row(
+        label,
+        item.total === null ? "Não exibido" : money(item.total),
+        item.rate === null ? "-" : percent(item.rate),
+        {
         bold: item.isBest,
         ...(item.isBest ? { color: SUCCESS } : {}),
-      });
+        },
+      );
       if (item.estimateNote) {
         doc.text(item.estimateNote, { size: 8, color: MUTED, x: MARGIN + 10, width: CONTENT_WIDTH - 10 });
       }
@@ -613,7 +630,7 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
   doc.ensure(150);
   doc.heading("Resumo executivo");
   doc.text(
-    `Com base nos dados informados, a carga tributária projetada muda de ${percent(
+    `Com base nos dados informados, ${isRegularExit ? "na hipótese de saída do Simples para o regime regular, a carga tributária" : "a carga tributária projetada"} muda de ${percent(
       result.current.rate,
     )} para ${percent(result.reform.rate)} em ${year} — uma ${
       worse ? "elevação" : unchanged ? "variação" : "redução"
