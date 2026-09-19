@@ -443,7 +443,7 @@ function MyCalculations() {
                 </Field>
               </div>
               <div className="inline-flex rounded-md border border-border bg-card p-1">
-                {(["list", "kanban"] as const).map((mode) => (
+                {(["list", "kanban", "funnel"] as const).map((mode) => (
                   <button
                     key={mode}
                     type="button"
