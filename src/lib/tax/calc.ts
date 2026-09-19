@@ -363,6 +363,7 @@ export function pjClientAdvisory(
   if (share <= PJ_CLIENT_ALERT_THRESHOLD) return null;
   const simples = items.find((i) => i.regime === "simples");
   if (!simples) return null;
+  if (!simples.isAvailable) return null;
   if (!simples.isCurrent && (!simples.isAvailable || !simples.isBest)) return null;
   return "Boa parte da sua receita vem de clientes PJ que provavelmente aproveitam o crédito integral do seu IBS/CBS. Mesmo com carga nominal menor, permanecer no Simples pode ser menos competitivo com esses clientes, que perdem esse crédito — vale considerar esse fator na decisão de regime.";
 }
