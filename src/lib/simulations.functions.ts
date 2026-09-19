@@ -47,6 +47,41 @@ type SavePayload = {
   id?: string | undefined;
 };
 
+/**
+ * Encontra (ou cria) o Caso do cliente: mesmo CNPJ reaproveita o Caso existente;
+ * sem CNPJ, cada cálculo novo abre o seu próprio Caso.
+ */
+async function resolveCaseId(
+  admin: Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"],
+  clientName: string | null,
+  cnpj: string | null,
+): Promise<string | null> {
+  const digits = (cnpj ?? "").replace(/\D/g, "");
+  if (digits) {
+    const { data: existing } = await admin
+      .from("cases")
+      .select("id")
+      .eq("cnpj", digits)
+      .limit(1)
+      .maybeSingle();
+    if (existing?.id) {
+      if (clientName) {
+        await admin.from("cases").update({ client_name: clientName }).eq("id", existing.id);
+      } else {
+        await admin.from("cases").update({ updated_at: new Date().toISOString() }).eq("id", existing.id);
+      }
+      return existing.id as string;
+    }
+  }
+  const { data: created, error } = await admin
+    .from("cases")
+    .insert({ client_name: clientName, cnpj: digits || null })
+    .select("id")
+    .single();
+  if (error) return null;
+  return created.id as string;
+}
+
 export const saveSimulation = createServerFn({ method: "POST" })
   .inputValidator((input: SavePayload) => input)
   .handler(async ({ data }) => {
