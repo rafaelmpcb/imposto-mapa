@@ -190,6 +190,7 @@ function Simulator() {
           setCnpj(parsed.cnpjData.cnpj);
         }
         savedIdRef.current = parsed.id ?? null;
+        setTaxpayerChosen(true);
         setStep(5);
         return;
       }
@@ -733,6 +734,7 @@ function Simulator() {
                   savedIdRef.current = null;
                   setClientName("");
                   setInput(defaultInput());
+                  setTaxpayerChosen(false);
                   setCnpj("");
                   setCnpjData(null);
                   setCnpjError("");
