@@ -471,7 +471,13 @@ function MyCalculations() {
 
             {error ? <Notice tone="warning">{error}</Notice> : null}
 
-            {filtered.length === 0 ? (
+            {view === "funnel" ? (
+              funnel ? (
+                <FunnelPanel stages={funnel.stages} totalCases={funnel.totalCases} />
+              ) : (
+                <Notice>Carregando as métricas do funil...</Notice>
+              )
+            ) : filtered.length === 0 ? (
               <Notice>Nenhum caso encontrado.</Notice>
             ) : view === "kanban" ? (
               <CaseKanban
