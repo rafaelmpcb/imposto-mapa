@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { StageSelect } from "@/components/cases/StageSelect";
 import type { CaseRecord } from "@/lib/cases.functions";
 import { STAGE_BLOCKS, STAGE_LABELS, formatCnpj, type CaseStage } from "@/lib/cases/stages";
@@ -32,6 +34,20 @@ export function CaseKanban({
   onOpen: (id: string) => void;
   busyId: string | null;
 }) {
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<CaseStage | null>(null);
+
+  const handleDrop = (stage: CaseStage) => {
+    if (draggingId) {
+      const dragged = items.find((i) => i.id === draggingId);
+      if (dragged && dragged.stage !== stage) {
+        onStageChange(draggingId, stage);
+      }
+    }
+    setDraggingId(null);
+    setDropTarget(null);
+  };
+
   return (
     <div className="space-y-6">
       {STAGE_BLOCKS.map((block) => {
@@ -51,10 +67,29 @@ export function CaseKanban({
             <div className="mt-3 flex gap-3 overflow-x-auto pb-2">
               {block.stages.map((stage) => {
                 const columnItems = items.filter((i) => i.stage === stage);
+                const isTarget = dropTarget === stage && draggingId !== null;
                 return (
                   <div
                     key={stage}
-                    className="w-64 shrink-0 rounded-lg border border-border bg-secondary p-3"
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = "move";
+                      if (dropTarget !== stage) setDropTarget(stage);
+                    }}
+                    onDragLeave={(event) => {
+                      if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+                        setDropTarget((current) => (current === stage ? null : current));
+                      }
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      handleDrop(stage);
+                    }}
+                    className={`w-64 shrink-0 rounded-lg border p-3 transition-colors ${
+                      isTarget
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-border bg-secondary"
+                    }`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-foreground">
@@ -67,14 +102,35 @@ export function CaseKanban({
 
                     <div className="mt-3 space-y-3">
                       {columnItems.length === 0 ? (
-                        <p className="text-xs text-muted-foreground">Nenhum caso</p>
+                        <p
+                          className={`rounded-md border border-dashed px-2 py-3 text-center text-xs ${
+                            isTarget
+                              ? "border-primary/50 text-primary"
+                              : "border-border text-muted-foreground"
+                          }`}
+                        >
+                          {isTarget ? "Solte aqui para mover" : "Nenhum caso"}
+                        </p>
                       ) : (
                         columnItems.map((item) => {
                           const cnpj = formatCnpj(item.cnpj);
+                          const isDragging = draggingId === item.id;
                           return (
                             <article
                               key={item.id}
-                              className="rounded-md border border-border bg-card p-3"
+                              draggable
+                              onDragStart={(event) => {
+                                event.dataTransfer.setData("text/plain", item.id);
+                                event.dataTransfer.effectAllowed = "move";
+                                setDraggingId(item.id);
+                              }}
+                              onDragEnd={() => {
+                                setDraggingId(null);
+                                setDropTarget(null);
+                              }}
+                              className={`rounded-md border border-border bg-card p-3 transition-opacity ${
+                                isDragging ? "opacity-40" : "cursor-grab active:cursor-grabbing"
+                              }`}
                             >
                               <button
                                 type="button"
