@@ -454,7 +454,7 @@ function MyCalculations() {
                         : "text-muted-foreground hover:bg-secondary"
                     }`}
                   >
-                    {mode === "list" ? "Lista" : "Kanban"}
+                    {mode === "list" ? "Lista" : mode === "kanban" ? "Kanban" : "Funil"}
                   </button>
                 ))}
               </div>
