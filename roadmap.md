@@ -6,3 +6,4 @@
 - [x] Camada de parâmetros datados (tax_parameters): valor, vigência, base legal, histórico e tela interna /parametros — 18/09/2026
 - [x] Cenário do Simples em 2033 separado entre saída para regime regular e permanência no DAS sem valor até validação da tabela de partilha — 19/09/2026
 - [x] Entidade "Caso" (cliente) com histórico de cálculos, 12 etapas do funil em 3 blocos, visão Lista/Kanban e migração dos cálculos existentes agrupados por CNPJ — 19/09/2026
+- [x] Painel "Funil": cards por etapa com contagem de casos e tempo médio na etapa, com registro histórico das mudanças de etapa — 19/09/2026
