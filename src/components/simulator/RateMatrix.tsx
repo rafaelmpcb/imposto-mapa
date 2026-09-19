@@ -280,8 +280,9 @@ export function RateMatrix({
       </div>
 
       <p className="mt-3 text-xs text-muted-foreground">
-        O Simples Nacional usa as tabelas dos anexos, que não são ajustáveis por aqui. Em 2033 o ISS
-        e o ICMS já estão extintos e toda a tributação do consumo é feita por IBS e CBS.
+        O Simples Nacional usa as tabelas dos anexos, que não são ajustáveis por aqui. A tabela de
+        partilha do DAS aplicável a quem permanecer no Simples em 2033 ainda não está confirmada
+        nesta base; por isso, nenhum valor de permanência é estimado.
       </p>
 
       <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-border pt-4">

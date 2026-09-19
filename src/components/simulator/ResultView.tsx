@@ -542,7 +542,8 @@ export function ResultView({
           <section className="border-t border-border py-10">
             <h3 className="font-presentation-display text-xl font-semibold">Resumo executivo</h3>
             <p className="mt-3 max-w-5xl text-sm leading-relaxed text-muted-foreground">
-              Com base nos dados informados, {isRegularExit ? "na hipótese de saída do Simples para o regime regular, a carga tributária" : "a carga tributária projetada"} muda de{" "}
+              Com base nos dados informados, no cenário “{reformScenarioLabel}”, a carga tributária
+              muda de{" "}
               <strong className="text-foreground">{pct(result.current.rate)}</strong> para{" "}
               <strong className="text-foreground">{pct(result.reform.rate)}</strong> em {year} — uma{" "}
               {worse ? "elevação" : "redução"} estimada de{" "}
@@ -666,7 +667,8 @@ export function ResultView({
       <div className="rounded-xl border border-border bg-card p-5">
         <h3 className="text-lg font-semibold">Resumo executivo</h3>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Com base nos dados informados, {isRegularExit ? "na hipótese de saída do Simples para o regime regular, sua carga tributária" : "sua carga tributária projetada"} muda de{" "}
+          Com base nos dados informados, no cenário “{reformScenarioLabel}”, sua carga tributária
+          muda de{" "}
           <strong className="text-danger">{pct(result.current.rate)}</strong> para{" "}
           <strong className="text-success">{pct(result.reform.rate)}</strong> em {year} — uma{" "}
           {worse ? "elevação" : "redução"} estimada de{" "}

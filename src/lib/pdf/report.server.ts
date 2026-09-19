@@ -630,7 +630,7 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
   doc.ensure(150);
   doc.heading("Resumo executivo");
   doc.text(
-    `Com base nos dados informados, ${isRegularExit ? "na hipótese de saída do Simples para o regime regular, a carga tributária" : "a carga tributária projetada"} muda de ${percent(
+    `Com base nos dados informados, no cenário "${reformScenarioLabel}", a carga tributária muda de ${percent(
       result.current.rate,
     )} para ${percent(result.reform.rate)} em ${year} — uma ${
       worse ? "elevação" : unchanged ? "variação" : "redução"
