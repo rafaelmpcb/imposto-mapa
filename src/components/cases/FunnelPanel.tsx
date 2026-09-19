@@ -34,9 +34,20 @@ export function FunnelPanel({
           (sum, stage) => sum + (byStage.get(stage)?.count ?? 0),
           0,
         );
+        // Média ponderada do tempo por etapa dentro do bloco, pelas passagens medidas.
+        let blockSum = 0;
+        let blockSamples = 0;
+        for (const stage of block.stages) {
+          const stat = byStage.get(stage);
+          if (stat?.avgDurationMs != null && stat.samples > 0) {
+            blockSum += stat.avgDurationMs * stat.samples;
+            blockSamples += stat.samples;
+          }
+        }
+        const blockAvg = blockSamples > 0 ? blockSum / blockSamples : null;
         return (
           <section key={block.number} className="rounded-xl border border-border bg-card p-4">
-            <header className="flex items-baseline gap-2">
+            <header className="flex flex-wrap items-baseline gap-2">
               <span className="text-xs font-semibold tracking-[0.18em] text-muted-foreground">
                 {block.number}
               </span>
@@ -44,7 +55,15 @@ export function FunnelPanel({
               <span className="text-xs text-muted-foreground">
                 {blockCount} caso{blockCount === 1 ? "" : "s"}
               </span>
+              <span className="ml-auto text-xs text-muted-foreground">
+                Tempo médio no bloco:{" "}
+                <strong className="font-semibold tabular-nums text-foreground">
+                  {formatDuration(blockAvg)}
+                </strong>
+                {blockSamples > 0 ? ` · ${blockSamples} passagem${blockSamples === 1 ? "" : "s"}` : ""}
+              </span>
             </header>
+
 
             <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {block.stages.map((stage) => {

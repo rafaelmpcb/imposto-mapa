@@ -76,7 +76,7 @@ function MyCalculations() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
-  const [view, setView] = useState<"list" | "kanban" | "funnel">("list");
+  const [view, setView] = useState<"kanban" | "funnel">("kanban");
   const [funnel, setFunnel] = useState<{ stages: StageStat[]; totalCases: number } | null>(null);
   const [openCaseId, setOpenCaseId] = useState<string | null>(null);
   const [busyCaseId, setBusyCaseId] = useState<string | null>(null);
@@ -444,18 +444,21 @@ function MyCalculations() {
                 </Field>
               </div>
               <div className="inline-flex rounded-md border border-border bg-card p-1">
-                {(["list", "kanban", "funnel"] as const).map((mode) => (
+                {(["kanban", "funnel"] as const).map((mode) => (
                   <button
                     key={mode}
                     type="button"
-                    onClick={() => setView(mode)}
+                    onClick={() => {
+                      setView(mode);
+                      setOpenCaseId(null);
+                    }}
                     className={`rounded px-3 py-1.5 text-sm font-semibold transition-colors ${
                       view === mode
                         ? "bg-navy text-navy-foreground"
                         : "text-muted-foreground hover:bg-secondary"
                     }`}
                   >
-                    {mode === "list" ? "Lista" : mode === "kanban" ? "Kanban" : "Funil"}
+                    {mode === "kanban" ? "Kanban" : "Funil"}
                   </button>
                 ))}
               </div>
@@ -472,27 +475,32 @@ function MyCalculations() {
 
             {error ? <Notice tone="warning">{error}</Notice> : null}
 
-            {view === "funnel" ? (
+            {openCaseId ? (
+              <div>
+                <Button variant="ghost" onClick={() => setOpenCaseId(null)}>
+                  ← Voltar ao {view === "funnel" ? "funil" : "Kanban"}
+                </Button>
+              </div>
+            ) : null}
+
+            {!openCaseId && view === "funnel" ? (
               funnel ? (
                 <FunnelPanel stages={funnel.stages} totalCases={funnel.totalCases} />
               ) : (
                 <Notice>Carregando as métricas do funil...</Notice>
               )
-            ) : filtered.length === 0 ? (
+            ) : !openCaseId && filtered.length === 0 ? (
               <Notice>Nenhum caso encontrado.</Notice>
-            ) : view === "kanban" ? (
+            ) : !openCaseId ? (
               <CaseKanban
                 items={filtered}
                 busyId={busyCaseId}
                 onStageChange={(id, stage) => void handleStageChange(id, stage)}
-                onOpen={(id) => {
-                  setView("list");
-                  setOpenCaseId(id);
-                }}
+                onOpen={(id) => setOpenCaseId(id)}
               />
             ) : (
               <ul className="space-y-3">
-                {filtered.map((item) => {
+                {cases.filter((c) => c.id === openCaseId).map((item) => {
                   const latest = item.simulations[0];
                   const cnpj = formatCnpj(item.cnpj);
                   const isOpen = openCaseId === item.id;
