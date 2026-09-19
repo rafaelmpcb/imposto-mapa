@@ -13,10 +13,12 @@ import { StageSelect } from "@/components/cases/StageSelect";
 import type { CnpjData } from "@/lib/cnpj/types";
 import {
   deleteCase,
+  getFunnelStats,
   listCases,
   renameCase,
   updateCaseStage,
   type CaseRecord,
+  type StageStat,
 } from "@/lib/cases.functions";
 import { STAGE_LABELS, formatCnpj, type CaseStage } from "@/lib/cases/stages";
 import {
