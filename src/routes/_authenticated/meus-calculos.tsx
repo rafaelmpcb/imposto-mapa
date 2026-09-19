@@ -8,14 +8,17 @@ import { Button, Field, Notice, TextInput } from "@/components/simulator/ui";
 import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
 import { HelpButton } from "@/components/help/HelpPanel";
 import { CaseKanban } from "@/components/cases/CaseKanban";
+import { FunnelPanel } from "@/components/cases/FunnelPanel";
 import { StageSelect } from "@/components/cases/StageSelect";
 import type { CnpjData } from "@/lib/cnpj/types";
 import {
   deleteCase,
+  getFunnelStats,
   listCases,
   renameCase,
   updateCaseStage,
   type CaseRecord,
+  type StageStat,
 } from "@/lib/cases.functions";
 import { STAGE_LABELS, formatCnpj, type CaseStage } from "@/lib/cases/stages";
 import {
@@ -59,6 +62,7 @@ const TAXPAYER_LABELS: Record<string, string> = {
 function MyCalculations() {
   const navigate = useNavigate();
   const fetchList = useServerFn(listCases);
+  const fetchFunnel = useServerFn(getFunnelStats);
   const changeStage = useServerFn(updateCaseStage);
   const renameCaseFn = useServerFn(renameCase);
   const removeCase = useServerFn(deleteCase);
@@ -71,7 +75,8 @@ function MyCalculations() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
-  const [view, setView] = useState<"list" | "kanban">("list");
+  const [view, setView] = useState<"list" | "kanban" | "funnel">("list");
+  const [funnel, setFunnel] = useState<{ stages: StageStat[]; totalCases: number } | null>(null);
   const [openCaseId, setOpenCaseId] = useState<string | null>(null);
   const [busyCaseId, setBusyCaseId] = useState<string | null>(null);
   const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
@@ -87,6 +92,15 @@ function MyCalculations() {
   const [memoFor, setMemoFor] = useState<SavedSimulation | null>(null);
   const [userEmail, setUserEmail] = useState("");
 
+  const loadFunnel = async () => {
+    try {
+      const res = await fetchFunnel({ data: undefined });
+      if (res.ok) setFunnel({ stages: res.stages, totalCases: res.totalCases });
+    } catch {
+      /* métricas são complementares; a lista continua funcionando */
+    }
+  };
+
   const load = async () => {
     setLoading(true);
     setError("");
@@ -97,6 +111,7 @@ function MyCalculations() {
         return;
       }
       setCases(res.items);
+      void loadFunnel();
       setSelected(new Set());
       setConfirmBulk(false);
     } catch {
@@ -146,6 +161,7 @@ function MyCalculations() {
     try {
       const res = await changeStage({ data: { id, stage } });
       if (!res.ok) throw new Error("fail");
+      void loadFunnel();
     } catch {
       setCases(previous);
       setError("Não foi possível mover o caso de etapa.");
@@ -427,7 +443,7 @@ function MyCalculations() {
                 </Field>
               </div>
               <div className="inline-flex rounded-md border border-border bg-card p-1">
-                {(["list", "kanban"] as const).map((mode) => (
+                {(["list", "kanban", "funnel"] as const).map((mode) => (
                   <button
                     key={mode}
                     type="button"
@@ -438,7 +454,7 @@ function MyCalculations() {
                         : "text-muted-foreground hover:bg-secondary"
                     }`}
                   >
-                    {mode === "list" ? "Lista" : "Kanban"}
+                    {mode === "list" ? "Lista" : mode === "kanban" ? "Kanban" : "Funil"}
                   </button>
                 ))}
               </div>
@@ -455,7 +471,13 @@ function MyCalculations() {
 
             {error ? <Notice tone="warning">{error}</Notice> : null}
 
-            {filtered.length === 0 ? (
+            {view === "funnel" ? (
+              funnel ? (
+                <FunnelPanel stages={funnel.stages} totalCases={funnel.totalCases} />
+              ) : (
+                <Notice>Carregando as métricas do funil...</Notice>
+              )
+            ) : filtered.length === 0 ? (
               <Notice>Nenhum caso encontrado.</Notice>
             ) : view === "kanban" ? (
               <CaseKanban
