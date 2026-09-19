@@ -45,7 +45,7 @@ export const Route = createFileRoute("/_authenticated/meus-calculos")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: MyCalculations;
+  component: MyCalculations,
 });
 
 const TAXPAYER_LABELS: Record<string, string> = {
@@ -272,8 +272,6 @@ function MyCalculations() {
         (c.cnpj ?? "").includes(term.replace(/\D/g, "")),
     );
   }, [cases, query]);
-
-  const openCase = filtered.find((c) => c.id === openCaseId) ?? null;
 
   const renderSimulation = (item: SavedSimulation) => {
     const diff = Number(item.reform_total) - Number(item.current_total);
