@@ -92,6 +92,15 @@ function MyCalculations() {
   const [memoFor, setMemoFor] = useState<SavedSimulation | null>(null);
   const [userEmail, setUserEmail] = useState("");
 
+  const loadFunnel = async () => {
+    try {
+      const res = await fetchFunnel({ data: undefined });
+      if (res.ok) setFunnel({ stages: res.stages, totalCases: res.totalCases });
+    } catch {
+      /* métricas são complementares; a lista continua funcionando */
+    }
+  };
+
   const load = async () => {
     setLoading(true);
     setError("");
@@ -102,6 +111,7 @@ function MyCalculations() {
         return;
       }
       setCases(res.items);
+      void loadFunnel();
       setSelected(new Set());
       setConfirmBulk(false);
     } catch {
