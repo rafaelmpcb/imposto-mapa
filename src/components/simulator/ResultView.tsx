@@ -252,6 +252,14 @@ function RegimeComparison({
             ))
         : null}
 
+      {input.profitMargin === DEFAULT_PROFIT_MARGIN ? (
+        <p className="mt-4 rounded-md border border-border bg-secondary px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+          Este comparativo usa uma margem de lucro estimada em 20%, valor padrão. Se você souber a
+          margem real da empresa (lucro líquido ÷ faturamento), informe-a nos Ajustes opcionais para
+          um comparativo mais preciso.
+        </p>
+      ) : null}
+
       {advisory ? (
         <div className="mt-4">
           <Notice tone="warning">{advisory}</Notice>
