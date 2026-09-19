@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.log_case_stage_change() FROM PUBLIC, anon, authenticated;
