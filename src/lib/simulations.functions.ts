@@ -111,9 +111,11 @@ export const saveSimulation = createServerFn({ method: "POST" })
       return { id: data.id };
     }
 
+    const caseId = await resolveCaseId(supabaseAdmin, row.client_name, row.cnpj);
+
     const { data: inserted, error } = await supabaseAdmin
       .from("simulations")
-      .insert(row)
+      .insert({ ...row, case_id: caseId })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
