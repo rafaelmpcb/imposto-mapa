@@ -4,3 +4,4 @@
 - [x] Bloco “Perfil identificado” na tela de resultado e no PDF, condicionado a dados completos de CNPJ/CNAE
 - [x] Redesenho profissional do Modo Apresentação, sem alterar cálculos ou dados
 - [x] Camada de parâmetros datados (tax_parameters): valor, vigência, base legal, histórico e tela interna /parametros — 18/09/2026
+- [x] Cenário do Simples em 2033 separado entre saída para regime regular e permanência no DAS sem valor até validação da tabela de partilha — 19/09/2026

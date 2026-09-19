@@ -10,8 +10,10 @@ import {
   brl,
   compareRegimes,
   DEFAULT_PROFIT_MARGIN,
+  isSimplesRegularExitScenario,
   pct,
   pjClientAdvisory,
+  SIMPLES_REGULAR_EXIT_2033_LABEL,
   simulate,
   type RegimeComparisonItem,
   type SimulationInput,
@@ -78,6 +80,16 @@ function RegimeDetail({
   year: YearId;
   presentationMode: boolean;
 }) {
+  if (
+    !item.isAvailable ||
+    !currentItem.isAvailable ||
+    item.total === null ||
+    item.rate === null ||
+    currentItem.total === null ||
+    currentItem.rate === null
+  ) {
+    return null;
+  }
   const diff = item.total - currentItem.total;
   const rateDiff = item.rate - currentItem.rate;
   return (
@@ -180,7 +192,8 @@ function RegimeComparison({
 
       <div className="mt-4 grid gap-4 md:grid-cols-3">
         {items.map((item) => {
-          const expandable = !item.isCurrent && !!currentItem;
+          const expandable =
+            !item.isCurrent && item.isAvailable && Boolean(currentItem?.isAvailable);
           const isOpen = openRegime === item.regime;
            const cardClass = `w-full rounded-lg border p-4 text-left transition-colors ${
             item.isBest ? "border-success/50 bg-success-soft" : "border-border bg-secondary"
@@ -195,12 +208,20 @@ function RegimeComparison({
                   </span>
                 ) : null}
               </div>
-              <p className="mt-3 text-2xl font-bold tabular-nums text-foreground">
-                {brl(item.total)}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                por mês · {pct(item.rate)} do faturamento
-              </p>
+              {item.isAvailable && item.total !== null && item.rate !== null ? (
+                <>
+                  <p className="mt-3 text-2xl font-bold tabular-nums text-foreground">
+                    {brl(item.total)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    por mês · {pct(item.rate)} do faturamento
+                  </p>
+                </>
+              ) : (
+                <p className="mt-3 text-sm font-semibold text-muted-foreground">
+                  Valor não exibido — fonte pendente de validação
+                </p>
+              )}
               {item.isBest ? (
                 <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-success">
                   Mais vantajoso em {activeYear}
@@ -378,6 +399,10 @@ export function ResultView({
     { minimumFractionDigits: 2, maximumFractionDigits: 2 },
   )} p.p.`;
   const identifiedProfile = buildIdentifiedProfile(cnpjData, input, year);
+  const isRegularExit = isSimplesRegularExitScenario(input, year);
+  const reformScenarioLabel = isRegularExit
+    ? SIMPLES_REGULAR_EXIT_2033_LABEL
+    : REGIME_LABELS[input.taxpayerType];
 
   useEffect(() => {
     void loadOfficeContact()
@@ -463,7 +488,7 @@ export function ResultView({
             <div className="rounded-lg border border-navy bg-navy p-6 text-navy-foreground sm:p-8">
               <p className="text-sm font-semibold text-navy-foreground/70">Cenário com a reforma</p>
               <h2 className="mt-2 font-presentation-display text-xl font-semibold">
-                {REGIME_LABELS[input.taxpayerType]}
+                {reformScenarioLabel}
               </h2>
               <p className="mt-8 font-presentation-display text-4xl font-semibold tabular-nums sm:text-5xl">
                 {brl(result.reform.total)}
@@ -517,7 +542,8 @@ export function ResultView({
           <section className="border-t border-border py-10">
             <h3 className="font-presentation-display text-xl font-semibold">Resumo executivo</h3>
             <p className="mt-3 max-w-5xl text-sm leading-relaxed text-muted-foreground">
-              Com base nos dados informados, a carga tributária projetada muda de{" "}
+              Com base nos dados informados, no cenário “{reformScenarioLabel}”, a carga tributária
+              muda de{" "}
               <strong className="text-foreground">{pct(result.current.rate)}</strong> para{" "}
               <strong className="text-foreground">{pct(result.reform.rate)}</strong> em {year} — uma{" "}
               {worse ? "elevação" : "redução"} estimada de{" "}
@@ -610,7 +636,7 @@ export function ResultView({
           lines={presentationMode ? undefined : result.current.lines}
         />
         <ScenarioCard
-          title={REGIME_LABELS[input.taxpayerType]}
+          title={reformScenarioLabel}
           subtitle={`Cenário ${year} — Reforma Tributária`}
           tone="reform"
           total={result.reform.total}
@@ -641,7 +667,8 @@ export function ResultView({
       <div className="rounded-xl border border-border bg-card p-5">
         <h3 className="text-lg font-semibold">Resumo executivo</h3>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Com base nos dados informados, sua carga tributária projetada muda de{" "}
+          Com base nos dados informados, no cenário “{reformScenarioLabel}”, sua carga tributária
+          muda de{" "}
           <strong className="text-danger">{pct(result.current.rate)}</strong> para{" "}
           <strong className="text-success">{pct(result.reform.rate)}</strong> em {year} — uma{" "}
           {worse ? "elevação" : "redução"} estimada de{" "}

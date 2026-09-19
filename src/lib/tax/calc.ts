@@ -228,12 +228,23 @@ export type BusinessRegime = "simples" | "presumido" | "real";
 export interface RegimeComparisonItem {
   regime: BusinessRegime;
   label: string;
-  total: number;
-  rate: number;
+  total: number | null;
+  rate: number | null;
   lines: { label: string; value: number }[];
   isCurrent: boolean;
   isBest: boolean;
+  isAvailable: boolean;
   estimateNote?: string;
+}
+
+export const SIMPLES_REGULAR_EXIT_2033_LABEL =
+  "Se sair do Simples — regime regular (2033)";
+
+export const SIMPLES_2033_UNAVAILABLE_NOTE =
+  "Para quem permanece optante pelo Simples em 2033, o cálculo continua sendo feito em guia única (DAS), com uma nova tabela de partilha que substitui ICMS/ISS por IBS/CBS. Essa tabela específica para 2033 ainda não está confirmada em nossa base — não exibir um valor estimado até essa fonte ser validada.";
+
+export function isSimplesRegularExitScenario(input: SimulationInput, year: YearId): boolean {
+  return input.taxpayerType === "simples" && year === 2033;
 }
 
 /** Margem de lucro padrão quando o usuário não informou (Lucro Real estimado). */
@@ -279,6 +290,19 @@ export function compareRegimes(
 
   const items = regimes.map(({ id, label }) => {
     const isCurrent = input.taxpayerType === id;
+    if (id === "simples" && year === 2033) {
+      return {
+        regime: id,
+        label: "Permanecer no Simples em 2033",
+        total: null,
+        rate: null,
+        lines: [],
+        isCurrent,
+        isBest: false,
+        isAvailable: false,
+        estimateNote: SIMPLES_2033_UNAVAILABLE_NOTE,
+      } satisfies RegimeComparisonItem;
+    }
     let variant: SimulationInput = { ...input, taxpayerType: id };
     let estimateNote: string | undefined;
 
@@ -306,12 +330,22 @@ export function compareRegimes(
       lines: reform.lines,
       isCurrent,
       isBest: false,
+      isAvailable: true,
       ...(estimateNote ? { estimateNote } : {}),
     } satisfies RegimeComparisonItem;
   });
 
-  const min = Math.min(...items.map((i) => i.total));
-  return items.map((i) => ({ ...i, isBest: Math.abs(i.total - min) < 0.005 }));
+  const availableTotals = items.flatMap((item) =>
+    item.isAvailable && item.total !== null ? [item.total] : [],
+  );
+  const min = availableTotals.length ? Math.min(...availableTotals) : null;
+  return items.map((item) => ({
+    ...item,
+    isBest:
+      min !== null && item.total !== null && item.isAvailable
+        ? Math.abs(item.total - min) < 0.005
+        : false,
+  }));
 }
 
 /** Percentual acima do qual a base de clientes PJ vira um alerta de competitividade. */
@@ -329,7 +363,8 @@ export function pjClientAdvisory(
   if (share <= PJ_CLIENT_ALERT_THRESHOLD) return null;
   const simples = items.find((i) => i.regime === "simples");
   if (!simples) return null;
-  if (!simples.isCurrent && !simples.isBest) return null;
+  if (!simples.isAvailable) return null;
+  if (!simples.isCurrent && (!simples.isAvailable || !simples.isBest)) return null;
   return "Boa parte da sua receita vem de clientes PJ que provavelmente aproveitam o crédito integral do seu IBS/CBS. Mesmo com carga nominal menor, permanecer no Simples pode ser menos competitivo com esses clientes, que perdem esse crédito — vale considerar esse fator na decisão de regime.";
 }
 
@@ -416,8 +451,8 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
     const cppLine: TaxLine[] = cppFora
       ? [{ label: `CPP patronal via GPS (${pct(CPP_RATE)} da folha)`, value: cppValue }]
       : [];
-    // Em 2033 o IBS/CBS substitui apenas os tributos sobre consumo. IRPJ, CSLL e CPP,
-    // hoje embutidos no DAS, continuam existindo na apuração regular e entram na conta.
+    // Em 2033 este ramo representa exclusivamente a saída do Simples e a apuração
+    // pelo regime regular. A permanência no DAS não recebe valor sem a tabela validada.
     const simplesSupplierShare2033 = Math.min(100, Math.max(0, input.simplesSupplierShare || 0));
     const purchases2033 = Math.min(Math.max(0, input.purchases), input.revenue);
     const credits2033 = purchases2033 * (1 - simplesSupplierShare2033 / 100) * newRate;
@@ -454,7 +489,10 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
       );
     } else {
       notes.push(
-        "Comparação com a hipótese de saída do Simples e apuração regular em 2033. O IBS/CBS substitui apenas os tributos sobre consumo (PIS, COFINS, ICMS e ISS): IRPJ, CSLL e CPP, hoje embutidos no DAS, continuam devidos e estão somados ao cenário pós-reforma (IRPJ/CSLL estimados pelas bases do Lucro Presumido). A empresa também pode permanecer no Simples.",
+        "Este cenário representa exclusivamente a hipótese de saída do Simples e apuração pelo regime regular em 2033 — não é uma projeção de permanência no DAS. O IBS/CBS substitui os tributos sobre consumo, e IRPJ, CSLL e CPP estão somados separadamente (IRPJ/CSLL estimados pelas bases do Lucro Presumido).",
+      );
+      notes.push(
+        SIMPLES_2033_UNAVAILABLE_NOTE,
       );
     }
 
