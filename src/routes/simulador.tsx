@@ -87,6 +87,8 @@ function Simulator() {
   const [manualName, setManualName] = useState(false);
   const [activitySuggested, setActivitySuggested] = useState(false);
   const [anexoSuggested, setAnexoSuggested] = useState(false);
+  // O tipo de contribuinte nunca nasce pré-selecionado: exige escolha ativa.
+  const [taxpayerChosen, setTaxpayerChosen] = useState(false);
 
   const [memoOpen, setMemoOpen] = useState(false);
 
@@ -271,7 +273,7 @@ function Simulator() {
   const isCompany = input.taxpayerType !== "pf";
   const canAdvance =
     step === 1
-      ? Boolean(input.taxpayerType && input.activityId && input.uf)
+      ? Boolean(taxpayerChosen && input.taxpayerType && input.activityId && input.uf)
       : step === 2
         ? input.taxpayerType === "pf"
           ? input.salary > 0
@@ -412,11 +414,25 @@ function Simulator() {
                 </div>
               )}
 
-              <Field label="Tipo de contribuinte">
+              <Field
+                label="Tipo de contribuinte"
+                hint="A Receita Federal não informa publicamente o regime tributário — confirme com o cliente. Essa escolha muda todo o cálculo."
+              >
                 <Select
-                  value={input.taxpayerType}
-                  onChange={(e) => set("taxpayerType", e.target.value as TaxpayerType)}
+                  value={taxpayerChosen ? input.taxpayerType : ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (!value) {
+                      setTaxpayerChosen(false);
+                      return;
+                    }
+                    setTaxpayerChosen(true);
+                    set("taxpayerType", value as TaxpayerType);
+                  }}
                 >
+                  <option value="" disabled>
+                    Selecione o regime tributário desta empresa
+                  </option>
                   {TAXPAYERS.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.label}
