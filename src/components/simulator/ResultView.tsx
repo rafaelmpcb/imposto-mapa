@@ -9,6 +9,7 @@ import { buildIdentifiedProfile } from "@/lib/tax/identified-profile";
 import {
   brl,
   compareRegimes,
+  DEFAULT_PROFIT_MARGIN,
   pct,
   pjClientAdvisory,
   simulate,
