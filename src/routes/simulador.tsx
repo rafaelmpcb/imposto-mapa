@@ -650,7 +650,7 @@ function Simulator() {
                 <div className="space-y-5 pt-2">
                   <Field
                     label="% da receita vinda de produtos monofásicos"
-                    hint="Produtos com PIS/COFINS já recolhido na cadeia."
+                    hint="Produtos com PIS/COFINS já recolhido na cadeia: essa fatia sai da base tributável da estimativa. Em branco, consideramos que toda a receita é tributada normalmente."
                   >
                     <NumberInput
                       value={input.monofasicoShare}
@@ -662,10 +662,17 @@ function Simulator() {
                   {isCompany && (
                     <Field
                       label="Compras e insumos do mês"
-                      hint="Usado para estimar créditos de IBS/CBS."
+                      hint="Usado para estimar créditos de IBS/CBS: quanto maior a compra de fornecedores tributados, menor o imposto a pagar depois da reforma."
                     >
                       <MoneyInput value={input.purchases} onChange={(v) => set("purchases", v)} />
                     </Field>
+                  )}
+                  {isCompany && !(input.purchases > 0) && (
+                    <Notice tone="warning">
+                      Sem informar as compras e insumos do mês, não conseguimos estimar os créditos
+                      de IBS/CBS sobre essas compras — a carga projetada depois da reforma tende a
+                      ficar superestimada. Você pode seguir assim mesmo.
+                    </Notice>
                   )}
                   {isCompany && input.purchases > 0 && (
                     <Field
@@ -683,7 +690,7 @@ function Simulator() {
                   {isCompany && (
                     <Field
                       label="Aproximadamente que % da sua receita vem de clientes PJ (empresas) que aproveitam o crédito de IBS/CBS que você recolhe?"
-                      hint="Não altera o cálculo — serve para avaliar competitividade entre regimes."
+                      hint="Não altera nenhum valor do cálculo — serve para avaliar competitividade entre regimes. Em branco, apenas deixamos de exibir esse alerta."
                     >
                       <NumberInput
                         value={input.pjClientShare}
@@ -696,7 +703,7 @@ function Simulator() {
                   {isCompany && input.taxpayerType !== "real" && (
                     <Field
                       label="Margem de lucro estimada (%)"
-                      hint="Usada apenas no cenário de Lucro Real da seção “Comparação entre regimes”. Padrão de 20% se você não tiver esse dado."
+                      hint="Lucro líquido ÷ faturamento. Usada apenas no cenário de Lucro Real da seção “Comparação entre regimes” — mantida no padrão de 20%, esse comparativo pode ficar bem distante da realidade da empresa."
                     >
                       <NumberInput
                         value={input.profitMargin}
