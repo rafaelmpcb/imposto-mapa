@@ -159,7 +159,7 @@ function MyCalculations() {
     setBusyCaseId(id);
     setCases((prev) => (prev ?? []).map((c) => (c.id === id ? { ...c, stage } : c)));
     try {
-      const res = await changeStage({ data: { id, stage } });
+      const res = await withAuthRetry(() => changeStage({ data: { id, stage } }));
       if (!res.ok) throw new Error("fail");
       void loadFunnel();
     } catch {
