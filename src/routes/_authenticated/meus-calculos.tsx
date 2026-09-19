@@ -475,27 +475,32 @@ function MyCalculations() {
 
             {error ? <Notice tone="warning">{error}</Notice> : null}
 
-            {view === "funnel" ? (
+            {openCaseId ? (
+              <div>
+                <Button variant="ghost" onClick={() => setOpenCaseId(null)}>
+                  ← Voltar ao {view === "funnel" ? "funil" : "Kanban"}
+                </Button>
+              </div>
+            ) : null}
+
+            {!openCaseId && view === "funnel" ? (
               funnel ? (
                 <FunnelPanel stages={funnel.stages} totalCases={funnel.totalCases} />
               ) : (
                 <Notice>Carregando as métricas do funil...</Notice>
               )
-            ) : filtered.length === 0 ? (
+            ) : !openCaseId && filtered.length === 0 ? (
               <Notice>Nenhum caso encontrado.</Notice>
-            ) : view === "kanban" ? (
+            ) : !openCaseId ? (
               <CaseKanban
                 items={filtered}
                 busyId={busyCaseId}
                 onStageChange={(id, stage) => void handleStageChange(id, stage)}
-                onOpen={(id) => {
-                  setView("list");
-                  setOpenCaseId(id);
-                }}
+                onOpen={(id) => setOpenCaseId(id)}
               />
             ) : (
               <ul className="space-y-3">
-                {filtered.map((item) => {
+                {cases.filter((c) => c.id === openCaseId).map((item) => {
                   const latest = item.simulations[0];
                   const cnpj = formatCnpj(item.cnpj);
                   const isOpen = openCaseId === item.id;
