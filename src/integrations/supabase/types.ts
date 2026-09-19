@@ -14,6 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
+      case_documents: {
+        Row: {
+          case_id: string
+          content_type: string | null
+          created_at: string
+          file_name: string
+          id: string
+          size_bytes: number | null
+          storage_path: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          case_id: string
+          content_type?: string | null
+          created_at?: string
+          file_name: string
+          id?: string
+          size_bytes?: number | null
+          storage_path: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          case_id?: string
+          content_type?: string | null
+          created_at?: string
+          file_name?: string
+          id?: string
+          size_bytes?: number | null
+          storage_path?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cases: {
+        Row: {
+          client_name: string | null
+          cnpj: string | null
+          created_at: string
+          id: string
+          owner_id: string | null
+          owner_name: string | null
+          stage: Database["public"]["Enums"]["case_stage"]
+          updated_at: string
+        }
+        Insert: {
+          client_name?: string | null
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          owner_id?: string | null
+          owner_name?: string | null
+          stage?: Database["public"]["Enums"]["case_stage"]
+          updated_at?: string
+        }
+        Update: {
+          client_name?: string | null
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          owner_id?: string | null
+          owner_name?: string | null
+          stage?: Database["public"]["Enums"]["case_stage"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       office_config: {
         Row: {
           key: string
@@ -36,6 +113,7 @@ export type Database = {
         Row: {
           activity_id: string
           base_amount: number
+          case_id: string | null
           client_name: string | null
           cnpj: string | null
           cnpj_data: Json | null
@@ -56,6 +134,7 @@ export type Database = {
         Insert: {
           activity_id: string
           base_amount?: number
+          case_id?: string | null
           client_name?: string | null
           cnpj?: string | null
           cnpj_data?: Json | null
@@ -76,6 +155,7 @@ export type Database = {
         Update: {
           activity_id?: string
           base_amount?: number
+          case_id?: string | null
           client_name?: string | null
           cnpj?: string | null
           cnpj_data?: Json | null
@@ -93,7 +173,15 @@ export type Database = {
           uf?: string
           year_id?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "simulations_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tax_config: {
         Row: {
@@ -154,7 +242,19 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      case_stage:
+        | "lead"
+        | "diagnostico_basico"
+        | "memorando_assinado"
+        | "aguardando_documentos"
+        | "diagnostico_full"
+        | "em_revisao"
+        | "reuniao_agendada"
+        | "elaboracao_proposta"
+        | "proposta_enviada"
+        | "contrato_assinado"
+        | "relatorio_entregue"
+        | "acompanhamento_implantacao"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -281,6 +381,21 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      case_stage: [
+        "lead",
+        "diagnostico_basico",
+        "memorando_assinado",
+        "aguardando_documentos",
+        "diagnostico_full",
+        "em_revisao",
+        "reuniao_agendada",
+        "elaboracao_proposta",
+        "proposta_enviada",
+        "contrato_assinado",
+        "relatorio_entregue",
+        "acompanhamento_implantacao",
+      ],
+    },
   },
 } as const
