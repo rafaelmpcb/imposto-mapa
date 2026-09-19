@@ -58,6 +58,38 @@ export type Database = {
           },
         ]
       }
+      case_stage_events: {
+        Row: {
+          case_id: string
+          changed_at: string
+          from_stage: Database["public"]["Enums"]["case_stage"] | null
+          id: string
+          to_stage: Database["public"]["Enums"]["case_stage"]
+        }
+        Insert: {
+          case_id: string
+          changed_at?: string
+          from_stage?: Database["public"]["Enums"]["case_stage"] | null
+          id?: string
+          to_stage: Database["public"]["Enums"]["case_stage"]
+        }
+        Update: {
+          case_id?: string
+          changed_at?: string
+          from_stage?: Database["public"]["Enums"]["case_stage"] | null
+          id?: string
+          to_stage?: Database["public"]["Enums"]["case_stage"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_stage_events_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cases: {
         Row: {
           client_name: string | null
