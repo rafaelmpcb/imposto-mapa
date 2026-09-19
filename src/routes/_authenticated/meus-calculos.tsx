@@ -28,6 +28,7 @@ import {
   setSimulationShare,
   type SavedSimulation,
 } from "@/lib/simulations.functions";
+import { withAuthRetry } from "@/lib/auth-retry";
 import { brl, pct } from "@/lib/tax/calc";
 import { getActivity } from "@/lib/tax/constants";
 import { RESTORE_KEY } from "@/lib/tax/session";
