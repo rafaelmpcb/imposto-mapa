@@ -92,6 +92,7 @@ function MyCalculations() {
   const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [memoFor, setMemoFor] = useState<SavedSimulation | null>(null);
+  const [diagCaseId, setDiagCaseId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState("");
 
   const loadFunnel = async () => {
