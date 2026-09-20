@@ -5,6 +5,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Button, Notice } from "@/components/simulator/ui";
 import { CarteiraResult } from "@/components/cases/CarteiraResult";
 import { PgdasdPanel } from "@/components/cases/PgdasdPanel";
+import { NfeCompraPanel } from "@/components/cases/NfeCompraPanel";
 import { withAuthRetry } from "@/lib/auth-retry";
 import {
   deleteCarteiraRow,
@@ -546,26 +547,31 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
                   <PgdasdPanel caseItem={caseItem} onStatus={setRegimeStatus} />
                 </div>
               ) : doc.active ? (
-                <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <label className="cursor-pointer rounded-md border border-dashed border-input px-3 py-2 text-sm font-semibold text-navy hover:bg-secondary">
-                    Anexar arquivo(s)
-                    <input
-                      type="file"
-                      multiple
-                      accept=".xlsx,.csv,.xls"
-                      className="hidden"
-                      onChange={(e) => void handleFiles(e.target.files)}
-                    />
-                  </label>
-                  <Button variant="ghost" onClick={() => downloadModel()}>
-                    Baixar modelo sugerido
-                  </Button>
-                  {rows.length > 0 ? (
-                    <span className="text-xs text-muted-foreground">
-                      {rows.length} contrapartes na composição atual
-                    </span>
+                <>
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <label className="cursor-pointer rounded-md border border-dashed border-input px-3 py-2 text-sm font-semibold text-navy hover:bg-secondary">
+                      Anexar relatório (.xlsx ou .csv)
+                      <input
+                        type="file"
+                        multiple
+                        accept=".xlsx,.csv,.xls"
+                        className="hidden"
+                        onChange={(e) => void handleFiles(e.target.files)}
+                      />
+                    </label>
+                    <Button variant="ghost" onClick={() => downloadModel()}>
+                      Baixar modelo sugerido
+                    </Button>
+                    {rows.length > 0 ? (
+                      <span className="text-xs text-muted-foreground">
+                        {rows.length} contrapartes na composição atual
+                      </span>
+                    ) : null}
+                  </div>
+                  {doc.key === "composicao_carteira" ? (
+                    <NfeCompraPanel caseId={caseItem.id} onApplied={refresh} />
                   ) : null}
-                </div>
+                </>
               ) : null}
             </li>
           );
