@@ -66,9 +66,10 @@ export const DIAGNOSTIC_DOCS: DiagnosticDocDef[] = [
   },
   {
     key: "dados_regime",
-    title: "Dados de entrada do motor de regime (PGDAS-D, EFD, folha, RBT12)",
-    description: "Reservado para uma próxima etapa. Ainda não é processado aqui.",
-    active: false,
+    title: "Dados de entrada do motor de regime (PGDAS-D)",
+    description:
+      "Extrato do PGDAS-D em PDF (Portal do Simples Nacional). Traz RBT12, receita do período, Anexo e folha de salários. Só se aplica a Casos no Simples Nacional.",
+    active: true,
   },
 ];
 
