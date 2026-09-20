@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { Button, Notice } from "@/components/simulator/ui";
 import { CarteiraResult } from "@/components/cases/CarteiraResult";
+import { PgdasdPanel } from "@/components/cases/PgdasdPanel";
 import { withAuthRetry } from "@/lib/auth-retry";
 import {
   deleteCarteiraRow,
@@ -98,6 +99,9 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
   }, [caseItem.id]);
 
   const carteiraStatus = docs["composicao_carteira"] ?? "nao_enviado";
+  const [regimeStatus, setRegimeStatus] = useState("nao_enviado");
+  // O PGDAS-D só existe no Simples Nacional.
+  const isSimples = caseItem.simulations[0]?.input?.taxpayerType === "simples";
 
   /* ---------------- upload e mapeamento ---------------- */
 
@@ -514,8 +518,13 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
       {error ? <Notice tone="warning">{error}</Notice> : null}
 
       <ul className="space-y-3">
-        {DIAGNOSTIC_DOCS.map((doc) => {
-          const status = doc.key === "composicao_carteira" ? carteiraStatus : "nao_enviado";
+        {DIAGNOSTIC_DOCS.filter((doc) => doc.key !== "dados_regime" || isSimples).map((doc) => {
+          const status =
+            doc.key === "composicao_carteira"
+              ? carteiraStatus
+              : doc.key === "dados_regime"
+                ? (docs["dados_regime"] ?? regimeStatus)
+                : "nao_enviado";
           return (
             <li
               key={doc.key}
@@ -531,7 +540,11 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
                 </span>
               </div>
 
-              {doc.active ? (
+              {doc.key === "dados_regime" ? (
+                <div className="mt-3">
+                  <PgdasdPanel caseItem={caseItem} onStatus={setRegimeStatus} />
+                </div>
+              ) : doc.active ? (
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <label className="cursor-pointer rounded-md border border-dashed border-input px-3 py-2 text-sm font-semibold text-navy hover:bg-secondary">
                     Anexar arquivo(s)
