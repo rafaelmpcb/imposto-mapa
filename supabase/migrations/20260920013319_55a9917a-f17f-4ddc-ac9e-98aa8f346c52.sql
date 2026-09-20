@@ -1,0 +1,2 @@
+DELETE FROM public.composicao_carteira WHERE cnpj IN ('33000167000101','00000000000191');
+UPDATE public.case_diagnostic_docs SET status = 'nao_enviado' WHERE doc_key = 'composicao_carteira' AND NOT EXISTS (SELECT 1 FROM public.composicao_carteira c WHERE c.case_id = case_diagnostic_docs.case_id);
