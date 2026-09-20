@@ -55,16 +55,9 @@ async function viaBrasilApi(cnpj: string): Promise<ClassifyResult | null> {
         updated: new Date().toISOString(),
       };
     }
-    // Campo ausente: a BrasilAPI só informa o Simples quando há opção registrada.
-    if (raw["cnpj"] !== undefined || raw["razao_social"] !== undefined) {
-      return {
-        cnpj,
-        regime: "regular",
-        status: "ok",
-        fonte: FONTE_BRASILAPI,
-        updated: new Date().toISOString(),
-      };
-    }
+    // Campo nulo: a BrasilAPI não soube informar. Cai para a CNPJá, que é
+    // mais confiável nesse ponto, em vez de presumir regime regular.
+    void raw;
     return null;
   } catch {
     return null;
