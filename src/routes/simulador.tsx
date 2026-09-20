@@ -200,6 +200,7 @@ function Simulator() {
         setTaxpayerChosen(true);
         if (typeof suggestion === "number") {
           setCreditFromDiagnostic(true);
+          setOptionalOpen(true);
           setStep(4);
         } else {
           setStep(5);
