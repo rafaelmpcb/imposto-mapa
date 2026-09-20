@@ -661,6 +661,14 @@ function Simulator() {
               </p>
               {optionalOpen && (
                 <div className="space-y-5 pt-2">
+                  {creditFromDiagnostic && !(isCompany && input.purchases > 0) && (
+                    <Notice>
+                      O Diagnóstico Completo sugeriu{" "}
+                      <strong>{input.simplesSupplierShare}%</strong> de compras vindas de
+                      fornecedores do Simples. Informe as compras e insumos do mês para esse
+                      percentual entrar na estimativa de crédito.
+                    </Notice>
+                  )}
                   <Field
                     label="% da receita vinda de produtos monofásicos"
                     hint="Produtos com PIS/COFINS já recolhido na cadeia: essa fatia sai da base tributável da estimativa. Em branco, consideramos que toda a receita é tributada normalmente."
