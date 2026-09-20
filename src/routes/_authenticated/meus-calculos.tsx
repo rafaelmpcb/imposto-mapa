@@ -8,6 +8,7 @@ import { Button, Field, Notice, TextInput } from "@/components/simulator/ui";
 import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
 import { HelpButton } from "@/components/help/HelpPanel";
 import { CaseKanban } from "@/components/cases/CaseKanban";
+import { DiagnosticoCompleto } from "@/components/cases/DiagnosticoCompleto";
 import { FunnelPanel } from "@/components/cases/FunnelPanel";
 import { StageSelect } from "@/components/cases/StageSelect";
 import type { CnpjData } from "@/lib/cnpj/types";
@@ -91,6 +92,7 @@ function MyCalculations() {
   const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [memoFor, setMemoFor] = useState<SavedSimulation | null>(null);
+  const [diagCaseId, setDiagCaseId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState("");
 
   const loadFunnel = async () => {
@@ -568,12 +570,21 @@ function MyCalculations() {
                               onChange={(stage) => void handleStageChange(item.id, stage)}
                             />
                           </div>
-                          <Button
-                            variant="ghost"
-                            onClick={() => setOpenCaseId(isOpen ? null : item.id)}
-                          >
-                            {isOpen ? "Fechar caso" : "Abrir caso"}
-                          </Button>
+                           <Button
+                             onClick={() =>
+                               setDiagCaseId(diagCaseId === item.id ? null : item.id)
+                             }
+                           >
+                             {diagCaseId === item.id
+                               ? "Fechar Diagnóstico Completo"
+                               : "Diagnóstico Completo"}
+                           </Button>
+                           <Button
+                             variant="ghost"
+                             onClick={() => setOpenCaseId(isOpen ? null : item.id)}
+                           >
+                             {isOpen ? "Fechar caso" : "Abrir caso"}
+                           </Button>
                           <Button
                             variant="ghost"
                             onClick={() => {
@@ -599,6 +610,12 @@ function MyCalculations() {
                           )}
                         </div>
                       </div>
+
+                      {diagCaseId === item.id ? (
+                        <div className="mt-4 border-t border-border pt-4">
+                          <DiagnosticoCompleto caseItem={item} />
+                        </div>
+                      ) : null}
 
                       {isOpen ? (
                         <div className="mt-4 border-t border-border pt-4">

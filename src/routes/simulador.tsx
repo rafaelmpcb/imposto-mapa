@@ -77,6 +77,7 @@ function Simulator() {
   const [presentationMode, setPresentationMode] = useState(false);
   const persist = useServerFn(saveSimulation);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [creditFromDiagnostic, setCreditFromDiagnostic] = useState(false);
   const [pdfError, setPdfError] = useState("");
 
   const searchCnpjFn = useServerFn(lookupCnpj);
@@ -181,8 +182,14 @@ function Simulator() {
           year?: YearId;
           clientName?: string;
           cnpjData?: CnpjData | null;
+          suggestedSimplesSupplierShare?: number;
         };
-        setInput({ ...defaultInput(), ...(parsed.input ?? {}) });
+        const suggestion = parsed.suggestedSimplesSupplierShare;
+        setInput({
+          ...defaultInput(),
+          ...(parsed.input ?? {}),
+          ...(typeof suggestion === "number" ? { simplesSupplierShare: suggestion } : {}),
+        });
         if (parsed.year) setYear(parsed.year);
         setClientName(parsed.clientName ?? "");
         if (parsed.cnpjData) {
@@ -191,7 +198,13 @@ function Simulator() {
         }
         savedIdRef.current = parsed.id ?? null;
         setTaxpayerChosen(true);
-        setStep(5);
+        if (typeof suggestion === "number") {
+          setCreditFromDiagnostic(true);
+          setOptionalOpen(true);
+          setStep(4);
+        } else {
+          setStep(5);
+        }
         return;
       }
       // Nada é restaurado automaticamente: dados financeiros de uma empresa
@@ -648,6 +661,14 @@ function Simulator() {
               </p>
               {optionalOpen && (
                 <div className="space-y-5 pt-2">
+                  {creditFromDiagnostic && !(isCompany && input.purchases > 0) && (
+                    <Notice>
+                      O Diagnóstico Completo sugeriu{" "}
+                      <strong>{input.simplesSupplierShare}%</strong> de compras vindas de
+                      fornecedores do Simples. Informe as compras e insumos do mês para esse
+                      percentual entrar na estimativa de crédito.
+                    </Notice>
+                  )}
                   <Field
                     label="% da receita vinda de produtos monofásicos"
                     hint="Produtos com PIS/COFINS já recolhido na cadeia: essa fatia sai da base tributável da estimativa. Em branco, consideramos que toda a receita é tributada normalmente."
@@ -681,10 +702,19 @@ function Simulator() {
                     >
                       <NumberInput
                         value={input.simplesSupplierShare}
-                        onChange={(v) => set("simplesSupplierShare", v)}
+                        onChange={(v) => {
+                          setCreditFromDiagnostic(false);
+                          set("simplesSupplierShare", v);
+                        }}
                         suffix="%"
                         max={100}
                       />
+                      {creditFromDiagnostic ? (
+                        <p className="mt-2 rounded-md border border-navy/30 bg-navy/5 px-3 py-2 text-xs text-navy">
+                          ✓ Calculado a partir do Diagnóstico Completo — CNPJs de fornecedores em
+                          regime regular. Você pode alterar este valor antes de seguir.
+                        </p>
+                      ) : null}
                     </Field>
                   )}
                   {isCompany && (

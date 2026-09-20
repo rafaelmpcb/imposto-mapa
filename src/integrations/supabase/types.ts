@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      case_diagnostic_docs: {
+        Row: {
+          case_id: string
+          created_at: string
+          doc_key: string
+          id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          doc_key: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          doc_key?: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_diagnostic_docs_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       case_documents: {
         Row: {
           case_id: string
@@ -92,6 +127,8 @@ export type Database = {
       }
       cases: {
         Row: {
+          carteira_column_mapping: Json | null
+          carteira_uploaded_at: string | null
           client_name: string | null
           cnpj: string | null
           created_at: string
@@ -102,6 +139,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          carteira_column_mapping?: Json | null
+          carteira_uploaded_at?: string | null
           client_name?: string | null
           cnpj?: string | null
           created_at?: string
@@ -112,6 +151,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          carteira_column_mapping?: Json | null
+          carteira_uploaded_at?: string | null
           client_name?: string | null
           cnpj?: string | null
           created_at?: string
@@ -122,6 +163,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      composicao_carteira: {
+        Row: {
+          case_id: string
+          cnpj: string
+          created_at: string
+          data_classificacao: string | null
+          fonte_classificacao: string
+          id: string
+          nome: string
+          percentual_carteira: number
+          regime: Database["public"]["Enums"]["carteira_regime"]
+          status_consulta: Database["public"]["Enums"]["carteira_status"]
+          tipo: Database["public"]["Enums"]["carteira_tipo"]
+          updated_at: string
+          valor_movimentado: number
+        }
+        Insert: {
+          case_id: string
+          cnpj: string
+          created_at?: string
+          data_classificacao?: string | null
+          fonte_classificacao?: string
+          id?: string
+          nome?: string
+          percentual_carteira?: number
+          regime?: Database["public"]["Enums"]["carteira_regime"]
+          status_consulta?: Database["public"]["Enums"]["carteira_status"]
+          tipo: Database["public"]["Enums"]["carteira_tipo"]
+          updated_at?: string
+          valor_movimentado?: number
+        }
+        Update: {
+          case_id?: string
+          cnpj?: string
+          created_at?: string
+          data_classificacao?: string | null
+          fonte_classificacao?: string
+          id?: string
+          nome?: string
+          percentual_carteira?: number
+          regime?: Database["public"]["Enums"]["carteira_regime"]
+          status_consulta?: Database["public"]["Enums"]["carteira_status"]
+          tipo?: Database["public"]["Enums"]["carteira_tipo"]
+          updated_at?: string
+          valor_movimentado?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "composicao_carteira_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       office_config: {
         Row: {
@@ -274,6 +371,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      carteira_regime: "simples" | "regular" | "pendente" | "erro"
+      carteira_status: "ok" | "nao_encontrado" | "erro" | "pendente"
+      carteira_tipo: "cliente" | "fornecedor"
       case_stage:
         | "lead"
         | "diagnostico_basico"
@@ -414,6 +514,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      carteira_regime: ["simples", "regular", "pendente", "erro"],
+      carteira_status: ["ok", "nao_encontrado", "erro", "pendente"],
+      carteira_tipo: ["cliente", "fornecedor"],
       case_stage: [
         "lead",
         "diagnostico_basico",
