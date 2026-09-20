@@ -570,12 +570,21 @@ function MyCalculations() {
                               onChange={(stage) => void handleStageChange(item.id, stage)}
                             />
                           </div>
-                          <Button
-                            variant="ghost"
-                            onClick={() => setOpenCaseId(isOpen ? null : item.id)}
-                          >
-                            {isOpen ? "Fechar caso" : "Abrir caso"}
-                          </Button>
+                           <Button
+                             onClick={() =>
+                               setDiagCaseId(diagCaseId === item.id ? null : item.id)
+                             }
+                           >
+                             {diagCaseId === item.id
+                               ? "Fechar Diagnóstico Completo"
+                               : "Diagnóstico Completo"}
+                           </Button>
+                           <Button
+                             variant="ghost"
+                             onClick={() => setOpenCaseId(isOpen ? null : item.id)}
+                           >
+                             {isOpen ? "Fechar caso" : "Abrir caso"}
+                           </Button>
                           <Button
                             variant="ghost"
                             onClick={() => {
