@@ -49,7 +49,7 @@ export function PgdasdPanel({
   const [error, setError] = useState("");
 
   const latestSim = caseItem.simulations[0];
-  const motor = (latestSim?.input ?? {}) as {
+  const motor = ((latestSim?.input as Record<string, unknown> | undefined) ?? {}) as {
     revenue?: number;
     payroll?: number;
     simplesAnexo?: string;
@@ -141,7 +141,7 @@ export function PgdasdPanel({
       RESTORE_KEY,
       JSON.stringify({
         input: {
-          ...(latestSim?.input ?? {}),
+          ...((latestSim?.input as Record<string, unknown> | undefined) ?? {}),
           taxpayerType: "simples",
           ...(record.rbt12 ? { rbt12: record.rbt12 } : {}),
           ...(record.receita_bruta_pa ? { revenue: record.receita_bruta_pa } : {}),

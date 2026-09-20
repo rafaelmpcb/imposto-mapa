@@ -36,7 +36,7 @@ export async function readPdfText(file: File): Promise<string> {
     }
     if (line.trim()) parts.push(line.trim());
   }
-  await doc.destroy();
+  await doc.cleanup();
   return parts.join("\n");
 }
 

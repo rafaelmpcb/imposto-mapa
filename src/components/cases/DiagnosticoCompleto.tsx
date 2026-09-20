@@ -101,7 +101,8 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
   const carteiraStatus = docs["composicao_carteira"] ?? "nao_enviado";
   const [regimeStatus, setRegimeStatus] = useState("nao_enviado");
   // O PGDAS-D só existe no Simples Nacional.
-  const isSimples = caseItem.simulations[0]?.input?.taxpayerType === "simples";
+  const isSimples = (caseItem.simulations[0]?.input as { taxpayerType?: string } | undefined)?.taxpayerType ===
+    "simples";
 
   /* ---------------- upload e mapeamento ---------------- */
 
