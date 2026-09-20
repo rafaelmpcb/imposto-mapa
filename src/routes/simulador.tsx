@@ -181,8 +181,14 @@ function Simulator() {
           year?: YearId;
           clientName?: string;
           cnpjData?: CnpjData | null;
+          suggestedSimplesSupplierShare?: number;
         };
-        setInput({ ...defaultInput(), ...(parsed.input ?? {}) });
+        const suggestion = parsed.suggestedSimplesSupplierShare;
+        setInput({
+          ...defaultInput(),
+          ...(parsed.input ?? {}),
+          ...(typeof suggestion === "number" ? { simplesSupplierShare: suggestion } : {}),
+        });
         if (parsed.year) setYear(parsed.year);
         setClientName(parsed.clientName ?? "");
         if (parsed.cnpjData) {
@@ -191,7 +197,12 @@ function Simulator() {
         }
         savedIdRef.current = parsed.id ?? null;
         setTaxpayerChosen(true);
-        setStep(5);
+        if (typeof suggestion === "number") {
+          setCreditFromDiagnostic(true);
+          setStep(4);
+        } else {
+          setStep(5);
+        }
         return;
       }
       // Nada é restaurado automaticamente: dados financeiros de uma empresa
