@@ -87,7 +87,8 @@ function extractAnexos(lines: string[]): PgdasdAnexo[] {
     const anexo = match[1]!.toUpperCase();
     if (!ROMANOS.includes(anexo)) continue;
     const pctMatch = raw.match(/(\d{1,2},\d{1,4})\s*%/);
-    const valueMatch = raw.match(MONEY);
+    // remove o percentual antes de procurar o valor, senão "12,50 %" vira receita
+    const valueMatch = raw.replace(/\d{1,2},\d{1,4}\s*%/g, " ").match(MONEY);
     const current = found.get(anexo) ?? { anexo, receita: null, percentual: null };
     if (current.percentual === null && pctMatch?.[1]) {
       current.percentual = parseAmount(pctMatch[1]);
