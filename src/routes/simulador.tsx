@@ -78,6 +78,11 @@ function Simulator() {
   const persist = useServerFn(saveSimulation);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [creditFromDiagnostic, setCreditFromDiagnostic] = useState(false);
+  const [pgdasdOrigin, setPgdasdOrigin] = useState<{
+    competencia: string | null;
+    anexo: string;
+    rbt12: number | null;
+  } | null>(null);
   const [pdfError, setPdfError] = useState("");
 
   const searchCnpjFn = useServerFn(lookupCnpj);
@@ -183,8 +188,10 @@ function Simulator() {
           clientName?: string;
           cnpjData?: CnpjData | null;
           suggestedSimplesSupplierShare?: number;
+          pgdasdOrigin?: { competencia: string | null; anexo: string; rbt12: number | null };
         };
         const suggestion = parsed.suggestedSimplesSupplierShare;
+        if (parsed.pgdasdOrigin) setPgdasdOrigin(parsed.pgdasdOrigin);
         setInput({
           ...defaultInput(),
           ...(parsed.input ?? {}),
@@ -202,6 +209,8 @@ function Simulator() {
           setCreditFromDiagnostic(true);
           setOptionalOpen(true);
           setStep(4);
+        } else if (parsed.pgdasdOrigin) {
+          setStep(2);
         } else {
           setStep(5);
         }
@@ -510,13 +519,30 @@ function Simulator() {
                 </>
               )}
 
+              {input.taxpayerType === "simples" && pgdasdOrigin && (
+                <div className="rounded-md border border-navy/30 bg-navy/5 px-3 py-2 text-xs text-navy">
+                  ✓ Faturamento, Anexo{pgdasdOrigin.rbt12 ? ", RBT12" : ""} e folha preenchidos a
+                  partir do PGDAS-D
+                  {pgdasdOrigin.competencia ? ` da competência ${pgdasdOrigin.competencia}` : ""}.
+                  Todos os campos continuam editáveis.
+                  {pgdasdOrigin.rbt12
+                    ? " A faixa do Simples passa a usar o RBT12 real, no lugar de faturamento mensal × 12."
+                    : ""}
+                </div>
+              )}
+
               {input.taxpayerType === "simples" && (
                 <>
                   <Field
                     label="Faturamento bruto mensal"
                     hint="É a base de todo o cálculo: define a faixa do Simples e o valor de IBS/CBS. Sem esse dado não há estimativa."
                   >
-                    <MoneyInput value={input.revenue} onChange={(v) => set("revenue", v)} />
+                    <MoneyInput
+                      value={input.revenue}
+                      onChange={(v) => {
+                        set("revenue", v);
+                      }}
+                    />
                   </Field>
                   <Field
                     label="Anexo do Simples Nacional"
