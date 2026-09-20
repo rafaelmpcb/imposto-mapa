@@ -19,18 +19,64 @@ export interface ParsedSheet {
   headerIndex: number;
 }
 
+/** Divide um CSV em células, preservando o texto original dos valores. */
+function parseCsv(text: string): string[][] {
+  const firstLine = text.split(/\r?\n/)[0] ?? "";
+  const delimiter = [";", "\t", ","]
+    .map((d) => ({ d, n: firstLine.split(d).length }))
+    .sort((a, b) => b.n - a.n)[0]!.d;
+
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let quoted = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i]!;
+    if (quoted) {
+      if (ch === '"') {
+        if (text[i + 1] === '"') {
+          cell += '"';
+          i += 1;
+        } else quoted = false;
+      } else cell += ch;
+      continue;
+    }
+    if (ch === '"') quoted = true;
+    else if (ch === delimiter) {
+      row.push(cell);
+      cell = "";
+    } else if (ch === "\n") {
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = "";
+    } else if (ch !== "\r") cell += ch;
+  }
+  row.push(cell);
+  rows.push(row);
+  return rows.filter((r) => r.some((c) => c.trim() !== ""));
+}
+
 /** Lê o arquivo e identifica a linha de cabeçalho e as colunas existentes. */
 export async function readSheet(file: File): Promise<ParsedSheet> {
-  const buffer = await file.arrayBuffer();
-  const wb = XLSX.read(buffer, { type: "array", raw: false });
-  const sheetName = wb.SheetNames[0];
-  if (!sheetName) throw new Error("A planilha está vazia.");
-  const sheet = wb.Sheets[sheetName]!;
-  const matrix = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
-    header: 1,
-    blankrows: false,
-    defval: "",
-  });
+  let matrix: unknown[][];
+
+  if (/\.csv$/i.test(file.name) || file.type === "text/csv") {
+    // CSV é lido como texto: assim "10.000,00" não vira número errado.
+    matrix = parseCsv(await file.text());
+  } else {
+    const buffer = await file.arrayBuffer();
+    const wb = XLSX.read(buffer, { type: "array", cellText: true, cellDates: true });
+    const sheetName = wb.SheetNames[0];
+    if (!sheetName) throw new Error("A planilha está vazia.");
+    const sheet = wb.Sheets[sheetName]!;
+    matrix = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
+      header: 1,
+      blankrows: false,
+      defval: "",
+      raw: false,
+    });
+  }
 
   const cells = matrix.map((row) => (row ?? []).map((c) => String(c ?? "").trim()));
   // Cabeçalho: primeira linha com pelo menos 2 células preenchidas e majoritariamente texto.
