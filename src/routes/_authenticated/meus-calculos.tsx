@@ -8,6 +8,7 @@ import { Button, Field, Notice, TextInput } from "@/components/simulator/ui";
 import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
 import { HelpButton } from "@/components/help/HelpPanel";
 import { CaseKanban } from "@/components/cases/CaseKanban";
+import { DiagnosticoCompleto } from "@/components/cases/DiagnosticoCompleto";
 import { FunnelPanel } from "@/components/cases/FunnelPanel";
 import { StageSelect } from "@/components/cases/StageSelect";
 import type { CnpjData } from "@/lib/cnpj/types";
