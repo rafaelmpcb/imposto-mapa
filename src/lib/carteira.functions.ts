@@ -150,49 +150,18 @@ export const saveCarteira = createServerFn({ method: "POST" })
     return { ok: true as const, inserted: payload.length };
   });
 
-interface Classification {
-  regime: "simples" | "regular" | "erro";
-  status: "ok" | "nao_encontrado" | "erro";
-  updated: string | null;
-}
-
-/** Consulta o regime tributário na API Pública da CNPJá. */
-async function classify(cnpj: string): Promise<Classification> {
-  try {
-    const res = await fetch(`https://open.cnpja.com/office/${cnpj}`, {
-      headers: { Accept: "application/json" },
-    });
-    if (res.status === 404) return { regime: "erro", status: "nao_encontrado", updated: null };
-    if (!res.ok) return { regime: "erro", status: "erro", updated: null };
-    const raw = (await res.json()) as Record<string, any>;
-    const optant =
-      raw?.["company"]?.["simples"]?.["optant"] ?? raw?.["simples"]?.["optant"] ?? null;
-    if (optant === null || optant === undefined) {
-      return { regime: "regular", status: "ok", updated: raw?.["updated"] ?? null };
-    }
-    return {
-      regime: optant ? "simples" : "regular",
-      status: "ok",
-      updated: raw?.["updated"] ?? null,
-    };
-  } catch {
-    return { regime: "erro", status: "erro", updated: null };
-  }
-}
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 /**
- * Processa um lote pequeno de CNPJs, respeitando o limite de 5 consultas por
- * minuto da API pública (~12 s entre chamadas). O progresso fica gravado no
- * banco: o usuário pode sair da tela e retomar depois.
+ * Processa um lote de CNPJs usando a BrasilAPI (fila com concorrência
+ * moderada) e a CNPJá como reserva. O progresso fica gravado no banco: o
+ * usuário pode sair da tela e retomar depois.
  */
 export const processCarteiraBatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { caseId: string; ids?: string[] }) => input)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const BATCH = 4;
+    const { classifyMany } = await import("@/lib/carteira/classify.server");
+    const BATCH = 8;
 
     let query = supabaseAdmin
       .from("composicao_carteira")
@@ -206,20 +175,24 @@ export const processCarteiraBatch = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     const batch = (rows ?? []) as { id: string; cnpj: string }[];
 
-    for (let i = 0; i < batch.length; i += 1) {
-      const row = batch[i]!;
-      if (i > 0) await sleep(12_000);
-      const result = await classify(row.cnpj);
-      await supabaseAdmin
-        .from("composicao_carteira")
-        .update({
-          regime: result.regime,
-          status_consulta: result.status,
-          fonte_classificacao: FONTE,
-          data_classificacao: result.updated ?? new Date().toISOString(),
-        } as never)
-        .eq("id", row.id);
-    }
+    const results = await classifyMany(batch.map((r) => r.cnpj));
+    const byCnpj = new Map(results.map((r) => [r.cnpj, r]));
+
+    await Promise.all(
+      batch.map((row) => {
+        const result = byCnpj.get(row.cnpj);
+        if (!result) return Promise.resolve();
+        return supabaseAdmin
+          .from("composicao_carteira")
+          .update({
+            regime: result.regime,
+            status_consulta: result.status,
+            fonte_classificacao: result.fonte,
+            data_classificacao: result.updated ?? new Date().toISOString(),
+          } as never)
+          .eq("id", row.id);
+      }),
+    );
 
     const { count } = await supabaseAdmin
       .from("composicao_carteira")
