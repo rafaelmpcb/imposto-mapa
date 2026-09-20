@@ -238,6 +238,71 @@ export type Database = {
         }
         Relationships: []
       }
+      pgdasd_extraido: {
+        Row: {
+          anexos: Json
+          aplicado_ao_calculo: boolean
+          arquivo_original: string
+          case_id: string
+          cnpj_extraido: string | null
+          competencia: string | null
+          created_at: string
+          detalhamento_tributos: Json
+          folha_12_meses: number | null
+          id: string
+          razao_social_extraida: string | null
+          rbt12: number | null
+          receita_bruta_pa: number | null
+          status_extracao: string
+          updated_at: string
+          valor_total_das: number | null
+        }
+        Insert: {
+          anexos?: Json
+          aplicado_ao_calculo?: boolean
+          arquivo_original?: string
+          case_id: string
+          cnpj_extraido?: string | null
+          competencia?: string | null
+          created_at?: string
+          detalhamento_tributos?: Json
+          folha_12_meses?: number | null
+          id?: string
+          razao_social_extraida?: string | null
+          rbt12?: number | null
+          receita_bruta_pa?: number | null
+          status_extracao?: string
+          updated_at?: string
+          valor_total_das?: number | null
+        }
+        Update: {
+          anexos?: Json
+          aplicado_ao_calculo?: boolean
+          arquivo_original?: string
+          case_id?: string
+          cnpj_extraido?: string | null
+          competencia?: string | null
+          created_at?: string
+          detalhamento_tributos?: Json
+          folha_12_meses?: number | null
+          id?: string
+          razao_social_extraida?: string | null
+          rbt12?: number | null
+          receita_bruta_pa?: number | null
+          status_extracao?: string
+          updated_at?: string
+          valor_total_das?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pgdasd_extraido_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       simulations: {
         Row: {
           activity_id: string
