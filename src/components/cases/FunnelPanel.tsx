@@ -51,7 +51,7 @@ export function FunnelPanel({
               <span className="text-xs font-semibold tracking-[0.18em] text-muted-foreground">
                 {block.number}
               </span>
-              <h2 className="text-base font-semibold text-foreground">{block.title}</h2>
+              <h2 className="font-presentation-display text-lg font-semibold tracking-tight text-foreground">{block.title}</h2>
               <span className="text-xs text-muted-foreground">
                 {blockCount} caso{blockCount === 1 ? "" : "s"}
               </span>
