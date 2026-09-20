@@ -611,6 +611,12 @@ function MyCalculations() {
                         </div>
                       </div>
 
+                      {diagCaseId === item.id ? (
+                        <div className="mt-4 border-t border-border pt-4">
+                          <DiagnosticoCompleto caseItem={item} />
+                        </div>
+                      ) : null}
+
                       {isOpen ? (
                         <div className="mt-4 border-t border-border pt-4">
                           <div className="flex flex-wrap items-center justify-between gap-3">
