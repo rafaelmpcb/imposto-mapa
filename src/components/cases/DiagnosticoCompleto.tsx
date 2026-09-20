@@ -5,6 +5,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Button, Notice } from "@/components/simulator/ui";
 import { CarteiraResult } from "@/components/cases/CarteiraResult";
 import { PgdasdPanel } from "@/components/cases/PgdasdPanel";
+import { NfeCompraPanel } from "@/components/cases/NfeCompraPanel";
 import { withAuthRetry } from "@/lib/auth-retry";
 import {
   deleteCarteiraRow,
