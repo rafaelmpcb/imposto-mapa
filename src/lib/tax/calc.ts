@@ -47,6 +47,8 @@ export interface SimulationInput {
   payroll: number;
   profitMargin: number; // %
   simplesAnexo: keyof typeof SIMPLES_TABLES;
+  /** RBT12 real (PGDAS-D). Quando ausente, usa faturamento mensal x 12. */
+  rbt12?: number;
   meiType: keyof typeof MEI_DAS;
   // Etapa 3
   benefitConfirmed: boolean | null;
@@ -177,8 +179,12 @@ function irpfNew(salary: number, dependents: number): number {
   return full * progress; // interpolação linear (aproximação)
 }
 
-function simplesEffectiveRate(anexo: keyof typeof SIMPLES_TABLES, revenue: number): number {
-  const rbt12 = Math.max(revenue * 12, 1);
+function simplesEffectiveRate(
+  anexo: keyof typeof SIMPLES_TABLES,
+  revenue: number,
+  rbt12Real?: number,
+): number {
+  const rbt12 = Math.max(rbt12Real && rbt12Real > 0 ? rbt12Real : revenue * 12, 1);
   const table = SIMPLES_TABLES[anexo] ?? SIMPLES_TABLES['III']!;
   const bracket = table.find((b) => rbt12 <= b.rbt12) ?? table[table.length - 1]!;
   return Math.max(0, (rbt12 * bracket.rate - bracket.deduct) / rbt12);
@@ -444,7 +450,7 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
 
   /* ---------- Simples Nacional ---------- */
   if (input.taxpayerType === "simples") {
-    const simplesRate = simplesEffectiveRate(input.simplesAnexo, input.revenue);
+    const simplesRate = simplesEffectiveRate(input.simplesAnexo, input.revenue, input.rbt12);
     const currentTax = input.revenue * simplesRate;
     const cppFora = cppOutsideDas(input.simplesAnexo);
     const cppValue = cppFora ? Math.max(0, input.payroll) * CPP_RATE : 0;

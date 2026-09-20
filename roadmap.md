@@ -8,3 +8,5 @@
 - [x] Entidade "Caso" (cliente) com histórico de cálculos, 12 etapas do funil em 3 blocos, visão Lista/Kanban e migração dos cálculos existentes agrupados por CNPJ — 19/09/2026
 - [x] Painel "Funil": cards por etapa com contagem de casos e tempo médio na etapa, com registro histórico das mudanças de etapa — 19/09/2026
 - [x] "Diagnóstico Completo" no Caso: anexos, mapeamento livre de colunas, conferência, classificação de regime por CNPJ (CNPJá) e sugestão de crédito no simulador — 20/09/2026
+
+- [x] PGDAS-D: upload do extrato no Diagnóstico Completo (só Simples), extração por rótulos, conferência editável e aplicação do RBT12 real no motor.
