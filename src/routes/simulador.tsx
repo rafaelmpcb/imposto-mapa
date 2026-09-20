@@ -693,10 +693,19 @@ function Simulator() {
                     >
                       <NumberInput
                         value={input.simplesSupplierShare}
-                        onChange={(v) => set("simplesSupplierShare", v)}
+                        onChange={(v) => {
+                          setCreditFromDiagnostic(false);
+                          set("simplesSupplierShare", v);
+                        }}
                         suffix="%"
                         max={100}
                       />
+                      {creditFromDiagnostic ? (
+                        <p className="mt-2 rounded-md border border-navy/30 bg-navy/5 px-3 py-2 text-xs text-navy">
+                          ✓ Calculado a partir do Diagnóstico Completo — CNPJs de fornecedores em
+                          regime regular. Você pode alterar este valor antes de seguir.
+                        </p>
+                      ) : null}
                     </Field>
                   )}
                   {isCompany && (
