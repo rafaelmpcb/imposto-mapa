@@ -77,6 +77,7 @@ function Simulator() {
   const [presentationMode, setPresentationMode] = useState(false);
   const persist = useServerFn(saveSimulation);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [creditFromDiagnostic, setCreditFromDiagnostic] = useState(false);
   const [pdfError, setPdfError] = useState("");
 
   const searchCnpjFn = useServerFn(lookupCnpj);
