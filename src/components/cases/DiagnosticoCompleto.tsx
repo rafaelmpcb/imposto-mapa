@@ -6,6 +6,7 @@ import { Button, Notice } from "@/components/simulator/ui";
 import { CarteiraResult } from "@/components/cases/CarteiraResult";
 import { PgdasdPanel } from "@/components/cases/PgdasdPanel";
 import { NfeCompraPanel } from "@/components/cases/NfeCompraPanel";
+import { NfeVendaPanel } from "@/components/cases/NfeVendaPanel";
 import { withAuthRetry } from "@/lib/auth-retry";
 import {
   deleteCarteiraRow,
@@ -569,7 +570,10 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
                     ) : null}
                   </div>
                   {doc.key === "composicao_carteira" ? (
-                    <NfeCompraPanel caseId={caseItem.id} onApplied={refresh} />
+                    <>
+                      <NfeCompraPanel caseId={caseItem.id} onApplied={refresh} />
+                      <NfeVendaPanel caseId={caseItem.id} onApplied={refresh} />
+                    </>
                   ) : null}
                 </>
               ) : null}
