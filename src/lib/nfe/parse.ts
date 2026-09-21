@@ -61,6 +61,9 @@ export interface NfeAgregado {
 
 const text = (node: Element | null | undefined) => (node?.textContent ?? "").trim();
 
+const num = (node: Element | null | undefined) =>
+  Number(text(node).replace(",", ".")) || 0;
+
 /** Busca a primeira tag com esse nome local, ignorando namespace. */
 function tag(root: ParentNode, name: string): Element | null {
   const found = root.querySelectorAll(name);
