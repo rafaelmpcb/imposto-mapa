@@ -19,6 +19,21 @@ export function regimeFromCrt(crt: string | null): NfeRegime {
   return "erro";
 }
 
+/** Item (det) da nota, usado para apurar o crédito de IBS/CBS. */
+export interface NfeItem {
+  ncm: string | null;
+  cfop: string | null;
+  descricao: string | null;
+  quantidade: number;
+  valorItem: number;
+  temIbscbs: boolean;
+  cclasstrib: string | null;
+  baseCalculo: number;
+  vCBS: number;
+  vIBSUF: number;
+  vIBSMun: number;
+}
+
 export interface NfeNota {
   arquivo: string;
   chave: string | null;
@@ -31,6 +46,7 @@ export interface NfeNota {
   valorTotal: number;
   dataEmissao: string | null;
   status: NfeStatus;
+  itens: NfeItem[];
 }
 
 export interface NfeAgregado {
