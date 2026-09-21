@@ -3,24 +3,24 @@ import { useServerFn } from "@tanstack/react-start";
 
 import { Notice } from "@/components/simulator/ui";
 import { withAuthRetry } from "@/lib/auth-retry";
-import {
-  getCreditoServicoItens,
-  resolverServicoAmbiguo,
-  type CreditoServicoItem,
-} from "@/lib/nfse.functions";
-import { FONTE_TABELA_NBS, type OpcaoServico } from "@/lib/nfse/credito";
+import { getCreditoServicoItens, type CreditoServicoItem } from "@/lib/nfse.functions";
+import { FONTE_TABELA_NBS } from "@/lib/nfse/credito";
 import { formatCnpjMask } from "@/lib/carteira/types";
 import { brl } from "@/lib/tax/calc";
 
 const pct1 = (v: number) => `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
 
 /** Crédito de IBS/CBS apurado serviço a serviço nas NFS-e tomadas. */
-export function CreditoNbsPanel({ caseId }: { caseId: string }) {
+export function CreditoNbsPanel({
+  caseId,
+  reloadKey = 0,
+}: {
+  caseId: string;
+  reloadKey?: number;
+}) {
   const fetchItens = useServerFn(getCreditoServicoItens);
-  const resolver = useServerFn(resolverServicoAmbiguo);
 
   const [itens, setItens] = useState<CreditoServicoItem[]>([]);
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
@@ -34,7 +34,7 @@ export function CreditoNbsPanel({ caseId }: { caseId: string }) {
 
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [load, reloadKey]);
 
   const resumo = useMemo(() => {
     const ok = itens.filter((i) => i.status_classificacao === "ok");
