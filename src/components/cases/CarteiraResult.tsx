@@ -15,6 +15,21 @@ import {
 
 const pct1 = (v: number) => `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
 
+const FONTE_CRT = "XML de NF-e — CRT do emitente";
+
+/** Legenda que reflete a fonte real de classificação das linhas exibidas. */
+function fontesLegenda(rows: CarteiraRow[]): string {
+  const temCrt = rows.some((r) => (r.fonte_classificacao ?? "").startsWith(FONTE_CRT));
+  const temApi = rows.some((r) => !(r.fonte_classificacao ?? "").startsWith(FONTE_CRT));
+  const crt = "Classificação obtida do CRT informado no XML da nota (fornecedores).";
+  const api =
+    "Classificação obtida na API Pública da CNPJá, a partir do CNPJ de cada contraparte.";
+  if (temCrt && temApi) {
+    return "Classificação obtida do CRT informado no XML da nota (fornecedores) ou da API Pública da CNPJá, a partir do CNPJ de cada contraparte (quando aplicável).";
+  }
+  return temCrt ? crt : api;
+}
+
 function SummaryCard({ rows, tipo }: { rows: CarteiraRow[]; tipo: CarteiraTipo }) {
   const s = summarize(rows, tipo);
   if (s.linhas === 0) return null;
@@ -197,9 +212,7 @@ export function CarteiraResult({
         </table>
       </div>
 
-      <Notice>
-        Classificação obtida na API Pública da CNPJá, a partir do CNPJ de cada contraparte.
-      </Notice>
+      <Notice>{fontesLegenda(visible)}</Notice>
     </div>
   );
 }
