@@ -188,7 +188,7 @@ export function NfseServicoPanel({
           </div>
 
           <p className="text-sm text-muted-foreground">
-            {selecionadas.length} nota(s) marcada(s) como serviço tomado ·{" "}
+            {selecionadas.length} nota(s) marcada(s) (tomadas e prestadas) ·{" "}
             {brl(totalSelecionado)} no total. Nada é gravado antes da confirmação.
           </p>
 
