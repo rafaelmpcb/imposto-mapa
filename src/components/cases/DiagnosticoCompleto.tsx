@@ -7,6 +7,8 @@ import { CarteiraResult } from "@/components/cases/CarteiraResult";
 import { PgdasdPanel } from "@/components/cases/PgdasdPanel";
 import { NfeUnificadoPanel } from "@/components/cases/NfeUnificadoPanel";
 import { CreditoNcmPanel } from "@/components/cases/CreditoNcmPanel";
+import { NfseServicoPanel } from "@/components/cases/NfseServicoPanel";
+import { CreditoNbsPanel } from "@/components/cases/CreditoNbsPanel";
 import { withAuthRetry } from "@/lib/auth-retry";
 import {
   deleteCarteiraRow,
