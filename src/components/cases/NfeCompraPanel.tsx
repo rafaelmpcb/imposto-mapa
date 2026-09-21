@@ -3,17 +3,14 @@ import { useServerFn } from "@tanstack/react-start";
 
 import { Button, Notice } from "@/components/simulator/ui";
 import { withAuthRetry } from "@/lib/auth-retry";
-import {
-  applyNotasCompra,
-  classifyCnpjs,
-  getFornecedoresExistentes,
-  saveNotasCompra,
-} from "@/lib/nfe.functions";
+import { applyNotasCompra, getFornecedoresExistentes, saveNotasCompra } from "@/lib/nfe.functions";
 import { aggregateNotas, readNfeFiles, type NfeNota } from "@/lib/nfe/parse";
 import { formatCnpjMask } from "@/lib/carteira/types";
 import { brl } from "@/lib/tax/calc";
 
 type Regime = "simples" | "regular" | "erro";
+
+const FONTE_CRT = "XML de NF-e — CRT do emitente";
 
 interface DraftRow {
   cnpj: string;
@@ -22,8 +19,6 @@ interface DraftRow {
   notas: number;
   regime: Regime;
   fonte: string;
-  ultimaEmissao: string | null;
-  classificado: boolean;
 }
 
 const REGIME_OPTIONS: { value: Regime; label: string }[] = [
@@ -42,7 +37,6 @@ export function NfeCompraPanel({
   onApplied: () => void | Promise<void>;
 }) {
   const save = useServerFn(saveNotasCompra);
-  const classify = useServerFn(classifyCnpjs);
   const apply = useServerFn(applyNotasCompra);
   const existentesFn = useServerFn(getFornecedoresExistentes);
 
@@ -52,7 +46,6 @@ export function NfeCompraPanel({
   const [existentes, setExistentes] = useState<string[]>([]);
   const [substituir, setSubstituir] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
 
@@ -78,8 +71,8 @@ export function NfeCompraPanel({
   }, [caseId, notas, drafts]);
 
   const semCnpj = useMemo(() => notas.filter((n) => n.status !== "ok"), [notas]);
-  const pendentes = drafts.filter((d) => !d.classificado);
-  const conferido = drafts.length > 0 && pendentes.length === 0;
+  const semRegime = drafts.filter((d) => d.regime === "erro");
+  const conferido = drafts.length > 0 && semRegime.length === 0;
   const conflitos = drafts.filter((d) => existentes.includes(d.cnpj));
 
   const handleFiles = async (files: FileList | null) => {
@@ -88,7 +81,13 @@ export function NfeCompraPanel({
     setError("");
     setStatus("");
     try {
-      const lidas = await readNfeFiles(Array.from(files));
+      let lidas: NfeNota[];
+      try {
+        lidas = await readNfeFiles(Array.from(files));
+      } catch {
+        setError("Não foi possível ler os arquivos. Envie .xml de NF-e ou um .zip com as notas.");
+        return;
+      }
       if (lidas.length === 0) {
         setError("Nenhum XML de NF-e encontrado nos arquivos enviados.");
         return;
@@ -101,53 +100,27 @@ export function NfeCompraPanel({
           nome: a.nome,
           valor: a.valor,
           notas: a.notas,
-          regime: "erro" as Regime,
-          fonte: "",
-          ultimaEmissao: a.ultimaEmissao,
-          classificado: false,
+          regime: a.regime,
+          fonte: a.regime === "erro" ? "" : FONTE_CRT,
         })),
       );
       setOpen(true);
-      await withAuthRetry(() => save({ data: { caseId, notas: lidas } }));
-      const res = await withAuthRetry(() => existentesFn({ data: { caseId } }));
-      setExistentes(res.cnpjs);
-    } catch {
-      setError("Não foi possível ler os arquivos. Envie .xml de NF-e ou um .zip com as notas.");
-    } finally {
-      setBusy(false);
-    }
-  };
+      setStatus(
+        `${lidas.length} nota(s) lida(s) · ${agregados.length} fornecedor(es) classificado(s) pelo CRT da própria nota.`,
+      );
 
-  const classifyRows = async (targets: string[]) => {
-    if (targets.length === 0) return;
-    setBusy(true);
-    setError("");
-    let done = 0;
-    setProgress({ done: 0, total: targets.length });
-    try {
-      for (let i = 0; i < targets.length; i += 12) {
-        const slice = targets.slice(i, i + 12);
-        const res = await withAuthRetry(() => classify({ data: { cnpjs: slice } }));
-        setDrafts((prev) =>
-          prev.map((row) => {
-            const hit = res.results.find((r) => r.cnpj === row.cnpj);
-            if (!hit) return row;
-            return {
-              ...row,
-              regime: hit.regime,
-              fonte: hit.fonte,
-              classificado: hit.status === "ok",
-            };
-          }),
+      // etapas auxiliares: uma falha aqui não invalida a leitura dos arquivos
+      try {
+        await withAuthRetry(() => save({ data: { caseId, notas: lidas } }));
+        const res = await withAuthRetry(() => existentesFn({ data: { caseId } }));
+        setExistentes(res.cnpjs);
+      } catch {
+        setError(
+          "Os arquivos foram lidos, mas não foi possível registrar as notas agora. Você ainda pode conferir e salvar a composição.",
         );
-        done += slice.length;
-        setProgress({ done, total: targets.length });
       }
-    } catch {
-      setError("A consulta foi interrompida. Você pode tentar novamente.");
     } finally {
       setBusy(false);
-      setProgress(null);
     }
   };
 
@@ -168,8 +141,6 @@ export function NfeCompraPanel({
               nome: d.nome,
               valor: d.valor,
               regime: d.regime,
-              fonte: d.fonte || "conferência manual",
-              dataClassificacao: d.ultimaEmissao,
             })),
           },
         }),
@@ -193,7 +164,7 @@ export function NfeCompraPanel({
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
         Via alternativa ao relatório de fornecedores: envie vários .xml de NF-e de compra ou um
-        .zip com as notas. Usamos apenas o cabeçalho da nota (emitente, valor e data).
+        .zip com as notas. O regime vem do CRT informado na própria nota — sem consulta externa.
       </p>
 
       <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -229,20 +200,6 @@ export function NfeCompraPanel({
 
       {open && drafts.length > 0 ? (
         <div className="mt-4 space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              disabled={busy || pendentes.length === 0}
-              onClick={() => void classifyRows(pendentes.map((d) => d.cnpj))}
-            >
-              {busy && progress ? "Consultando..." : "Classificar regime dos fornecedores"}
-            </Button>
-            {progress ? (
-              <span className="text-xs text-muted-foreground">
-                {progress.done} de {progress.total} CNPJs consultados
-              </span>
-            ) : null}
-          </div>
-
           {conflitos.length > 0 ? (
             <div className="rounded-xl border border-border bg-card p-3 text-sm">
               <p className="font-medium text-foreground">
@@ -304,8 +261,7 @@ export function NfeCompraPanel({
                         onChange={(e) =>
                           patch(row.cnpj, {
                             regime: e.target.value as Regime,
-                            classificado: e.target.value !== "erro",
-                            fonte: row.fonte || "conferência manual",
+                            fonte: e.target.value === "erro" ? "" : FONTE_CRT,
                           })
                         }
                         className="rounded border border-input bg-card px-2 py-1 text-sm"
@@ -319,14 +275,6 @@ export function NfeCompraPanel({
                     </td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">
                       {row.fonte || "—"}
-                      {!row.classificado && row.fonte ? (
-                        <Button
-                          variant="ghost"
-                          onClick={() => void classifyRows([row.cnpj])}
-                        >
-                          Tentar novamente
-                        </Button>
-                      ) : null}
                     </td>
                   </tr>
                 ))}
@@ -362,8 +310,8 @@ export function NfeCompraPanel({
 
           {!conferido ? (
             <Notice tone="warning">
-              Classifique (ou ajuste manualmente) o regime de todos os fornecedores antes de
-              gravar.
+              {semRegime.length} fornecedor{semRegime.length === 1 ? "" : "es"} sem CRT na nota.
+              Informe o regime manualmente antes de gravar.
             </Notice>
           ) : null}
 

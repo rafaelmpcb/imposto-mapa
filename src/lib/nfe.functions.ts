@@ -37,15 +37,6 @@ export const saveNotasCompra = createServerFn({ method: "POST" })
     return { ok: true as const, inserted: payload.length };
   });
 
-/** Classifica um lote de CNPJs (BrasilAPI com reserva na CNPJá). */
-export const classifyCnpjs = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { cnpjs: string[] }) => input)
-  .handler(async ({ data }): Promise<{ ok: true; results: NfeClassificacao[] }> => {
-    const { classifyMany } = await import("@/lib/carteira/classify.server");
-    const results = await classifyMany(data.cnpjs.slice(0, 12));
-    return { ok: true as const, results };
-  });
 
 /** Grava as contrapartes conferidas na composição de carteira, como fornecedores. */
 export const applyNotasCompra = createServerFn({ method: "POST" })
@@ -58,8 +49,6 @@ export const applyNotasCompra = createServerFn({ method: "POST" })
         nome: string;
         valor: number;
         regime: "simples" | "regular" | "erro";
-        fonte: string;
-        dataClassificacao: string | null;
       }[];
       substituir: boolean;
     }) => input,
@@ -87,6 +76,7 @@ export const applyNotasCompra = createServerFn({ method: "POST" })
         .in("cnpj", [...existentes]);
     }
 
+    const processadoEm = new Date().toISOString();
     const payload = data.rows
       .filter((r) => data.substituir || !existentes.has(r.cnpj))
       .map((r) => ({
@@ -97,8 +87,8 @@ export const applyNotasCompra = createServerFn({ method: "POST" })
         valor_movimentado: r.valor,
         regime: r.regime === "erro" ? ("pendente" as const) : r.regime,
         status_consulta: r.regime === "erro" ? ("pendente" as const) : ("ok" as const),
-        fonte_classificacao: `XML de NF-e (emitente) — ${r.fonte}`,
-        data_classificacao: r.dataClassificacao ?? new Date().toISOString(),
+        fonte_classificacao: "XML de NF-e — CRT do emitente",
+        data_classificacao: processadoEm,
       }));
 
     if (payload.length > 0) {

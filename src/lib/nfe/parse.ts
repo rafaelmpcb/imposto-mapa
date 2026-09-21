@@ -10,6 +10,15 @@ import { onlyDigits } from "@/lib/carteira/types";
 
 export type NfeStatus = "ok" | "sem_cnpj_emitente" | "xml_invalido" | "nao_e_nfe";
 
+/** Regime do emitente, direto do CRT da nota (1/2 = Simples, 3 = Regular). */
+export type NfeRegime = "simples" | "regular" | "erro";
+
+export function regimeFromCrt(crt: string | null): NfeRegime {
+  if (crt === "1" || crt === "2") return "simples";
+  if (crt === "3") return "regular";
+  return "erro";
+}
+
 export interface NfeNota {
   arquivo: string;
   chave: string | null;
@@ -17,6 +26,8 @@ export interface NfeNota {
   serie: string | null;
   cnpjEmitente: string | null;
   razaoSocialEmitente: string | null;
+  crt: string | null;
+  regime: NfeRegime;
   valorTotal: number;
   dataEmissao: string | null;
   status: NfeStatus;
@@ -27,6 +38,7 @@ export interface NfeAgregado {
   nome: string;
   valor: number;
   notas: number;
+  regime: NfeRegime;
   /** Data da nota mais recente usada na soma. */
   ultimaEmissao: string | null;
 }
@@ -47,6 +59,8 @@ export function parseNfeXml(xml: string, arquivo: string): NfeNota {
     serie: null,
     cnpjEmitente: null,
     razaoSocialEmitente: null,
+    crt: null,
+    regime: "erro",
     valorTotal: 0,
     dataEmissao: null,
     status: "xml_invalido",
@@ -72,6 +86,7 @@ export function parseNfeXml(xml: string, arquivo: string): NfeNota {
   const cnpj = onlyDigits(text(emit ? tag(emit, "CNPJ") : null));
   const emissao = text(ide ? tag(ide, "dhEmi") : null) || text(ide ? tag(ide, "dEmi") : null);
   const valor = Number(text(icmsTot ? tag(icmsTot, "vNF") : null).replace(",", ".")) || 0;
+  const crt = text(emit ? tag(emit, "CRT") : null) || null;
 
   const nota: NfeNota = {
     arquivo,
@@ -80,6 +95,8 @@ export function parseNfeXml(xml: string, arquivo: string): NfeNota {
     serie: text(ide ? tag(ide, "serie") : null) || null,
     cnpjEmitente: cnpj.length === 14 ? cnpj : null,
     razaoSocialEmitente: text(emit ? tag(emit, "xNome") : null) || null,
+    crt,
+    regime: regimeFromCrt(crt),
     valorTotal: valor,
     dataEmissao: emissao ? new Date(emissao).toISOString() : null,
     status: cnpj.length === 14 ? "ok" : "sem_cnpj_emitente",
@@ -117,6 +134,15 @@ export function aggregateNotas(notas: NfeNota[]): NfeAgregado[] {
       found.valor = Math.round((found.valor + nota.valorTotal) * 100) / 100;
       found.notas += 1;
       if (!found.nome && nota.razaoSocialEmitente) found.nome = nota.razaoSocialEmitente;
+      // a nota mais recente define o regime informado no CRT
+      if (
+        nota.regime !== "erro" &&
+        (found.regime === "erro" ||
+          !found.ultimaEmissao ||
+          (nota.dataEmissao ?? "") >= found.ultimaEmissao)
+      ) {
+        found.regime = nota.regime;
+      }
       if (
         nota.dataEmissao &&
         (!found.ultimaEmissao || nota.dataEmissao > found.ultimaEmissao)
@@ -129,6 +155,7 @@ export function aggregateNotas(notas: NfeNota[]): NfeAgregado[] {
         nome: nota.razaoSocialEmitente ?? "",
         valor: Math.round(nota.valorTotal * 100) / 100,
         notas: 1,
+        regime: nota.regime,
         ultimaEmissao: nota.dataEmissao,
       });
     }
