@@ -40,6 +40,13 @@ export interface NfseNota {
 
 const text = (node: Element | null | undefined) => (node?.textContent ?? "").trim();
 
+/** Data em ISO, ou null quando o documento traz algo que não é data. */
+const toIso = (raw: string): string | null => {
+  if (!raw) return null;
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+};
+
 const num = (node: Element | null | undefined) => {
   const raw = text(node);
   if (!raw) return 0;
