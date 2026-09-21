@@ -86,6 +86,7 @@ export function parseNfeXml(xml: string, arquivo: string): NfeNota {
   const cnpj = onlyDigits(text(emit ? tag(emit, "CNPJ") : null));
   const emissao = text(ide ? tag(ide, "dhEmi") : null) || text(ide ? tag(ide, "dEmi") : null);
   const valor = Number(text(icmsTot ? tag(icmsTot, "vNF") : null).replace(",", ".")) || 0;
+  const crt = text(emit ? tag(emit, "CRT") : null) || null;
 
   const nota: NfeNota = {
     arquivo,
@@ -94,6 +95,8 @@ export function parseNfeXml(xml: string, arquivo: string): NfeNota {
     serie: text(ide ? tag(ide, "serie") : null) || null,
     cnpjEmitente: cnpj.length === 14 ? cnpj : null,
     razaoSocialEmitente: text(emit ? tag(emit, "xNome") : null) || null,
+    crt,
+    regime: regimeFromCrt(crt),
     valorTotal: valor,
     dataEmissao: emissao ? new Date(emissao).toISOString() : null,
     status: cnpj.length === 14 ? "ok" : "sem_cnpj_emitente",
