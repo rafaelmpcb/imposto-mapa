@@ -524,11 +524,14 @@ export type Database = {
           case_id: string
           chave_acesso: string | null
           cnpj_prestador: string | null
+          cnpj_tomador: string | null
           created_at: string
           data_emissao: string | null
+          direcao: string
           id: string
           numero_nota: string | null
           razao_social_prestador: string | null
+          razao_social_tomador: string | null
           serie: string | null
           status_processamento: string
           updated_at: string
@@ -539,11 +542,14 @@ export type Database = {
           case_id: string
           chave_acesso?: string | null
           cnpj_prestador?: string | null
+          cnpj_tomador?: string | null
           created_at?: string
           data_emissao?: string | null
+          direcao?: string
           id?: string
           numero_nota?: string | null
           razao_social_prestador?: string | null
+          razao_social_tomador?: string | null
           serie?: string | null
           status_processamento?: string
           updated_at?: string
@@ -554,11 +560,14 @@ export type Database = {
           case_id?: string
           chave_acesso?: string | null
           cnpj_prestador?: string | null
+          cnpj_tomador?: string | null
           created_at?: string
           data_emissao?: string | null
+          direcao?: string
           id?: string
           numero_nota?: string | null
           razao_social_prestador?: string | null
+          razao_social_tomador?: string | null
           serie?: string | null
           status_processamento?: string
           updated_at?: string
@@ -639,6 +648,78 @@ export type Database = {
           },
           {
             foreignKeyName: "nota_servico_nfse_item_nota_servico_id_fkey"
+            columns: ["nota_servico_id"]
+            isOneToOne: false
+            referencedRelation: "nota_servico_nfse"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nota_servico_nfse_item_prestado: {
+        Row: {
+          case_id: string
+          cclasstrib: string | null
+          created_at: string
+          descricao: string | null
+          fonte: string
+          id: string
+          item_lc116: string | null
+          nbs: string | null
+          nota_servico_id: string
+          opcoes_candidatas: Json
+          status_classificacao: string
+          tem_classificacao_documento: boolean
+          updated_at: string
+          valor_base_calculo: number
+          valor_debito_ibs_cbs: number
+          valor_servico: number
+        }
+        Insert: {
+          case_id: string
+          cclasstrib?: string | null
+          created_at?: string
+          descricao?: string | null
+          fonte?: string
+          id?: string
+          item_lc116?: string | null
+          nbs?: string | null
+          nota_servico_id: string
+          opcoes_candidatas?: Json
+          status_classificacao?: string
+          tem_classificacao_documento?: boolean
+          updated_at?: string
+          valor_base_calculo?: number
+          valor_debito_ibs_cbs?: number
+          valor_servico?: number
+        }
+        Update: {
+          case_id?: string
+          cclasstrib?: string | null
+          created_at?: string
+          descricao?: string | null
+          fonte?: string
+          id?: string
+          item_lc116?: string | null
+          nbs?: string | null
+          nota_servico_id?: string
+          opcoes_candidatas?: Json
+          status_classificacao?: string
+          tem_classificacao_documento?: boolean
+          updated_at?: string
+          valor_base_calculo?: number
+          valor_debito_ibs_cbs?: number
+          valor_servico?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nota_servico_nfse_item_prestado_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nota_servico_nfse_item_prestado_nota_servico_id_fkey"
             columns: ["nota_servico_id"]
             isOneToOne: false
             referencedRelation: "nota_servico_nfse"
