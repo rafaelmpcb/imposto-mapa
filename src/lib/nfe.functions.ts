@@ -37,15 +37,6 @@ export const saveNotasCompra = createServerFn({ method: "POST" })
     return { ok: true as const, inserted: payload.length };
   });
 
-/** Classifica um lote de CNPJs (BrasilAPI com reserva na CNPJá). */
-export const classifyCnpjs = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { cnpjs: string[] }) => input)
-  .handler(async ({ data }): Promise<{ ok: true; results: NfeClassificacao[] }> => {
-    const { classifyMany } = await import("@/lib/carteira/classify.server");
-    const results = await classifyMany(data.cnpjs.slice(0, 12));
-    return { ok: true as const, results };
-  });
 
 /** Grava as contrapartes conferidas na composição de carteira, como fornecedores. */
 export const applyNotasCompra = createServerFn({ method: "POST" })
