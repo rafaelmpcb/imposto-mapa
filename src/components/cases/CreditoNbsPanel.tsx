@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 
-import { Button, Notice } from "@/components/simulator/ui";
+import { Notice } from "@/components/simulator/ui";
 import { withAuthRetry } from "@/lib/auth-retry";
 import {
   getCreditoServicoItens,
