@@ -10,6 +10,15 @@ import { onlyDigits } from "@/lib/carteira/types";
 
 export type NfeStatus = "ok" | "sem_cnpj_emitente" | "xml_invalido" | "nao_e_nfe";
 
+/** Regime do emitente, direto do CRT da nota (1/2 = Simples, 3 = Regular). */
+export type NfeRegime = "simples" | "regular" | "erro";
+
+export function regimeFromCrt(crt: string | null): NfeRegime {
+  if (crt === "1" || crt === "2") return "simples";
+  if (crt === "3") return "regular";
+  return "erro";
+}
+
 export interface NfeNota {
   arquivo: string;
   chave: string | null;
@@ -17,6 +26,8 @@ export interface NfeNota {
   serie: string | null;
   cnpjEmitente: string | null;
   razaoSocialEmitente: string | null;
+  crt: string | null;
+  regime: NfeRegime;
   valorTotal: number;
   dataEmissao: string | null;
   status: NfeStatus;
@@ -27,6 +38,7 @@ export interface NfeAgregado {
   nome: string;
   valor: number;
   notas: number;
+  regime: NfeRegime;
   /** Data da nota mais recente usada na soma. */
   ultimaEmissao: string | null;
 }
