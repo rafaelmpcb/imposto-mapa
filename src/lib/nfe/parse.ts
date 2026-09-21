@@ -70,6 +70,32 @@ function tag(root: ParentNode, name: string): Element | null {
   return found.length > 0 ? (found[0] as Element) : null;
 }
 
+/** Lê os itens (det) da nota: produto e, quando existir, o bloco IBSCBS. */
+export function parseItens(infNFe: Element): NfeItem[] {
+  const dets = Array.from(infNFe.getElementsByTagName("det"));
+  return dets.map((det) => {
+    const prod = tag(det, "prod");
+    const ibscbs = tag(det, "IBSCBS");
+    const gIbscbs = ibscbs ? tag(ibscbs, "gIBSCBS") : null;
+    const gCbs = gIbscbs ? tag(gIbscbs, "gCBS") : ibscbs ? tag(ibscbs, "gCBS") : null;
+    const gUf = gIbscbs ? tag(gIbscbs, "gIBSUF") : ibscbs ? tag(ibscbs, "gIBSUF") : null;
+    const gMun = gIbscbs ? tag(gIbscbs, "gIBSMun") : ibscbs ? tag(ibscbs, "gIBSMun") : null;
+    return {
+      ncm: onlyDigits(text(prod ? tag(prod, "NCM") : null)) || null,
+      cfop: text(prod ? tag(prod, "CFOP") : null) || null,
+      descricao: text(prod ? tag(prod, "xProd") : null) || null,
+      quantidade: num(prod ? tag(prod, "qCom") : null),
+      valorItem: num(prod ? tag(prod, "vProd") : null),
+      temIbscbs: Boolean(ibscbs),
+      cclasstrib: ibscbs ? text(tag(ibscbs, "cClassTrib")) || null : null,
+      baseCalculo: gIbscbs ? num(tag(gIbscbs, "vBC")) : 0,
+      vCBS: gCbs ? num(tag(gCbs, "vCBS")) : 0,
+      vIBSUF: gUf ? num(tag(gUf, "vIBSUF")) : 0,
+      vIBSMun: gMun ? num(tag(gMun, "vIBSMun")) : 0,
+    };
+  });
+}
+
 export function parseNfeXml(xml: string, arquivo: string): NfeNota {
   const base: NfeNota = {
     arquivo,
@@ -83,6 +109,7 @@ export function parseNfeXml(xml: string, arquivo: string): NfeNota {
     valorTotal: 0,
     dataEmissao: null,
     status: "xml_invalido",
+    itens: [],
   };
 
   let doc: Document;
