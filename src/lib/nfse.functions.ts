@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { NfseNota } from "@/lib/nfse/parse";
 import {
   FONTE_DOCUMENTO,
+  FONTE_DOCUMENTO_EMITIDA,
   creditoPorAliquotas,
   creditoPorNbs,
   type NbsExcecao,
@@ -11,12 +12,30 @@ import {
   type ServicoItemStatus,
 } from "@/lib/nfse/credito";
 
-/** Grava as notas de serviço tomadas e apura o crédito item a item. */
+export type DirecaoServico = "tomado" | "prestado";
+
+const TABELA_ITEM: Record<DirecaoServico, string> = {
+  tomado: "nota_servico_nfse_item",
+  prestado: "nota_servico_nfse_item_prestado",
+};
+
+const COLUNA_VALOR: Record<DirecaoServico, string> = {
+  tomado: "valor_credito_ibs_cbs",
+  prestado: "valor_debito_ibs_cbs",
+};
+
+/**
+ * Grava as notas de serviço (tomadas ou prestadas) e apura, item a item,
+ * o crédito (compras) ou o débito (vendas) de IBS/CBS.
+ */
 export const saveNotasServico = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { caseId: string; notas: NfseNota[] }) => input)
+  .inputValidator(
+    (input: { caseId: string; notas: NfseNota[]; direcao?: DirecaoServico }) => input,
+  )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const direcao: DirecaoServico = data.direcao ?? "tomado";
     if (data.notas.length === 0) return { ok: true as const, inserted: 0, itens: 0 };
 
     const { data: existentes } = await supabaseAdmin
@@ -46,6 +65,9 @@ export const saveNotasServico = createServerFn({ method: "POST" })
       serie: n.serie,
       cnpj_prestador: n.cnpjPrestador,
       razao_social_prestador: n.razaoSocialPrestador?.slice(0, 200) ?? null,
+      cnpj_tomador: n.cnpjTomador,
+      razao_social_tomador: n.razaoSocialTomador?.slice(0, 200) ?? null,
+      direcao,
       valor_total: n.valorTotal,
       data_emissao: n.dataEmissao,
       status_processamento: n.status,
@@ -94,6 +116,9 @@ export const saveNotasServico = createServerFn({ method: "POST" })
       }
     }
 
+    const colunaValor = COLUNA_VALOR[direcao];
+    const fonteDocumento = direcao === "prestado" ? FONTE_DOCUMENTO_EMITIDA : FONTE_DOCUMENTO;
+
     const itensPayload: Record<string, unknown>[] = [];
     for (const nota of notas) {
       const notaId =
@@ -115,9 +140,8 @@ export const saveNotasServico = createServerFn({ method: "POST" })
             ...base,
             cclasstrib: item.cclasstrib,
             valor_base_calculo: item.baseCalculo || item.valorServico,
-            valor_credito_ibs_cbs:
-              Math.round((item.vCBS + item.vIBSUF + item.vIBSMun) * 100) / 100,
-            fonte: FONTE_DOCUMENTO,
+            [colunaValor]: Math.round((item.vCBS + item.vIBSUF + item.vIBSMun) * 100) / 100,
+            fonte: fonteDocumento,
             status_classificacao: "ok",
             opcoes_candidatas: [],
           });
@@ -131,7 +155,7 @@ export const saveNotasServico = createServerFn({ method: "POST" })
           ...base,
           cclasstrib: calc.cclasstrib,
           valor_base_calculo: calc.baseCalculo,
-          valor_credito_ibs_cbs: calc.credito,
+          [colunaValor]: calc.credito,
           fonte: calc.fonte,
           status_classificacao: calc.status,
           opcoes_candidatas: calc.opcoes,
@@ -141,7 +165,7 @@ export const saveNotasServico = createServerFn({ method: "POST" })
 
     if (itensPayload.length > 0) {
       const ins = await supabaseAdmin
-        .from("nota_servico_nfse_item")
+        .from(TABELA_ITEM[direcao] as "nota_servico_nfse_item")
         .insert(itensPayload as never);
       if (ins.error) throw new Error(ins.error.message);
     }
@@ -164,6 +188,24 @@ export interface CreditoServicoItem {
   nota_servico_id: string;
   prestador: string | null;
   cnpj_prestador: string | null;
+  nota_numero: string | null;
+}
+
+export interface DebitoServicoItem {
+  id: string;
+  nbs: string | null;
+  item_lc116: string | null;
+  descricao: string | null;
+  valor_servico: number;
+  tem_classificacao_documento: boolean;
+  cclasstrib: string | null;
+  valor_debito_ibs_cbs: number;
+  fonte: string;
+  status_classificacao: ServicoItemStatus;
+  opcoes_candidatas: OpcaoServico[];
+  nota_servico_id: string;
+  tomador: string | null;
+  cnpj_tomador: string | null;
   nota_numero: string | null;
 }
 
@@ -225,6 +267,64 @@ export const getCreditoServicoItens = createServerFn({ method: "POST" })
     return { ok: true as const, itens: rows };
   });
 
+/** Itens de débito de serviços prestados pelo Caso, com o tomador de destino. */
+export const getDebitoServicoItens = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { caseId: string }) => input)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: itens } = await supabaseAdmin
+      .from("nota_servico_nfse_item_prestado" as "nota_servico_nfse_item")
+      .select("*")
+      .eq("case_id", data.caseId);
+    const lista = (itens ?? []) as Record<string, unknown>[];
+    const notaIds = [...new Set(lista.map((i) => String(i["nota_servico_id"])))];
+    const notas = new Map<
+      string,
+      { nome: string | null; cnpj: string | null; numero: string | null }
+    >();
+    if (notaIds.length > 0) {
+      const { data: notasData } = await supabaseAdmin
+        .from("nota_servico_nfse")
+        .select("id,razao_social_tomador,cnpj_tomador,numero_nota")
+        .in("id", notaIds);
+      for (const n of (notasData ?? []) as {
+        id: string;
+        razao_social_tomador: string | null;
+        cnpj_tomador: string | null;
+        numero_nota: string | null;
+      }[]) {
+        notas.set(n.id, {
+          nome: n.razao_social_tomador,
+          cnpj: n.cnpj_tomador,
+          numero: n.numero_nota,
+        });
+      }
+    }
+    const rows: DebitoServicoItem[] = lista.map((i) => {
+      const nota = notas.get(String(i["nota_servico_id"]));
+      return {
+        id: String(i["id"]),
+        nbs: (i["nbs"] as string | null) ?? null,
+        item_lc116: (i["item_lc116"] as string | null) ?? null,
+        descricao: (i["descricao"] as string | null) ?? null,
+        valor_servico: Number(i["valor_servico"] ?? 0),
+        tem_classificacao_documento: Boolean(i["tem_classificacao_documento"]),
+        cclasstrib: (i["cclasstrib"] as string | null) ?? null,
+        valor_debito_ibs_cbs: Number(i["valor_debito_ibs_cbs"] ?? 0),
+        fonte: String(i["fonte"] ?? ""),
+        status_classificacao:
+          (i["status_classificacao"] as ServicoItemStatus) ?? "sem_dado",
+        opcoes_candidatas: (i["opcoes_candidatas"] as OpcaoServico[]) ?? [],
+        nota_servico_id: String(i["nota_servico_id"]),
+        tomador: nota?.nome ?? null,
+        cnpj_tomador: nota?.cnpj ?? null,
+        nota_numero: nota?.numero ?? null,
+      };
+    });
+    return { ok: true as const, itens: rows };
+  });
+
 /** Decisão do analista para um serviço com classificação ambígua. */
 export const resolverServicoAmbiguo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -235,27 +335,32 @@ export const resolverServicoAmbiguo = createServerFn({ method: "POST" })
       nome: string;
       ibsPct: number;
       cbsPct: number;
+      direcao?: DirecaoServico;
     }) => input,
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const direcao: DirecaoServico = data.direcao ?? "tomado";
+    const tabela = TABELA_ITEM[direcao] as "nota_servico_nfse_item";
+    const colunaValor = COLUNA_VALOR[direcao];
+
     const { data: item } = await supabaseAdmin
-      .from("nota_servico_nfse_item")
+      .from(tabela)
       .select("valor_servico")
       .eq("id", data.itemId)
       .maybeSingle();
     const valor = Number((item as { valor_servico?: number } | null)?.valor_servico ?? 0);
-    const credito = creditoPorAliquotas(valor, data.ibsPct, data.cbsPct);
+    const apurado = creditoPorAliquotas(valor, data.ibsPct, data.cbsPct);
     const { error } = await supabaseAdmin
-      .from("nota_servico_nfse_item")
+      .from(tabela)
       .update({
         cclasstrib: data.cclasstrib,
         valor_base_calculo: valor,
-        valor_credito_ibs_cbs: credito,
+        [colunaValor]: apurado,
         fonte: `revisão do analista — ${data.nome.slice(0, 120)}`,
         status_classificacao: "ok",
       } as never)
       .eq("id", data.itemId);
     if (error) throw new Error(error.message);
-    return { ok: true as const, credito };
+    return { ok: true as const, credito: apurado };
   });
