@@ -53,12 +53,212 @@ export const saveNotasCompra = createServerFn({ method: "POST" })
         status_processamento: n.status,
       }));
 
-    if (payload.length === 0) return { ok: true as const, inserted: 0 };
-    const { error } = await supabaseAdmin
+    if (payload.length === 0) return { ok: true as const, inserted: 0, itens: 0 };
+    const { data: inseridas, error } = await supabaseAdmin
       .from("nota_fiscal_compra_xml")
-      .insert(payload as never);
+      .insert(payload as never)
+      .select("id,chave_acesso,arquivo_original");
     if (error) throw new Error(error.message);
-    return { ok: true as const, inserted: payload.length };
+
+    // --- itens da nota: crédito de IBS/CBS apurado item a item ---
+    const notasGravadas = (inseridas ?? []) as {
+      id: string;
+      chave_acesso: string | null;
+      arquivo_original: string;
+    }[];
+    const idPorChave = new Map<string, string>();
+    const idPorArquivo = new Map<string, string>();
+    for (const n of notasGravadas) {
+      if (n.chave_acesso) idPorChave.set(n.chave_acesso, n.id);
+      idPorArquivo.set(n.arquivo_original, n.id);
+    }
+
+    const notasComItens = data.notas.filter((n) => (n.itens?.length ?? 0) > 0);
+    const ncms = [
+      ...new Set(
+        notasComItens.flatMap((n) =>
+          (n.itens ?? []).filter((i) => !i.temIbscbs && i.ncm).map((i) => i.ncm as string),
+        ),
+      ),
+    ];
+    const excecoesPorNcm = new Map<string, NcmExcecao[]>();
+    if (ncms.length > 0) {
+      const { data: excecoes } = await supabaseAdmin
+        .from("ncm_excecao_ibscbs")
+        .select("ncm,anexo,anexo_desc,cclasstrib,reducao_pct,imposto_seletivo,n_classificacoes_ncm,requer_revisao_humana")
+        .in("ncm", ncms);
+      for (const linha of (excecoes ?? []) as NcmExcecao[]) {
+        const list = excecoesPorNcm.get(linha.ncm) ?? [];
+        list.push(linha);
+        excecoesPorNcm.set(linha.ncm, list);
+      }
+    }
+
+    const itensPayload: Record<string, unknown>[] = [];
+    for (const nota of notasComItens) {
+      const notaId =
+        (nota.chave ? idPorChave.get(nota.chave) : undefined) ??
+        idPorArquivo.get(nota.arquivo.slice(0, 200));
+      if (!notaId) continue;
+      for (const item of nota.itens ?? []) {
+        const base = {
+          nota_fiscal_compra_xml_id: notaId,
+          case_id: data.caseId,
+          ncm: item.ncm,
+          cfop: item.cfop,
+          descricao: item.descricao?.slice(0, 300) ?? null,
+          quantidade: item.quantidade,
+          valor_item: item.valorItem,
+          tem_ibscbs: item.temIbscbs,
+        };
+        if (item.temIbscbs) {
+          itensPayload.push({
+            ...base,
+            cclasstrib: item.cclasstrib,
+            valor_base_calculo: item.baseCalculo || item.valorItem,
+            valor_credito_ibs_cbs:
+              Math.round((item.vCBS + item.vIBSUF + item.vIBSMun) * 100) / 100,
+            fonte: FONTE_XML,
+            status_classificacao: "ok",
+            opcoes_candidatas: [],
+          });
+          continue;
+        }
+        const calc = creditoPorNcm(
+          item.valorItem,
+          item.descricao,
+          item.ncm ? (excecoesPorNcm.get(item.ncm) ?? []) : [],
+        );
+        itensPayload.push({
+          ...base,
+          cclasstrib: calc.cclasstrib,
+          valor_base_calculo: calc.baseCalculo,
+          valor_credito_ibs_cbs: calc.credito,
+          fonte: calc.fonte,
+          status_classificacao: calc.status,
+          opcoes_candidatas: calc.opcoes,
+        });
+      }
+    }
+
+    if (itensPayload.length > 0) {
+      const insItens = await supabaseAdmin
+        .from("nota_fiscal_compra_xml_item")
+        .insert(itensPayload as never);
+      if (insItens.error) throw new Error(insItens.error.message);
+    }
+
+    return { ok: true as const, inserted: payload.length, itens: itensPayload.length };
+  });
+
+export interface CreditoItem {
+  id: string;
+  ncm: string | null;
+  cfop: string | null;
+  descricao: string | null;
+  quantidade: number;
+  valor_item: number;
+  tem_ibscbs: boolean;
+  cclasstrib: string | null;
+  valor_credito_ibs_cbs: number;
+  fonte: string;
+  status_classificacao: ItemStatus;
+  opcoes_candidatas: OpcaoCandidata[];
+  nota_fiscal_compra_xml_id: string;
+  fornecedor: string | null;
+  cnpj_fornecedor: string | null;
+  nota_numero: string | null;
+}
+
+/** Itens de crédito apurados no Caso, com o fornecedor de origem. */
+export const getCreditoItens = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { caseId: string }) => input)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: itens } = await supabaseAdmin
+      .from("nota_fiscal_compra_xml_item")
+      .select("*")
+      .eq("case_id", data.caseId);
+    const lista = (itens ?? []) as Record<string, unknown>[];
+    const notaIds = [
+      ...new Set(lista.map((i) => String(i["nota_fiscal_compra_xml_id"]))),
+    ];
+    const notas = new Map<string, { nome: string | null; cnpj: string | null; numero: string | null }>();
+    if (notaIds.length > 0) {
+      const { data: notasData } = await supabaseAdmin
+        .from("nota_fiscal_compra_xml")
+        .select("id,razao_social_emitente,cnpj_emitente,numero_nota")
+        .in("id", notaIds);
+      for (const n of (notasData ?? []) as {
+        id: string;
+        razao_social_emitente: string | null;
+        cnpj_emitente: string | null;
+        numero_nota: string | null;
+      }[]) {
+        notas.set(n.id, {
+          nome: n.razao_social_emitente,
+          cnpj: n.cnpj_emitente,
+          numero: n.numero_nota,
+        });
+      }
+    }
+    const rows: CreditoItem[] = lista.map((i) => {
+      const nota = notas.get(String(i["nota_fiscal_compra_xml_id"]));
+      return {
+        id: String(i["id"]),
+        ncm: (i["ncm"] as string | null) ?? null,
+        cfop: (i["cfop"] as string | null) ?? null,
+        descricao: (i["descricao"] as string | null) ?? null,
+        quantidade: Number(i["quantidade"] ?? 0),
+        valor_item: Number(i["valor_item"] ?? 0),
+        tem_ibscbs: Boolean(i["tem_ibscbs"]),
+        cclasstrib: (i["cclasstrib"] as string | null) ?? null,
+        valor_credito_ibs_cbs: Number(i["valor_credito_ibs_cbs"] ?? 0),
+        fonte: String(i["fonte"] ?? ""),
+        status_classificacao: (i["status_classificacao"] as ItemStatus) ?? "sem_dado",
+        opcoes_candidatas: (i["opcoes_candidatas"] as OpcaoCandidata[]) ?? [],
+        nota_fiscal_compra_xml_id: String(i["nota_fiscal_compra_xml_id"]),
+        fornecedor: nota?.nome ?? null,
+        cnpj_fornecedor: nota?.cnpj ?? null,
+        nota_numero: nota?.numero ?? null,
+      };
+    });
+    return { ok: true as const, itens: rows };
+  });
+
+/** Decisão do analista para um item com classificação ambígua. */
+export const resolverItemAmbiguo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      itemId: string;
+      anexo: string;
+      cclasstrib: string | null;
+      reducaoPct: number;
+    }) => input,
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: item } = await supabaseAdmin
+      .from("nota_fiscal_compra_xml_item")
+      .select("valor_item")
+      .eq("id", data.itemId)
+      .maybeSingle();
+    const valor = Number((item as { valor_item?: number } | null)?.valor_item ?? 0);
+    const credito = creditoComReducao(valor, data.reducaoPct);
+    const { error } = await supabaseAdmin
+      .from("nota_fiscal_compra_xml_item")
+      .update({
+        cclasstrib: data.cclasstrib,
+        valor_credito_ibs_cbs: credito,
+        valor_base_calculo: valor,
+        fonte: `revisão do analista — ${data.anexo} (${data.reducaoPct}%)`,
+        status_classificacao: "ok",
+      } as never)
+      .eq("id", data.itemId);
+    if (error) throw new Error(error.message);
+    return { ok: true as const, credito };
   });
 
 
