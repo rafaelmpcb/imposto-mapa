@@ -165,7 +165,7 @@ export function parseNfseXml(xml: string, arquivo: string): NfseNota {
     cnpjTomador: cnpjOf(tomaScope),
     razaoSocialTomador: nomeOf(tomaScope),
     valorTotal: valorTotal || itens.reduce((acc, i) => acc + i.valorServico, 0),
-    dataEmissao: emissao ? new Date(emissao).toISOString() : null,
+    dataEmissao: toIso(emissao),
     status: cnpjPrestador ? "ok" : "sem_cnpj",
     itens,
   };
