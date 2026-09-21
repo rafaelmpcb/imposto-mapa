@@ -107,6 +107,7 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
   const carteiraStatus = docs["composicao_carteira"] ?? "nao_enviado";
   const [regimeStatus, setRegimeStatus] = useState("nao_enviado");
   const [servicosStatus, setServicosStatus] = useState("nao_enviado");
+  const [nbsReload, setNbsReload] = useState(0);
   // O PGDAS-D só existe no Simples Nacional.
   const isSimples = (caseItem.simulations[0]?.input as { taxpayerType?: string } | undefined)?.taxpayerType ===
     "simples";
@@ -558,7 +559,10 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
                 <NfseServicoPanel
                   caseId={caseItem.id}
                   caseCnpj={caseItem.cnpj}
-                  onSaved={() => setServicosStatus("processado")}
+                  onSaved={() => {
+                    setServicosStatus("processado");
+                    setNbsReload((v) => v + 1);
+                  }}
                 />
               ) : doc.active ? (
                 <>
