@@ -2,6 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { NfeNota } from "@/lib/nfe/parse";
+import {
+  FONTE_XML,
+  creditoComReducao,
+  creditoPorNcm,
+  type ItemStatus,
+  type NcmExcecao,
+  type OpcaoCandidata,
+} from "@/lib/nfe/credito";
 
 export interface NfeClassificacao {
   cnpj: string;
