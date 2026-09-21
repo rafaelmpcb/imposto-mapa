@@ -529,7 +529,9 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
               ? carteiraStatus
               : doc.key === "dados_regime"
                 ? (docs["dados_regime"] ?? regimeStatus)
-                : "nao_enviado";
+                : doc.key === "servicos_tomados"
+                  ? servicosStatus
+                  : "nao_enviado";
           return (
             <li
               key={doc.key}
@@ -549,6 +551,12 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
                 <div className="mt-3">
                   <PgdasdPanel caseItem={caseItem} onStatus={setRegimeStatus} />
                 </div>
+              ) : doc.key === "servicos_tomados" ? (
+                <NfseServicoPanel
+                  caseId={caseItem.id}
+                  caseCnpj={caseItem.cnpj}
+                  onSaved={() => setServicosStatus("processado")}
+                />
               ) : doc.active ? (
                 <>
                   <div className="mt-3 flex flex-wrap items-center gap-3">
