@@ -155,6 +155,7 @@ export function aggregateNotas(notas: NfeNota[]): NfeAgregado[] {
         nome: nota.razaoSocialEmitente ?? "",
         valor: Math.round(nota.valorTotal * 100) / 100,
         notas: 1,
+        regime: nota.regime,
         ultimaEmissao: nota.dataEmissao,
       });
     }
