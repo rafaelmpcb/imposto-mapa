@@ -19,15 +19,21 @@ const FONTE_CRT = "XML de NF-e — CRT do emitente";
 
 /** Legenda que reflete a fonte real de classificação das linhas exibidas. */
 function fontesLegenda(rows: CarteiraRow[]): string {
-  const temCrt = rows.some((r) => (r.fonte_classificacao ?? "").startsWith(FONTE_CRT));
-  const temApi = rows.some((r) => !(r.fonte_classificacao ?? "").startsWith(FONTE_CRT));
-  const crt = "Classificação obtida do CRT informado no XML da nota (fornecedores).";
-  const api =
-    "Classificação obtida na API Pública da CNPJá, a partir do CNPJ de cada contraparte.";
-  if (temCrt && temApi) {
-    return "Classificação obtida do CRT informado no XML da nota (fornecedores) ou da API Pública da CNPJá, a partir do CNPJ de cada contraparte (quando aplicável).";
+  const fontes = rows.map((r) => r.fonte_classificacao ?? "");
+  const partes: string[] = [];
+  if (fontes.some((f) => f.startsWith(FONTE_CRT))) {
+    partes.push("do CRT informado no XML da nota (fornecedores)");
   }
-  return temCrt ? crt : api;
+  if (fontes.some((f) => f.includes("BrasilAPI"))) {
+    partes.push("da BrasilAPI, pelo CNPJ da contraparte");
+  }
+  if (fontes.some((f) => f.includes("CNPJá"))) {
+    partes.push("da API Pública da CNPJá, pelo CNPJ da contraparte");
+  }
+  if (partes.length === 0) {
+    return "Classificação obtida a partir do CNPJ de cada contraparte.";
+  }
+  return `Classificação obtida ${partes.join(" ou ")}.`;
 }
 
 function SummaryCard({ rows, tipo }: { rows: CarteiraRow[]; tipo: CarteiraTipo }) {

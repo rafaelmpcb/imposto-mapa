@@ -282,6 +282,65 @@ export type Database = {
           },
         ]
       }
+      nota_fiscal_venda_xml: {
+        Row: {
+          aplicado_composicao_carteira: boolean
+          arquivo_original: string
+          case_id: string
+          chave_acesso: string | null
+          cnpj_destinatario: string | null
+          created_at: string
+          data_emissao: string | null
+          id: string
+          numero_nota: string | null
+          razao_social_destinatario: string | null
+          serie: string | null
+          status_processamento: string
+          updated_at: string
+          valor_total: number
+        }
+        Insert: {
+          aplicado_composicao_carteira?: boolean
+          arquivo_original?: string
+          case_id: string
+          chave_acesso?: string | null
+          cnpj_destinatario?: string | null
+          created_at?: string
+          data_emissao?: string | null
+          id?: string
+          numero_nota?: string | null
+          razao_social_destinatario?: string | null
+          serie?: string | null
+          status_processamento?: string
+          updated_at?: string
+          valor_total?: number
+        }
+        Update: {
+          aplicado_composicao_carteira?: boolean
+          arquivo_original?: string
+          case_id?: string
+          chave_acesso?: string | null
+          cnpj_destinatario?: string | null
+          created_at?: string
+          data_emissao?: string | null
+          id?: string
+          numero_nota?: string | null
+          razao_social_destinatario?: string | null
+          serie?: string | null
+          status_processamento?: string
+          updated_at?: string
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nota_fiscal_venda_xml_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       office_config: {
         Row: {
           key: string
