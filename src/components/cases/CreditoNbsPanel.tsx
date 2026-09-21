@@ -132,38 +132,6 @@ export function CreditoNbsPanel({
 
       {error ? <Notice tone="warning">{error}</Notice> : null}
 
-      {resumo.ambiguos.length > 0 ? (
-        <div className="space-y-2">
-          <p className="text-sm font-semibold text-foreground">Fila de revisão do analista</p>
-          {resumo.ambiguos.map((item) => (
-            <div key={item.id} className="rounded-lg border border-border p-3 text-sm">
-              <p className="font-medium text-foreground">
-                NBS {item.nbs ?? "—"} · {item.descricao ?? "sem descrição"}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Nota {item.nota_numero ?? "—"} · {item.prestador ?? "—"} ·{" "}
-                {brl(Number(item.valor_servico))}
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {item.opcoes_candidatas.map((o, idx) => (
-                  <button
-                    key={`${item.id}-${idx}`}
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void escolher(item, o)}
-                    className="max-w-sm rounded border border-input px-2 py-1 text-left text-xs font-semibold text-foreground hover:bg-secondary"
-                  >
-                    {o.cclasstrib ?? "—"} · IBS {o.aliquota_ibs_2026}% + CBS {o.aliquota_cbs_2026}%
-                    <span className="block font-normal text-muted-foreground">
-                      {o.nome_cclasstrib}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-lg border border-border p-3">
