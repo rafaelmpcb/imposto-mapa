@@ -17,22 +17,46 @@ export const saveNotasCompra = createServerFn({ method: "POST" })
   .inputValidator((input: { caseId: string; notas: NfeNota[] }) => input)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const payload = data.notas.map((n) => ({
-      case_id: data.caseId,
-      arquivo_original: n.arquivo.slice(0, 200),
-      chave_acesso: n.chave,
-      numero_nota: n.numero,
-      serie: n.serie,
-      cnpj_emitente: n.cnpjEmitente,
-      razao_social_emitente: n.razaoSocialEmitente?.slice(0, 200) ?? null,
-      valor_total: n.valorTotal,
-      data_emissao: n.dataEmissao,
-      status_processamento: n.status,
-    }));
+    if (data.notas.length === 0) return { ok: true as const, inserted: 0 };
+
+    // O índice de unicidade é parcial (só quando há chave), então o upsert por
+    // ON CONFLICT não é aceito: filtramos as chaves já gravadas manualmente.
+    const { data: existentes } = await supabaseAdmin
+      .from("nota_fiscal_compra_xml")
+      .select("chave_acesso")
+      .eq("case_id", data.caseId);
+    const jaGravadas = new Set(
+      ((existentes ?? []) as { chave_acesso: string | null }[])
+        .map((r) => r.chave_acesso)
+        .filter((c): c is string => Boolean(c)),
+    );
+
+    const vistas = new Set<string>();
+    const payload = data.notas
+      .filter((n) => {
+        if (!n.chave) return true;
+        if (jaGravadas.has(n.chave) || vistas.has(n.chave)) return false;
+        vistas.add(n.chave);
+        return true;
+      })
+      .map((n) => ({
+        case_id: data.caseId,
+        arquivo_original: n.arquivo.slice(0, 200),
+        chave_acesso: n.chave,
+        numero_nota: n.numero,
+        serie: n.serie,
+        cnpj_emitente: n.cnpjEmitente,
+        razao_social_emitente: n.razaoSocialEmitente?.slice(0, 200) ?? null,
+        valor_total: n.valorTotal,
+        data_emissao: n.dataEmissao,
+        regime_emitente: n.regime,
+        status_processamento: n.status,
+      }));
+
     if (payload.length === 0) return { ok: true as const, inserted: 0 };
     const { error } = await supabaseAdmin
       .from("nota_fiscal_compra_xml")
-      .upsert(payload as never, { onConflict: "case_id,chave_acesso", ignoreDuplicates: true });
+      .insert(payload as never);
     if (error) throw new Error(error.message);
     return { ok: true as const, inserted: payload.length };
   });

@@ -232,6 +232,7 @@ export type Database = {
           id: string
           numero_nota: string | null
           razao_social_emitente: string | null
+          regime_emitente: string | null
           serie: string | null
           status_processamento: string
           updated_at: string
@@ -248,6 +249,7 @@ export type Database = {
           id?: string
           numero_nota?: string | null
           razao_social_emitente?: string | null
+          regime_emitente?: string | null
           serie?: string | null
           status_processamento?: string
           updated_at?: string
@@ -264,6 +266,7 @@ export type Database = {
           id?: string
           numero_nota?: string | null
           razao_social_emitente?: string | null
+          regime_emitente?: string | null
           serie?: string | null
           status_processamento?: string
           updated_at?: string
