@@ -59,6 +59,8 @@ export function parseNfeXml(xml: string, arquivo: string): NfeNota {
     serie: null,
     cnpjEmitente: null,
     razaoSocialEmitente: null,
+    crt: null,
+    regime: "erro",
     valorTotal: 0,
     dataEmissao: null,
     status: "xml_invalido",
