@@ -146,6 +146,7 @@ export function parseNfeXml(xml: string, arquivo: string): NfeNota {
     valorTotal: valor,
     dataEmissao: emissao ? new Date(emissao).toISOString() : null,
     status: cnpj.length === 14 ? "ok" : "sem_cnpj_emitente",
+    itens: parseItens(infNFe),
   };
   return nota;
 }
