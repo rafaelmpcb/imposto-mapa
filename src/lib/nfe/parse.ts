@@ -104,6 +104,31 @@ export function parseNfeXml(xml: string, arquivo: string): NfeNota {
   return nota;
 }
 
+/** Lê o conteúdo bruto dos .xml soltos e/ou dentro de um .zip. */
+export async function readNfeRawFiles(
+  files: File[],
+): Promise<{ arquivo: string; xml: string }[]> {
+  const out: { arquivo: string; xml: string }[] = [];
+  for (const file of files) {
+    const lower = file.name.toLowerCase();
+    if (lower.endsWith(".zip")) {
+      const zip = await JSZip.loadAsync(await file.arrayBuffer());
+      const entries = Object.values(zip.files).filter(
+        (entry) => !entry.dir && entry.name.toLowerCase().endsWith(".xml"),
+      );
+      for (const entry of entries) {
+        out.push({
+          arquivo: entry.name.split("/").pop() ?? entry.name,
+          xml: await entry.async("string"),
+        });
+      }
+    } else if (lower.endsWith(".xml")) {
+      out.push({ arquivo: file.name, xml: await file.text() });
+    }
+  }
+  return out;
+}
+
 /** Lê arquivos .xml soltos e/ou um .zip com notas dentro. */
 export async function readNfeFiles(files: File[]): Promise<NfeNota[]> {
   const notas: NfeNota[] = [];

@@ -5,8 +5,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Button, Notice } from "@/components/simulator/ui";
 import { CarteiraResult } from "@/components/cases/CarteiraResult";
 import { PgdasdPanel } from "@/components/cases/PgdasdPanel";
-import { NfeCompraPanel } from "@/components/cases/NfeCompraPanel";
-import { NfeVendaPanel } from "@/components/cases/NfeVendaPanel";
+import { NfeUnificadoPanel } from "@/components/cases/NfeUnificadoPanel";
 import { withAuthRetry } from "@/lib/auth-retry";
 import {
   deleteCarteiraRow,
@@ -571,8 +570,11 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
                   </div>
                   {doc.key === "composicao_carteira" ? (
                     <>
-                      <NfeCompraPanel caseId={caseItem.id} onApplied={refresh} />
-                      <NfeVendaPanel caseId={caseItem.id} onApplied={refresh} />
+                      <NfeUnificadoPanel
+                        caseId={caseItem.id}
+                        caseCnpj={caseItem.cnpj}
+                        onApplied={refresh}
+                      />
                     </>
                   ) : null}
                 </>
