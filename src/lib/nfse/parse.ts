@@ -43,7 +43,8 @@ const text = (node: Element | null | undefined) => (node?.textContent ?? "").tri
 const num = (node: Element | null | undefined) => {
   const raw = text(node);
   if (!raw) return 0;
-  return Number(raw.replace(/\./g, (m, i, s: string) => (s.includes(",") ? "" : m)).replace(",", ".")) || 0;
+  const normalizado = raw.includes(",") ? raw.replace(/\./g, "").replace(",", ".") : raw;
+  return Number(normalizado) || 0;
 };
 
 /** Primeira tag com um dos nomes locais informados, em qualquer profundidade. */
