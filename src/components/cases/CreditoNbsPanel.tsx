@@ -90,28 +90,6 @@ export function CreditoNbsPanel({
     return [...map.values()].sort((a, b) => b.credito - a.credito).slice(0, 5);
   }, [itens]);
 
-  const escolher = async (item: CreditoServicoItem, opcao: OpcaoServico) => {
-    setBusy(true);
-    setError("");
-    try {
-      await withAuthRetry(() =>
-        resolver({
-          data: {
-            itemId: item.id,
-            cclasstrib: opcao.cclasstrib,
-            nome: opcao.nome_cclasstrib,
-            ibsPct: opcao.aliquota_ibs_2026,
-            cbsPct: opcao.aliquota_cbs_2026,
-          },
-        }),
-      );
-      await load();
-    } catch {
-      setError("Não foi possível registrar a decisão para este serviço.");
-    } finally {
-      setBusy(false);
-    }
-  };
 
   if (itens.length === 0) return null;
 
