@@ -87,8 +87,8 @@ export const applyNotasCompra = createServerFn({ method: "POST" })
         valor_movimentado: r.valor,
         regime: r.regime === "erro" ? ("pendente" as const) : r.regime,
         status_consulta: r.regime === "erro" ? ("pendente" as const) : ("ok" as const),
-        fonte_classificacao: `XML de NF-e (emitente) — ${r.fonte}`,
-        data_classificacao: r.dataClassificacao ?? new Date().toISOString(),
+        fonte_classificacao: "XML de NF-e — CRT do emitente",
+        data_classificacao: processadoEm,
       }));
 
     if (payload.length > 0) {
