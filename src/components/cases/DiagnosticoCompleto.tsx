@@ -622,6 +622,8 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
 
       <CreditoNcmPanel caseId={caseItem.id} />
 
+      <CreditoNbsPanel key={servicosStatus} caseId={caseItem.id} />
+
       {fornecedores.classificadas > 0 ? (
         <div className="rounded-xl border border-navy/30 bg-navy/5 p-4">
           <p className="text-sm font-semibold text-foreground">
