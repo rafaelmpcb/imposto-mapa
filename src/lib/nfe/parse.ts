@@ -134,6 +134,15 @@ export function aggregateNotas(notas: NfeNota[]): NfeAgregado[] {
       found.valor = Math.round((found.valor + nota.valorTotal) * 100) / 100;
       found.notas += 1;
       if (!found.nome && nota.razaoSocialEmitente) found.nome = nota.razaoSocialEmitente;
+      // a nota mais recente define o regime informado no CRT
+      if (
+        nota.regime !== "erro" &&
+        (found.regime === "erro" ||
+          !found.ultimaEmissao ||
+          (nota.dataEmissao ?? "") >= found.ultimaEmissao)
+      ) {
+        found.regime = nota.regime;
+      }
       if (
         nota.dataEmissao &&
         (!found.ultimaEmissao || nota.dataEmissao > found.ultimaEmissao)
