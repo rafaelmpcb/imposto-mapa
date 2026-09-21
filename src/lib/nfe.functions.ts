@@ -76,6 +76,7 @@ export const applyNotasCompra = createServerFn({ method: "POST" })
         .in("cnpj", [...existentes]);
     }
 
+    const processadoEm = new Date().toISOString();
     const payload = data.rows
       .filter((r) => data.substituir || !existentes.has(r.cnpj))
       .map((r) => ({
