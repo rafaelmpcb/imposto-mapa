@@ -220,6 +220,51 @@ export type Database = {
           },
         ]
       }
+      ncm_excecao_ibscbs: {
+        Row: {
+          anexo: string
+          anexo_desc: string
+          atualizado_em: string
+          cclasstrib: string | null
+          fonte: string
+          id: string
+          imposto_seletivo: boolean
+          n_classificacoes_ncm: number
+          ncm: string
+          observacao: string | null
+          reducao_pct: number
+          requer_revisao_humana: boolean
+        }
+        Insert: {
+          anexo?: string
+          anexo_desc?: string
+          atualizado_em?: string
+          cclasstrib?: string | null
+          fonte?: string
+          id?: string
+          imposto_seletivo?: boolean
+          n_classificacoes_ncm?: number
+          ncm: string
+          observacao?: string | null
+          reducao_pct?: number
+          requer_revisao_humana?: boolean
+        }
+        Update: {
+          anexo?: string
+          anexo_desc?: string
+          atualizado_em?: string
+          cclasstrib?: string | null
+          fonte?: string
+          id?: string
+          imposto_seletivo?: boolean
+          n_classificacoes_ncm?: number
+          ncm?: string
+          observacao?: string | null
+          reducao_pct?: number
+          requer_revisao_humana?: boolean
+        }
+        Relationships: []
+      }
       nota_fiscal_compra_xml: {
         Row: {
           aplicado_composicao_carteira: boolean
@@ -278,6 +323,81 @@ export type Database = {
             columns: ["case_id"]
             isOneToOne: false
             referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nota_fiscal_compra_xml_item: {
+        Row: {
+          case_id: string
+          cclasstrib: string | null
+          cfop: string | null
+          created_at: string
+          descricao: string | null
+          fonte: string
+          id: string
+          ncm: string | null
+          nota_fiscal_compra_xml_id: string
+          opcoes_candidatas: Json
+          quantidade: number
+          status_classificacao: string
+          tem_ibscbs: boolean
+          updated_at: string
+          valor_base_calculo: number
+          valor_credito_ibs_cbs: number
+          valor_item: number
+        }
+        Insert: {
+          case_id: string
+          cclasstrib?: string | null
+          cfop?: string | null
+          created_at?: string
+          descricao?: string | null
+          fonte?: string
+          id?: string
+          ncm?: string | null
+          nota_fiscal_compra_xml_id: string
+          opcoes_candidatas?: Json
+          quantidade?: number
+          status_classificacao?: string
+          tem_ibscbs?: boolean
+          updated_at?: string
+          valor_base_calculo?: number
+          valor_credito_ibs_cbs?: number
+          valor_item?: number
+        }
+        Update: {
+          case_id?: string
+          cclasstrib?: string | null
+          cfop?: string | null
+          created_at?: string
+          descricao?: string | null
+          fonte?: string
+          id?: string
+          ncm?: string | null
+          nota_fiscal_compra_xml_id?: string
+          opcoes_candidatas?: Json
+          quantidade?: number
+          status_classificacao?: string
+          tem_ibscbs?: boolean
+          updated_at?: string
+          valor_base_calculo?: number
+          valor_credito_ibs_cbs?: number
+          valor_item?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nota_fiscal_compra_xml_item_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nota_fiscal_compra_xml_item_nota_fiscal_compra_xml_id_fkey"
+            columns: ["nota_fiscal_compra_xml_id"]
+            isOneToOne: false
+            referencedRelation: "nota_fiscal_compra_xml"
             referencedColumns: ["id"]
           },
         ]
