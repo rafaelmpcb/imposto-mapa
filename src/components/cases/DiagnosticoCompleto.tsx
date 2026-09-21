@@ -7,6 +7,8 @@ import { CarteiraResult } from "@/components/cases/CarteiraResult";
 import { PgdasdPanel } from "@/components/cases/PgdasdPanel";
 import { NfeUnificadoPanel } from "@/components/cases/NfeUnificadoPanel";
 import { CreditoNcmPanel } from "@/components/cases/CreditoNcmPanel";
+import { NfseServicoPanel } from "@/components/cases/NfseServicoPanel";
+import { CreditoNbsPanel } from "@/components/cases/CreditoNbsPanel";
 import { withAuthRetry } from "@/lib/auth-retry";
 import {
   deleteCarteiraRow,
@@ -102,6 +104,7 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
 
   const carteiraStatus = docs["composicao_carteira"] ?? "nao_enviado";
   const [regimeStatus, setRegimeStatus] = useState("nao_enviado");
+  const [servicosStatus, setServicosStatus] = useState("nao_enviado");
   // O PGDAS-D só existe no Simples Nacional.
   const isSimples = (caseItem.simulations[0]?.input as { taxpayerType?: string } | undefined)?.taxpayerType ===
     "simples";
@@ -527,7 +530,9 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
               ? carteiraStatus
               : doc.key === "dados_regime"
                 ? (docs["dados_regime"] ?? regimeStatus)
-                : "nao_enviado";
+                : doc.key === "servicos_tomados"
+                  ? servicosStatus
+                  : "nao_enviado";
           return (
             <li
               key={doc.key}
@@ -547,6 +552,12 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
                 <div className="mt-3">
                   <PgdasdPanel caseItem={caseItem} onStatus={setRegimeStatus} />
                 </div>
+              ) : doc.key === "servicos_tomados" ? (
+                <NfseServicoPanel
+                  caseId={caseItem.id}
+                  caseCnpj={caseItem.cnpj}
+                  onSaved={() => setServicosStatus("processado")}
+                />
               ) : doc.active ? (
                 <>
                   <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -619,6 +630,8 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
       />
 
       <CreditoNcmPanel caseId={caseItem.id} />
+
+      <CreditoNbsPanel key={servicosStatus} caseId={caseItem.id} />
 
       {fornecedores.classificadas > 0 ? (
         <div className="rounded-xl border border-navy/30 bg-navy/5 p-4">

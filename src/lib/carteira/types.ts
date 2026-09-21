@@ -65,6 +65,13 @@ export const DIAGNOSTIC_DOCS: DiagnosticDocDef[] = [
     active: true,
   },
   {
+    key: "servicos_tomados",
+    title: "Notas de serviço tomadas (NFS-e)",
+    description:
+      "Arquivos .xml de NFS-e (ou um .zip com eles) dos serviços contratados pelo cliente. Usados para apurar o crédito de IBS/CBS serviço a serviço, por código NBS.",
+    active: true,
+  },
+  {
     key: "dados_regime",
     title: "Dados de entrada do motor de regime (PGDAS-D)",
     description:

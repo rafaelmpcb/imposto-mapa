@@ -220,6 +220,63 @@ export type Database = {
           },
         ]
       }
+      nbs_excecao_ibscbs: {
+        Row: {
+          aliquota_cbs_2026: number
+          aliquota_ibs_2026: number
+          atualizado_em: string
+          cclasstrib: string | null
+          descricao_nbs: string
+          flag_x_origem: boolean
+          fonte: string
+          grupo_cclasstrib: string | null
+          id: string
+          item_nbs: string
+          n_cclasstrib_por_nbs: number
+          nbs: string
+          nome_cclasstrib: string
+          observacao: string | null
+          regime_especifico_sem_aliquota_simples: boolean
+          requer_revisao_humana: boolean
+        }
+        Insert: {
+          aliquota_cbs_2026?: number
+          aliquota_ibs_2026?: number
+          atualizado_em?: string
+          cclasstrib?: string | null
+          descricao_nbs?: string
+          flag_x_origem?: boolean
+          fonte?: string
+          grupo_cclasstrib?: string | null
+          id?: string
+          item_nbs?: string
+          n_cclasstrib_por_nbs?: number
+          nbs: string
+          nome_cclasstrib?: string
+          observacao?: string | null
+          regime_especifico_sem_aliquota_simples?: boolean
+          requer_revisao_humana?: boolean
+        }
+        Update: {
+          aliquota_cbs_2026?: number
+          aliquota_ibs_2026?: number
+          atualizado_em?: string
+          cclasstrib?: string | null
+          descricao_nbs?: string
+          flag_x_origem?: boolean
+          fonte?: string
+          grupo_cclasstrib?: string | null
+          id?: string
+          item_nbs?: string
+          n_cclasstrib_por_nbs?: number
+          nbs?: string
+          nome_cclasstrib?: string
+          observacao?: string | null
+          regime_especifico_sem_aliquota_simples?: boolean
+          requer_revisao_humana?: boolean
+        }
+        Relationships: []
+      }
       ncm_excecao_ibscbs: {
         Row: {
           anexo: string
@@ -457,6 +514,134 @@ export type Database = {
             columns: ["case_id"]
             isOneToOne: false
             referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nota_servico_nfse: {
+        Row: {
+          arquivo_original: string
+          case_id: string
+          chave_acesso: string | null
+          cnpj_prestador: string | null
+          created_at: string
+          data_emissao: string | null
+          id: string
+          numero_nota: string | null
+          razao_social_prestador: string | null
+          serie: string | null
+          status_processamento: string
+          updated_at: string
+          valor_total: number
+        }
+        Insert: {
+          arquivo_original?: string
+          case_id: string
+          chave_acesso?: string | null
+          cnpj_prestador?: string | null
+          created_at?: string
+          data_emissao?: string | null
+          id?: string
+          numero_nota?: string | null
+          razao_social_prestador?: string | null
+          serie?: string | null
+          status_processamento?: string
+          updated_at?: string
+          valor_total?: number
+        }
+        Update: {
+          arquivo_original?: string
+          case_id?: string
+          chave_acesso?: string | null
+          cnpj_prestador?: string | null
+          created_at?: string
+          data_emissao?: string | null
+          id?: string
+          numero_nota?: string | null
+          razao_social_prestador?: string | null
+          serie?: string | null
+          status_processamento?: string
+          updated_at?: string
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nota_servico_nfse_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nota_servico_nfse_item: {
+        Row: {
+          case_id: string
+          cclasstrib: string | null
+          created_at: string
+          descricao: string | null
+          fonte: string
+          id: string
+          item_lc116: string | null
+          nbs: string | null
+          nota_servico_id: string
+          opcoes_candidatas: Json
+          status_classificacao: string
+          tem_classificacao_documento: boolean
+          updated_at: string
+          valor_base_calculo: number
+          valor_credito_ibs_cbs: number
+          valor_servico: number
+        }
+        Insert: {
+          case_id: string
+          cclasstrib?: string | null
+          created_at?: string
+          descricao?: string | null
+          fonte?: string
+          id?: string
+          item_lc116?: string | null
+          nbs?: string | null
+          nota_servico_id: string
+          opcoes_candidatas?: Json
+          status_classificacao?: string
+          tem_classificacao_documento?: boolean
+          updated_at?: string
+          valor_base_calculo?: number
+          valor_credito_ibs_cbs?: number
+          valor_servico?: number
+        }
+        Update: {
+          case_id?: string
+          cclasstrib?: string | null
+          created_at?: string
+          descricao?: string | null
+          fonte?: string
+          id?: string
+          item_lc116?: string | null
+          nbs?: string | null
+          nota_servico_id?: string
+          opcoes_candidatas?: Json
+          status_classificacao?: string
+          tem_classificacao_documento?: boolean
+          updated_at?: string
+          valor_base_calculo?: number
+          valor_credito_ibs_cbs?: number
+          valor_servico?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nota_servico_nfse_item_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nota_servico_nfse_item_nota_servico_id_fkey"
+            columns: ["nota_servico_id"]
+            isOneToOne: false
+            referencedRelation: "nota_servico_nfse"
             referencedColumns: ["id"]
           },
         ]
