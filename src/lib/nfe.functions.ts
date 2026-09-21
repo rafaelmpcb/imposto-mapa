@@ -49,8 +49,6 @@ export const applyNotasCompra = createServerFn({ method: "POST" })
         nome: string;
         valor: number;
         regime: "simples" | "regular" | "erro";
-        fonte: string;
-        dataClassificacao: string | null;
       }[];
       substituir: boolean;
     }) => input,
