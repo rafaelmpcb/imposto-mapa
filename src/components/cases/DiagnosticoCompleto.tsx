@@ -6,6 +6,7 @@ import { Button, Notice } from "@/components/simulator/ui";
 import { CarteiraResult } from "@/components/cases/CarteiraResult";
 import { PgdasdPanel } from "@/components/cases/PgdasdPanel";
 import { NfeUnificadoPanel } from "@/components/cases/NfeUnificadoPanel";
+import { CreditoNcmPanel } from "@/components/cases/CreditoNcmPanel";
 import { withAuthRetry } from "@/lib/auth-retry";
 import {
   deleteCarteiraRow,
@@ -616,6 +617,8 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
         onRefreshRows={(ids) => void handleRefreshRows(ids)}
         onDeleteRow={(id) => void handleDeleteRow(id)}
       />
+
+      <CreditoNcmPanel caseId={caseItem.id} />
 
       {fornecedores.classificadas > 0 ? (
         <div className="rounded-xl border border-navy/30 bg-navy/5 p-4">
