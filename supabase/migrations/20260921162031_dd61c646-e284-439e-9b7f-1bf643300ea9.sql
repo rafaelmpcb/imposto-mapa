@@ -1,0 +1,1 @@
+ALTER TABLE public.nota_fiscal_compra_xml ADD COLUMN IF NOT EXISTS regime_emitente text;
