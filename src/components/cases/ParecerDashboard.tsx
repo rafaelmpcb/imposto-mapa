@@ -8,6 +8,7 @@ import {
   ResultadoAnoChart,
   TransicaoChart,
 } from "@/components/cases/ParecerCharts";
+import { ParecerClientes } from "@/components/cases/ParecerClientes";
 import { ParecerFornecedores } from "@/components/cases/ParecerFornecedores";
 import { ParecerPrecoVenda } from "@/components/cases/ParecerPrecoVenda";
 import {
