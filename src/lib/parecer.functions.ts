@@ -785,6 +785,7 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
         precoNecessario: a.precoNecessario,
         variacaoPct: a.n > 0 ? a.soma / a.n : 0,
       })),
+      clientes: clientesDetalhe,
     },
     sec6: { linhas: dreLinhas },
     sec7: {
