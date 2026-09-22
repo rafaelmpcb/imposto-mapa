@@ -707,6 +707,7 @@ export function ParecerFornecedores({ sec4 }: { sec4: ParecerSnapshot["sec4"] })
           <table className="w-full text-sm">
             <thead className="bg-secondary/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
+                <th className="w-10 px-4 py-2 font-semibold" />
                 <th className="px-4 py-2 font-semibold">Fornecedor</th>
                 <th className="px-4 py-2 text-right font-semibold">Total bruto</th>
                 <th className="px-4 py-2 text-right font-semibold">Total crédito</th>
