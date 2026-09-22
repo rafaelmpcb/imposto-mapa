@@ -204,10 +204,7 @@ function MonofasicoPage() {
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,340px)_1fr]">
           <section className="space-y-4 rounded-xl border border-border bg-card p-4">
-            <Field
-              label="Segmento de atuação"
-              hint={segmentoAtual?.exemplos}
-            >
+            <Field label="Segmento de atuação" hint={segmentoAtual?.exemplos ?? ""}>
               <Select
                 value={segmento}
                 onChange={(e) => trocarSegmento(e.target.value as SegmentoMonofasico)}
