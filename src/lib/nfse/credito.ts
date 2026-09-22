@@ -41,6 +41,7 @@ export const ALIQUOTAS_NOMINAIS_NBS: Record<number, { ibs: number; cbs: number }
 export const ANO_VIGENTE_NBS = 2026;
 
 export const FONTE_DOCUMENTO = "IBSCBS da NFS-e";
+export const FONTE_DOCUMENTO_EMITIDA = "IBSCBS da NFS-e (emitida)";
 export const FONTE_GERAL_NBS = "tabela de exceções — regime geral (sem exceção aplicável)";
 export const FONTE_UNICO_NBS = "tabela de exceções — NBS único";
 export const FONTE_TABELA_NBS =

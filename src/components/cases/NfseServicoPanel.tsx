@@ -65,7 +65,7 @@ export function NfseServicoPanel({
               : nota.cnpjPrestador === cnpjCaso
                 ? "prestado"
                 : "nao_identificado";
-          return { nota, lado, incluir: lado === "tomado" };
+          return { nota, lado, incluir: lado !== "nao_identificado" };
         }),
       );
     } catch {
@@ -82,12 +82,27 @@ export function NfseServicoPanel({
     setBusy(true);
     setError("");
     try {
-      const res = await withAuthRetry(() =>
-        salvar({ data: { caseId, notas: selecionadas.map((d) => d.nota) } }),
-      );
+      const tomadas = selecionadas.filter((d) => d.lado !== "prestado").map((d) => d.nota);
+      const prestadas = selecionadas.filter((d) => d.lado === "prestado").map((d) => d.nota);
+      let notasGravadas = 0;
+      let servicos = 0;
+      if (tomadas.length > 0) {
+        const res = await withAuthRetry(() =>
+          salvar({ data: { caseId, notas: tomadas, direcao: "tomado" } }),
+        );
+        notasGravadas += res.inserted;
+        servicos += res.itens;
+      }
+      if (prestadas.length > 0) {
+        const res = await withAuthRetry(() =>
+          salvar({ data: { caseId, notas: prestadas, direcao: "prestado" } }),
+        );
+        notasGravadas += res.inserted;
+        servicos += res.itens;
+      }
       setDrafts([]);
       setInfo(
-        `${res.inserted} nota(s) de serviço gravada(s), ${res.itens} serviço(s) apurado(s). Notas repetidas foram ignoradas.`,
+        `${notasGravadas} nota(s) de serviço gravada(s), ${servicos} serviço(s) apurado(s). Notas repetidas foram ignoradas.`,
       );
       await onSaved?.();
     } catch {
@@ -96,6 +111,7 @@ export function NfseServicoPanel({
       setBusy(false);
     }
   };
+
 
   return (
     <div className="mt-3 space-y-3">
@@ -172,7 +188,7 @@ export function NfseServicoPanel({
           </div>
 
           <p className="text-sm text-muted-foreground">
-            {selecionadas.length} nota(s) marcada(s) como serviço tomado ·{" "}
+            {selecionadas.length} nota(s) marcada(s) (tomadas e prestadas) ·{" "}
             {brl(totalSelecionado)} no total. Nada é gravado antes da confirmação.
           </p>
 

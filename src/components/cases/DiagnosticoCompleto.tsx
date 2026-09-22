@@ -9,6 +9,8 @@ import { NfeUnificadoPanel } from "@/components/cases/NfeUnificadoPanel";
 import { CreditoNcmPanel } from "@/components/cases/CreditoNcmPanel";
 import { NfseServicoPanel } from "@/components/cases/NfseServicoPanel";
 import { CreditoNbsPanel } from "@/components/cases/CreditoNbsPanel";
+import { DebitoNbsPanel } from "@/components/cases/DebitoNbsPanel";
+import { RevisaoNbsPanel } from "@/components/cases/RevisaoNbsPanel";
 import { withAuthRetry } from "@/lib/auth-retry";
 import {
   deleteCarteiraRow,
@@ -105,6 +107,7 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
   const carteiraStatus = docs["composicao_carteira"] ?? "nao_enviado";
   const [regimeStatus, setRegimeStatus] = useState("nao_enviado");
   const [servicosStatus, setServicosStatus] = useState("nao_enviado");
+  const [nbsReload, setNbsReload] = useState(0);
   // O PGDAS-D só existe no Simples Nacional.
   const isSimples = (caseItem.simulations[0]?.input as { taxpayerType?: string } | undefined)?.taxpayerType ===
     "simples";
@@ -556,7 +559,10 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
                 <NfseServicoPanel
                   caseId={caseItem.id}
                   caseCnpj={caseItem.cnpj}
-                  onSaved={() => setServicosStatus("processado")}
+                  onSaved={() => {
+                    setServicosStatus("processado");
+                    setNbsReload((v) => v + 1);
+                  }}
                 />
               ) : doc.active ? (
                 <>
@@ -631,7 +637,11 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
 
       <CreditoNcmPanel caseId={caseItem.id} />
 
-      <CreditoNbsPanel key={servicosStatus} caseId={caseItem.id} />
+      <CreditoNbsPanel caseId={caseItem.id} reloadKey={nbsReload} />
+
+      <DebitoNbsPanel caseId={caseItem.id} reloadKey={nbsReload} />
+
+      <RevisaoNbsPanel caseId={caseItem.id} onResolved={() => setNbsReload((v) => v + 1)} />
 
       {fornecedores.classificadas > 0 ? (
         <div className="rounded-xl border border-navy/30 bg-navy/5 p-4">
