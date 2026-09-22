@@ -170,7 +170,9 @@ export type Database = {
           client_name: string | null
           cnpj: string | null
           created_at: string
+          escopo: string
           id: string
+          objetivo: string | null
           owner_id: string | null
           owner_name: string | null
           stage: Database["public"]["Enums"]["case_stage"]
@@ -182,7 +184,9 @@ export type Database = {
           client_name?: string | null
           cnpj?: string | null
           created_at?: string
+          escopo?: string
           id?: string
+          objetivo?: string | null
           owner_id?: string | null
           owner_name?: string | null
           stage?: Database["public"]["Enums"]["case_stage"]
@@ -194,7 +198,9 @@ export type Database = {
           client_name?: string | null
           cnpj?: string | null
           created_at?: string
+          escopo?: string
           id?: string
+          objetivo?: string | null
           owner_id?: string | null
           owner_name?: string | null
           stage?: Database["public"]["Enums"]["case_stage"]
@@ -1302,6 +1308,56 @@ export type Database = {
             foreignKeyName: "parametro_fluxo_caixa_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: true
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parecer_padrao: {
+        Row: {
+          case_id: string
+          created_at: string
+          dados_compilados_json: Json
+          edicoes_analista_json: Json
+          finalizado_em: string | null
+          gerado_em: string
+          gerado_por: string | null
+          id: string
+          status: string
+          updated_at: string
+          versao: number
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          dados_compilados_json?: Json
+          edicoes_analista_json?: Json
+          finalizado_em?: string | null
+          gerado_em?: string
+          gerado_por?: string | null
+          id?: string
+          status?: string
+          updated_at?: string
+          versao: number
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          dados_compilados_json?: Json
+          edicoes_analista_json?: Json
+          finalizado_em?: string | null
+          gerado_em?: string
+          gerado_por?: string | null
+          id?: string
+          status?: string
+          updated_at?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parecer_padrao_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
           },
