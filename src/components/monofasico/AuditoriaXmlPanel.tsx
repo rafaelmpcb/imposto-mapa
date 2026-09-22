@@ -206,7 +206,7 @@ export function AuditoriaXmlPanel({
         </p>
 
         <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <Field label="Regime do cliente" hint={REGIMES.find((r) => r.id === regime)?.hint}>
+          <Field label="Regime do cliente" hint={REGIMES.find((r) => r.id === regime)?.hint ?? ""}>
             <Select
               value={regime}
               onChange={(e) => {
