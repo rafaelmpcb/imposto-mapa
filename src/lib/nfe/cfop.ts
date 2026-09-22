@@ -44,7 +44,6 @@ export const CFOP_DESCRICAO: Record<string, string> = {
   "5401": "Venda de produção com substituição tributária",
   "5403": "Venda de mercadoria de terceiros com substituição tributária",
   "5405": "Venda de mercadoria com substituição tributária já recolhida",
-  "5405x": "Venda com substituição tributária (retenção anterior)",
   "5551": "Venda de bem do ativo imobilizado",
   "5556": "Devolução de material de uso ou consumo",
   "5910": "Remessa em bonificação, doação ou brinde",
