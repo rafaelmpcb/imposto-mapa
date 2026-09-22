@@ -293,6 +293,159 @@ export type Database = {
           },
         ]
       }
+      despesa_operacional_anual: {
+        Row: {
+          ano: number
+          case_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          ano: number
+          case_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          ano?: number
+          case_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "despesa_operacional_anual_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dre_projecao_anual: {
+        Row: {
+          ano: number
+          calculado_em: string
+          case_id: string
+          cenario: string
+          custo: number
+          deducoes: number
+          despesas_operacionais: number
+          id: string
+          ircs: number | null
+          ircs_origem: string | null
+          lucro_bruto: number
+          receita_bruta: number
+          receita_liquida: number
+          resultado_antes_ircs: number
+          resultado_liquido: number | null
+        }
+        Insert: {
+          ano: number
+          calculado_em?: string
+          case_id: string
+          cenario: string
+          custo?: number
+          deducoes?: number
+          despesas_operacionais?: number
+          id?: string
+          ircs?: number | null
+          ircs_origem?: string | null
+          lucro_bruto?: number
+          receita_bruta?: number
+          receita_liquida?: number
+          resultado_antes_ircs?: number
+          resultado_liquido?: number | null
+        }
+        Update: {
+          ano?: number
+          calculado_em?: string
+          case_id?: string
+          cenario?: string
+          custo?: number
+          deducoes?: number
+          despesas_operacionais?: number
+          id?: string
+          ircs?: number | null
+          ircs_origem?: string | null
+          lucro_bruto?: number
+          receita_bruta?: number
+          receita_liquida?: number
+          resultado_antes_ircs?: number
+          resultado_liquido?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dre_projecao_anual_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fluxo_caixa_projecao_mensal: {
+        Row: {
+          ano: number
+          calculado_em: string
+          case_id: string
+          credito_ibscbs_disponivel: number
+          debito_ibscbs_retido: number
+          debito_liquido_recolhido: number
+          entradas_clientes: number
+          id: string
+          mes: number
+          saidas_despesas: number
+          saidas_fornecedores: number
+          saldo_credor_acumulado: number
+          variacao_caixa: number
+        }
+        Insert: {
+          ano: number
+          calculado_em?: string
+          case_id: string
+          credito_ibscbs_disponivel?: number
+          debito_ibscbs_retido?: number
+          debito_liquido_recolhido?: number
+          entradas_clientes?: number
+          id?: string
+          mes: number
+          saidas_despesas?: number
+          saidas_fornecedores?: number
+          saldo_credor_acumulado?: number
+          variacao_caixa?: number
+        }
+        Update: {
+          ano?: number
+          calculado_em?: string
+          case_id?: string
+          credito_ibscbs_disponivel?: number
+          debito_ibscbs_retido?: number
+          debito_liquido_recolhido?: number
+          entradas_clientes?: number
+          id?: string
+          mes?: number
+          saidas_despesas?: number
+          saidas_fornecedores?: number
+          saldo_credor_acumulado?: number
+          variacao_caixa?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fluxo_caixa_projecao_mensal_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       item_revisao_evento: {
         Row: {
           acao: string
@@ -1115,6 +1268,38 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "parametro_cenario_compras_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parametro_fluxo_caixa: {
+        Row: {
+          atualizado_em: string
+          case_id: string
+          periodicidade_compensacao_credito_dias: number
+          prazo_medio_pagamento_fornecedores_dias: number
+          prazo_medio_recebimento_dias: number
+        }
+        Insert: {
+          atualizado_em?: string
+          case_id: string
+          periodicidade_compensacao_credito_dias?: number
+          prazo_medio_pagamento_fornecedores_dias?: number
+          prazo_medio_recebimento_dias?: number
+        }
+        Update: {
+          atualizado_em?: string
+          case_id?: string
+          periodicidade_compensacao_credito_dias?: number
+          prazo_medio_pagamento_fornecedores_dias?: number
+          prazo_medio_recebimento_dias?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parametro_fluxo_caixa_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: true
             referencedRelation: "cases"
