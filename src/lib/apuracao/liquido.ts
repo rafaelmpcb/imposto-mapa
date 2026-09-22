@@ -28,6 +28,14 @@ export interface ItemApurado {
 }
 
 export const PENDENTE_REVISAO = "ambiguo_revisao_pendente";
+/** Item marcado pelo analista para decidir depois: também fica fora da soma. */
+export const MARCADO_REVISAO = "marcado_revisao";
+/** Item descartado pelo analista: não gera crédito/débito e não conta como pendência. */
+export const EXCLUIDO_ANALISTA = "excluido_analista";
+
+export const estaPendente = (status: StatusApurado) =>
+  status === PENDENTE_REVISAO || status === MARCADO_REVISAO;
+
 
 export interface BlocoApuracao {
   /** Soma dos tributos dos itens considerados. */
