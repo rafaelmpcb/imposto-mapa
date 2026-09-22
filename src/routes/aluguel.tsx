@@ -88,7 +88,7 @@ function Kpi({
 }
 
 function AluguelPage() {
-  const [aluguel, setAluguel] = useState(10000);
+  const [aluguel, setAluguel] = useState(0);
   const [regime, setRegime] = useState<RegimeLocador>("presumido");
   const [aproveitamento, setAproveitamento] = useState(100);
   const [ano, setAno] = useState(2033);
@@ -154,6 +154,9 @@ function AluguelPage() {
     (typeof resultado.cenarios)[number],
     (typeof resultado.cenarios)[number],
   ];
+
+  // Resultados e gráficos só aparecem depois que o lead informa o aluguel.
+  const pronto = aluguel > 0;
 
   const dadosBarras = [
     {
@@ -295,6 +298,8 @@ function AluguelPage() {
         </section>
 
         <section className="space-y-6">
+          {pronto ? (
+            <>
           <div className="grid gap-3 sm:grid-cols-3">
             <Kpi
               label={`Alíquota efetiva em ${ano}`}
@@ -404,6 +409,18 @@ function AluguelPage() {
               Rascunho de apoio — a minuta final depende da análise jurídica do contrato.
             </p>
           </div>
+            </>
+          ) : (
+            <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center">
+              <p className="text-sm font-semibold text-foreground">
+                Informe o aluguel mensal de hoje para ver o resultado
+              </p>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+                Preencha o valor do aluguel no formulário ao lado. O impacto do IBS/CBS, os gráficos,
+                os três cenários e o valor de repactuação aparecem aqui.
+              </p>
+            </div>
+          )}
 
           <div className="space-y-3 rounded-xl border border-border bg-card p-4">
             <p className="text-sm font-semibold text-foreground">Vincular a um Caso</p>
@@ -444,7 +461,7 @@ function AluguelPage() {
               </Field>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <Button onClick={() => void handleSalvar()} disabled={salvando}>
+              <Button onClick={() => void handleSalvar()} disabled={salvando || aluguel <= 0}>
                 {salvando ? "Salvando…" : "Salvar contrato"}
               </Button>
               <Link to="/meus-calculos" className="text-sm font-semibold text-navy underline">
