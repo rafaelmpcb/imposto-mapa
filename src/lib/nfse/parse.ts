@@ -6,7 +6,13 @@
 
 import { onlyDigits } from "@/lib/carteira/types";
 
-export type NfseStatus = "ok" | "sem_cnpj" | "xml_invalido" | "nao_e_nfse";
+export type NfseStatus =
+  | "ok"
+  | "sem_cnpj"
+  | "xml_invalido"
+  | "nao_e_nfse"
+  /** Lido, mas sem chave/número de NFS-e Nacional (layout municipal legado, por exemplo). */
+  | "nao_e_nfse_nacional";
 
 /** Serviço descrito na nota. */
 export interface NfseServicoItem {
@@ -32,6 +38,10 @@ export interface NfseNota {
   razaoSocialPrestador: string | null;
   cnpjTomador: string | null;
   razaoSocialTomador: string | null;
+  /** Código do serviço como veio no documento (NBS ou item da LC 116). */
+  codigoServico: string | null;
+  /** Regime do prestador, só quando o próprio documento informa. */
+  regimePrestador: "simples" | "regular" | null;
   valorTotal: number;
   dataEmissao: string | null;
   status: NfseStatus;
