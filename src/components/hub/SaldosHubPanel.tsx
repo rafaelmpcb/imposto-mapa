@@ -1,0 +1,122 @@
+import { Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useState } from "react";
+
+import { Button, Notice } from "@/components/simulator/ui";
+import { withAuthRetry } from "@/lib/auth-retry";
+import {
+  excluirEstudoSaldos,
+  listEstudosSaldos,
+  type EstudoSaldosRow,
+} from "@/lib/saldos.functions";
+import { brl } from "@/lib/tax/calc";
+
+/** Estudos de saldos credores salvos, com o resumo financeiro de cada um. */
+export function SaldosHubPanel({ caseNames }: { caseNames: Map<string, string> }) {
+  const fetchAll = useServerFn(listEstudosSaldos);
+  const remove = useServerFn(excluirEstudoSaldos);
+  const [items, setItems] = useState<EstudoSaldosRow[] | null>(null);
+  const [error, setError] = useState("");
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+
+  const load = async () => {
+    setError("");
+    try {
+      const res = await withAuthRetry(() => fetchAll({ data: undefined }));
+      setItems(res.items);
+    } catch {
+      setError("Não foi possível carregar os estudos de saldos credores.");
+    }
+  };
+
+  useEffect(() => {
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleDelete = async (id: string) => {
+    try {
+      await withAuthRetry(() => remove({ data: { id } }));
+      setItems((prev) => (prev ?? []).filter((i) => i.id !== id));
+      setConfirmId(null);
+    } catch {
+      setError("Não foi possível excluir este estudo.");
+    }
+  };
+
+  return (
+    <section className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          {items
+            ? `${items.length} estudo${items.length === 1 ? "" : "s"} salvo${items.length === 1 ? "" : "s"}`
+            : "Carregando estudos..."}
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="ghost" onClick={() => void load()}>
+            Atualizar
+          </Button>
+          <Link
+            to="/saldos-credores"
+            className="rounded-md bg-navy px-3 py-2 text-sm font-semibold text-navy-foreground"
+          >
+            Novo estudo de saldos
+          </Link>
+        </div>
+      </div>
+
+      {error ? <Notice tone="warning">{error}</Notice> : null}
+
+      {items && items.length === 0 ? (
+        <Notice>
+          Nenhum estudo salvo ainda. Simule os saldos credores do cliente e vincule ao caso.
+        </Notice>
+      ) : null}
+
+      <ul className="space-y-3">
+        {(items ?? []).map((item) => {
+          const caseName = item.case_id ? caseNames.get(item.case_id) : null;
+          const res = item.resultado;
+          return (
+            <li key={item.id} className="rounded-xl border border-border bg-card p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-semibold text-foreground">
+                    {item.titulo || "Estudo sem título"}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {new Date(item.created_at).toLocaleDateString("pt-BR")} · {item.uf} · deságio{" "}
+                    {item.desagio_cessao_pct}% · custo de capital {item.custo_oportunidade_aa_pct}%
+                    a.a.
+                  </p>
+                  <p className="mt-2 text-sm tabular-nums text-foreground">
+                    Saldo {brl(Number(item.saldo_icms) + Number(item.saldo_pis_cofins))}
+                    {res ? ` · valor presente esperando ${brl(res.totais.vplInercia)}` : ""}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {res ? `Ganho da ação antecipada: ${brl(res.totais.ganhoAcaoAtiva)}. ` : ""}
+                    {caseName ? `Caso: ${caseName}` : "Sem caso vinculado"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {confirmId === item.id ? (
+                    <>
+                      <Button onClick={() => void handleDelete(item.id)}>Confirmar exclusão</Button>
+                      <Button variant="ghost" onClick={() => setConfirmId(null)}>
+                        Cancelar
+                      </Button>
+                    </>
+                  ) : (
+                    <Button variant="ghost" onClick={() => setConfirmId(item.id)}>
+                      Excluir
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
