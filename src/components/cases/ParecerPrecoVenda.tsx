@@ -262,7 +262,7 @@ export function ParecerPrecoVenda({
                           ? "opacity-80"
                           : a.variacaoPct >= 0
                             ? "text-magenta"
-                            : "text-mint-strong"
+                            : "text-mint"
                       }`}
                     >
                       {a.variacaoPct >= 0 ? "↗" : "↘"} {pct(a.variacaoPct, true)}
@@ -289,7 +289,7 @@ export function ParecerPrecoVenda({
               </span>
               <span
                 className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                  variacaoAno >= 0 ? "bg-magenta-soft text-magenta" : "bg-mint-soft text-mint-strong"
+                  variacaoAno >= 0 ? "bg-magenta-soft text-magenta" : "bg-mint-soft text-mint"
                 }`}
               >
                 {pct(variacaoAno, true)}
