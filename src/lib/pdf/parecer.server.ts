@@ -20,6 +20,14 @@ const NAVY = rgb(0.086, 0.145, 0.247);
 const TEXT = rgb(0.12, 0.13, 0.15);
 const MUTED = rgb(0.42, 0.45, 0.5);
 const LINE = rgb(0.85, 0.87, 0.9);
+/* Paleta dos gráficos — mesma linguagem visual do relatório em tela. */
+const TRACK = rgb(0.93, 0.93, 0.96);
+const MINT = rgb(0.16, 0.71, 0.56);
+const LAVENDER = rgb(0.45, 0.42, 0.85);
+const MAGENTA = rgb(0.83, 0.26, 0.55);
+const SKY = rgb(0.22, 0.55, 0.85);
+const AMBER = rgb(0.92, 0.65, 0.19);
+
 
 function safe(text: string): string {
   return text
@@ -185,10 +193,199 @@ class Doc {
     });
   }
 
+  /** Título curto de um gráfico, com respiro acima. */
+  chartTitle(titulo: string): void {
+    this.gap(6);
+    this.text(titulo, { size: 10, bold: true, color: NAVY });
+  }
+
+  /**
+   * Barras horizontais: rótulo à esquerda, barra proporcional ao maior valor
+   * e valor formatado à direita. Usa o módulo dos valores para o comprimento.
+   */
+  hBars(
+    items: { label: string; value: number; texto: string; color?: ReturnType<typeof rgb> }[],
+    opts: { labelWidth?: number } = {},
+  ): void {
+    if (items.length === 0) return;
+    const labelW = opts.labelWidth ?? 150;
+    const valueW = 92;
+    const trackW = CONTENT_WIDTH - labelW - valueW - 12;
+    const max = Math.max(...items.map((i) => Math.abs(i.value)), 1);
+    const barH = 11;
+    const step = barH + 7;
+    this.ensure(items.length * step + 10);
+    this.gap(6);
+    for (const item of items) {
+      this.ensure(step);
+      this.y -= step;
+      let label = safe(item.label);
+      while (label.length > 1 && this.regular.widthOfTextAtSize(label, 8.5) > labelW - 8) {
+        label = label.slice(0, -1);
+      }
+      this.page.drawText(label, {
+        x: MARGIN,
+        y: this.y + 2,
+        size: 8.5,
+        font: this.regular,
+        color: TEXT,
+      });
+      this.page.drawRectangle({
+        x: MARGIN + labelW,
+        y: this.y,
+        width: trackW,
+        height: barH,
+        color: TRACK,
+      });
+      const w = Math.max((Math.abs(item.value) / max) * trackW, item.value === 0 ? 0 : 2);
+      this.page.drawRectangle({
+        x: MARGIN + labelW,
+        y: this.y,
+        width: w,
+        height: barH,
+        color: item.color ?? NAVY,
+      });
+      const texto = safe(item.texto);
+      this.page.drawText(texto, {
+        x: MARGIN + CONTENT_WIDTH - this.bold.widthOfTextAtSize(texto, 8.5),
+        y: this.y + 2,
+        size: 8.5,
+        font: this.bold,
+        color: TEXT,
+      });
+    }
+    this.gap(4);
+  }
+
+  /**
+   * Colunas verticais agrupadas (até duas séries por categoria), com legenda.
+   * Serve para comparar "hoje" e "pós-reforma" ano a ano.
+   */
+  vBars(
+    categorias: { label: string; a: number; b?: number | undefined }[],
+    opts: { legendA: string; legendB?: string; fmt: (v: number) => string },
+  ): void {
+    if (categorias.length === 0) return;
+    const plotH = 96;
+    const blockH = plotH + 46;
+    this.ensure(blockH);
+    this.gap(6);
+    const baseY = this.y - plotH - 16;
+    const slot = CONTENT_WIDTH / categorias.length;
+    const hasB = opts.legendB != null;
+    const barW = Math.min(hasB ? 22 : 34, (slot - 14) / (hasB ? 2 : 1));
+    const values = categorias.flatMap((c) => [c.a, c.b ?? 0]);
+    const max = Math.max(...values.map(Math.abs), 1);
+
+    this.page.drawLine({
+      start: { x: MARGIN, y: baseY },
+      end: { x: MARGIN + CONTENT_WIDTH, y: baseY },
+      thickness: 0.8,
+      color: LINE,
+    });
+
+    categorias.forEach((c, i) => {
+      const center = MARGIN + slot * i + slot / 2;
+      const draw = (value: number, offset: number, color: ReturnType<typeof rgb>) => {
+        const h = Math.max((Math.abs(value) / max) * plotH, value === 0 ? 0 : 2);
+        const x = center + offset - barW / 2;
+        this.page.drawRectangle({ x, y: baseY, width: barW, height: h, color });
+        const txt = safe(opts.fmt(value));
+        const size = 7;
+        this.page.drawText(txt, {
+          x: x + barW / 2 - this.regular.widthOfTextAtSize(txt, size) / 2,
+          y: baseY + h + 3,
+          size,
+          font: this.regular,
+          color: MUTED,
+        });
+      };
+      if (hasB) {
+        draw(c.a, -(barW / 2 + 2), NAVY);
+        draw(c.b ?? 0, barW / 2 + 2, MINT);
+      } else {
+        draw(c.a, 0, NAVY);
+      }
+      const label = safe(c.label);
+      this.page.drawText(label, {
+        x: center - this.regular.widthOfTextAtSize(label, 8) / 2,
+        y: baseY - 12,
+        size: 8,
+        font: this.regular,
+        color: TEXT,
+      });
+    });
+
+    this.y = baseY - 26;
+    this.legend(
+      hasB
+        ? [
+            { label: opts.legendA, color: NAVY },
+            { label: opts.legendB as string, color: MINT },
+          ]
+        : [{ label: opts.legendA, color: NAVY }],
+    );
+  }
+
+  /** Barra única 100% empilhada, com legenda de composição. */
+  stacked(parts: { label: string; value: number; color: ReturnType<typeof rgb> }[]): void {
+    const total = parts.reduce((s, p) => s + Math.max(p.value, 0), 0);
+    if (total <= 0) return;
+    const h = 20;
+    this.ensure(h + 34);
+    this.gap(8);
+    this.y -= h;
+    let x = MARGIN;
+    for (const p of parts) {
+      const w = (Math.max(p.value, 0) / total) * CONTENT_WIDTH;
+      if (w <= 0) continue;
+      this.page.drawRectangle({ x, y: this.y, width: w, height: h, color: p.color });
+      const share = `${Math.round((Math.max(p.value, 0) / total) * 100)}%`;
+      if (w > 26) {
+        this.page.drawText(share, {
+          x: x + w / 2 - this.bold.widthOfTextAtSize(share, 7.5) / 2,
+          y: this.y + 6,
+          size: 7.5,
+          font: this.bold,
+          color: rgb(1, 1, 1),
+        });
+      }
+      x += w;
+    }
+    this.gap(6);
+    this.legend(parts.map((p) => ({ label: p.label, color: p.color })));
+  }
+
+  /** Legenda horizontal com quadradinhos de cor. */
+  legend(items: { label: string; color: ReturnType<typeof rgb> }[]): void {
+    this.ensure(16);
+    this.y -= 12;
+    let x = MARGIN;
+    for (const item of items) {
+      const label = safe(item.label);
+      const w = this.regular.widthOfTextAtSize(label, 8) + 22;
+      if (x + w > MARGIN + CONTENT_WIDTH) {
+        this.y -= 12;
+        x = MARGIN;
+      }
+      this.page.drawRectangle({ x, y: this.y, width: 8, height: 8, color: item.color });
+      this.page.drawText(label, {
+        x: x + 12,
+        y: this.y,
+        size: 8,
+        font: this.regular,
+        color: MUTED,
+      });
+      x += w;
+    }
+    this.gap(6);
+  }
+
   async bytes(): Promise<Uint8Array> {
     return this.doc.save();
   }
 }
+
 
 export interface ParecerPdfPayload {
   snapshot: ParecerSnapshot;
