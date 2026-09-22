@@ -65,7 +65,7 @@ export const HUB_TABS: HubTab[] = [
     id: "capex",
     label: "CAPEX",
     hint: "Crédito imediato x 1/48",
-    ativo: false,
+    ativo: true,
     icon: Factory,
   },
 ];

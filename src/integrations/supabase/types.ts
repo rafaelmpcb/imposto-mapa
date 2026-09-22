@@ -470,6 +470,74 @@ export type Database = {
           },
         ]
       }
+      estudo_capex: {
+        Row: {
+          aliquota_plena_pct: number
+          ano_aquisicao: number
+          case_id: string | null
+          created_at: string
+          created_by: string | null
+          custo_oportunidade_aa_pct: number
+          fator_ciap_pct: number
+          icms_pct: number
+          id: string
+          ipi_pct: number
+          observacao: string | null
+          regime: string
+          resultado_json: Json
+          tipo_ativo: string
+          titulo: string
+          updated_at: string
+          valor_investimento: number
+        }
+        Insert: {
+          aliquota_plena_pct?: number
+          ano_aquisicao: number
+          case_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          custo_oportunidade_aa_pct?: number
+          fator_ciap_pct?: number
+          icms_pct?: number
+          id?: string
+          ipi_pct?: number
+          observacao?: string | null
+          regime: string
+          resultado_json?: Json
+          tipo_ativo: string
+          titulo: string
+          updated_at?: string
+          valor_investimento?: number
+        }
+        Update: {
+          aliquota_plena_pct?: number
+          ano_aquisicao?: number
+          case_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          custo_oportunidade_aa_pct?: number
+          fator_ciap_pct?: number
+          icms_pct?: number
+          id?: string
+          ipi_pct?: number
+          observacao?: string | null
+          regime?: string
+          resultado_json?: Json
+          tipo_ativo?: string
+          titulo?: string
+          updated_at?: string
+          valor_investimento?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estudo_capex_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fluxo_caixa_projecao_mensal: {
         Row: {
           ano: number
