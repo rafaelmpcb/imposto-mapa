@@ -703,6 +703,32 @@ export function ParecerFornecedores({ sec4 }: { sec4: ParecerSnapshot["sec4"] })
           </div>
         </div>
 
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-secondary/30 px-4 py-2">
+          <p className="text-[11px] text-muted-foreground">
+            Marque de 2 a 4 fornecedores para comparar lado a lado
+            {comparar.length > 0 ? ` · ${comparar.length} selecionado(s)` : ""}
+          </p>
+          <div className="flex items-center gap-2">
+            {comparar.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => setComparar([])}
+                className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                Limpar
+              </button>
+            ) : null}
+            <button
+              type="button"
+              disabled={comparar.length < 2}
+              onClick={() => setModoComparar(true)}
+              className="rounded-full bg-navy px-3 py-1 text-xs font-semibold text-navy-foreground transition disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Comparar
+            </button>
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-secondary/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
