@@ -80,10 +80,11 @@ export const getConcentracao = createServerFn({ method: "POST" })
     };
 
     const cols = "codigo,cnpj_contraparte,nome_contraparte,valor_base_total,valor_apurado_total,n_itens,n_itens_pendentes";
+    const colsMercadoria = `${cols},cfop`;
 
     const [compras, vendas, tomados, prestados, notasVenda, itensVenda] = await Promise.all([
-      db.from("vw_concentracao_compras_ncm").select(cols).eq("case_id", caseId),
-      db.from("vw_concentracao_vendas_ncm").select(cols).eq("case_id", caseId),
+      db.from("vw_concentracao_compras_ncm").select(colsMercadoria).eq("case_id", caseId),
+      db.from("vw_concentracao_vendas_ncm").select(colsMercadoria).eq("case_id", caseId),
       db
         .from("vw_concentracao_servicos_nbs")
         .select(cols)
