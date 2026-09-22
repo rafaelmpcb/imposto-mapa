@@ -90,18 +90,20 @@ const MODULOS: Modulo[] = [
     numero: "04",
     titulo: "Saldos Credores Acumulados (ICMS e PIS/COFINS)",
     resumo:
-      "Diagnóstico e estratégia para monetizar créditos acumulados antes e durante a transição, evitando perda de valor.",
+      "Quanto vale o seu crédito acumulado se ele for devolvido em 240 parcelas — e quanto vale monetizá-lo agora.",
     itens: [
-      "Levantamento e qualificação dos saldos por tributo e período",
-      "Caminhos de ressarcimento, compensação e homologação",
-      "Cronograma de aproveitamento no novo sistema IBS/CBS",
+      "Valor presente do ressarcimento em 20 anos corrigido pelo IPCA",
+      "Comparativo entre esperar, compensar e ceder o crédito com deságio",
+      "Plano de ação em três fases: auditoria, homologação e monetização",
     ],
-    status: "consultoria",
-    selo: "Consultoria especializada",
+    status: "aberto",
+    selo: "Disponível online",
     tone: "border-amber-tone/40 bg-amber-tone-soft",
     chip: "bg-amber-tone text-navy",
-    cta: "Solicitar diagnóstico de créditos",
+    to: "/saldos-credores",
+    cta: "Abrir calculadora de saldos credores",
   },
+
   {
     numero: "05",
     titulo: "Planejamento de CAPEX e Ativo Imobilizado",
