@@ -141,43 +141,58 @@ export function ParecerDashboard({
   const caixaAno = snapshot.sec7.resumoAnual.find((r) => r.ano === anoSel) ?? null;
 
   return (
-    <section className="space-y-5 rounded-xl border border-border bg-background p-5">
-      <header className="flex flex-wrap items-start justify-between gap-4">
+    <section className="space-y-6 rounded-3xl bg-report-bg p-5 sm:p-7">
+      <header className="flex flex-wrap items-start justify-between gap-4 rounded-2xl bg-navy p-6 text-navy-foreground">
         <div>
-          <span className="inline-block rounded-full bg-success-soft px-3 py-1 text-xs font-semibold text-success">
+          <span className="inline-block rounded-full bg-mint px-3 py-1 text-xs font-semibold text-navy">
             Diagnóstico com documentos fiscais reais
           </span>
-          <h2 className="mt-2 font-presentation-display text-3xl text-foreground">
+          <h2 className="mt-3 font-presentation-display text-3xl leading-tight">
             {snapshot.sec1.cliente ?? "Cliente não informado"}
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-navy-foreground/75">
             {snapshot.sec1.cnpj ?? "CNPJ não informado"} ·{" "}
             {snapshot.sec1.regimeAtual ?? "regime não informado"} ·{" "}
             {ESCOPO_LABEL[snapshot.sec1.escopo]}
           </p>
           {snapshot.sec1.objetivo ? (
-            <p className="mt-1 max-w-2xl text-sm text-foreground">{snapshot.sec1.objetivo}</p>
+            <p className="mt-2 max-w-2xl text-sm text-navy-foreground/90">
+              {snapshot.sec1.objetivo}
+            </p>
           ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-muted-foreground">Versão {versao}</span>
+          <span className="rounded-full bg-navy-foreground/10 px-3 py-1 text-xs">
+            Versão {versao}
+          </span>
           {onApresentar ? (
-            <Button variant="ghost" onClick={onApresentar}>
+            <button
+              type="button"
+              onClick={onApresentar}
+              className="rounded-full bg-navy-foreground/10 px-4 py-1.5 text-sm font-medium hover:bg-navy-foreground/20"
+            >
               Apresentação guiada
-            </Button>
+            </button>
           ) : null}
           {onPdf ? (
-            <Button variant="ghost" onClick={onPdf}>
+            <button
+              type="button"
+              onClick={onPdf}
+              className="rounded-full bg-mint px-4 py-1.5 text-sm font-semibold text-navy"
+            >
               Baixar PDF
-            </Button>
+            </button>
           ) : null}
           {onSair ? (
-            <Button variant="ghost" onClick={onSair}>
+            <button
+              type="button"
+              onClick={onSair}
+              className="rounded-full border border-navy-foreground/30 px-4 py-1.5 text-sm"
+            >
               Sair do dashboard
-            </Button>
+            </button>
           ) : null}
         </div>
-
       </header>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -188,25 +203,23 @@ export function ParecerDashboard({
             onClick={() => setModulo(m.id)}
             className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
               modulo === m.id
-                ? "bg-navy text-navy-foreground"
-                : "bg-secondary text-muted-foreground hover:text-foreground"
+                ? "bg-navy text-navy-foreground shadow-sm"
+                : "bg-card text-muted-foreground hover:text-foreground"
             }`}
           >
             {m.label}
           </button>
         ))}
         {anos.length > 0 ? (
-          <div className="ml-auto flex flex-wrap items-center gap-1">
-            <span className="mr-1 text-xs text-muted-foreground">Ano</span>
+          <div className="ml-auto flex flex-wrap items-center gap-1 rounded-full bg-card p-1">
+            <span className="px-2 text-xs text-muted-foreground">Ano</span>
             {anos.map((a) => (
               <button
                 key={a}
                 type="button"
                 onClick={() => setAno(a)}
-                className={`rounded-md px-2.5 py-1 text-sm ${
-                  a === anoSel
-                    ? "bg-foreground text-background"
-                    : "bg-secondary text-muted-foreground"
+                className={`rounded-full px-2.5 py-1 text-sm ${
+                  a === anoSel ? "bg-lavender text-navy-foreground" : "text-muted-foreground"
                 }`}
               >
                 {a}
