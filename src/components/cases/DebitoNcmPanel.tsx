@@ -3,8 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 
 import { Button, Notice } from "@/components/simulator/ui";
 import { withAuthRetry } from "@/lib/auth-retry";
-import { getCreditoItens, resolverItemAmbiguo } from "@/lib/nfe.functions";
-import { getDebitoItens, resolverItemVendaAmbiguo, type DebitoItem } from "@/lib/nfe-venda.functions";
+import { getCreditoItens } from "@/lib/nfe.functions";
+import { getDebitoItens, type DebitoItem } from "@/lib/nfe-venda.functions";
 import {
   aplicarAcaoLote,
   getHistoricoRevisao,
@@ -41,8 +41,6 @@ interface FilaItem {
 export function DebitoNcmPanel({ caseId }: { caseId: string }) {
   const fetchVendas = useServerFn(getDebitoItens);
   const fetchCompras = useServerFn(getCreditoItens);
-  const resolverVenda = useServerFn(resolverItemVendaAmbiguo);
-  const resolverCompra = useServerFn(resolverItemAmbiguo);
   const aplicarLote = useServerFn(aplicarAcaoLote);
   const fetchHistorico = useServerFn(getHistoricoRevisao);
 
