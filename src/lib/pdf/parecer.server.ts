@@ -603,12 +603,32 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
     if (s.sec7.resultadoLiquidoAno != null) {
       doc.text(`Resultado líquido projetado no ano: ${money(s.sec7.resultadoLiquidoAno)}`, { size: 10 });
     }
+    doc.chartTitle("Da venda bruta ao efeito líquido no caixa");
+    doc.hBars(
+      [
+        { label: "Venda bruta do mês", value: s.sec7.vendasBrutas, texto: money(s.sec7.vendasBrutas), color: SKY },
+        { label: "IBS/CBS retido na origem", value: s.sec7.debitoRetido, texto: money(s.sec7.debitoRetido), color: MAGENTA },
+        {
+          label: "Crédito de compras",
+          value: s.sec7.creditoDisponivel,
+          texto: money(s.sec7.creditoDisponivel),
+          color: MINT,
+        },
+        { label: "Efeito líquido no caixa", value: s.sec7.debitoLiquido, texto: money(s.sec7.debitoLiquido), color: NAVY },
+      ],
+      { labelWidth: 165 },
+    );
     doc.gap(4);
     doc.text(
       "Mostrar apenas a retenção da venda, sem o crédito de compras, é uma meia-leitura: o efeito líquido é o número que orienta a decisão.",
       { size: 9, color: MUTED },
     );
     if (s.sec7.resumoAnual.length > 0) {
+      doc.chartTitle("Retenção e efeito líquido ano a ano");
+      doc.vBars(
+        s.sec7.resumoAnual.map((a) => ({ label: String(a.ano), a: a.retido, b: a.liquido })),
+        { legendA: "Retido na origem", legendB: "Efeito líquido", fmt: (v) => money(v) },
+      );
       doc.gap(6);
       const w = [70, 140, 140, 140];
       doc.row(["Ano", "Retido", "Crédito disponível", "Efeito líquido"], w, { bold: true });
@@ -616,6 +636,7 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
         doc.row([String(a.ano), money(a.retido), money(a.credito), money(a.liquido)], w);
       }
     }
+
   }
   analista(doc, e.sec7);
 
