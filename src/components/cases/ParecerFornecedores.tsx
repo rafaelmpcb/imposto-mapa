@@ -257,10 +257,178 @@ function DetalheFornecedor({
   );
 }
 
+const CORES_COMPARA = ["#12234a", "#f97316", "#7c6cf5", "#10b981"];
+
+/** Comparação lado a lado de 2 a 4 fornecedores selecionados. */
+function CompararFornecedores({
+  itens,
+  totalBase,
+  onFechar,
+}: {
+  itens: FornecedorDetalheSnap[];
+  totalBase: number;
+  onFechar: () => void;
+}) {
+  const meses = Array.from(
+    new Set(itens.flatMap((d) => d.meses.map((m) => m.competencia))),
+  ).sort();
+
+  const serie = meses.map((c) => {
+    const row: Record<string, string | number> = { mes: competenciaLabel(c) };
+    itens.forEach((d, i) => {
+      const m = d.meses.find((x) => x.competencia === c);
+      row[`v${i}`] = m?.valorBase ?? 0;
+      row[`p${i}`] = Number((m?.participacaoPct ?? 0).toFixed(2));
+    });
+    return row;
+  });
+
+  const linhas: { rotulo: string; valor: (d: FornecedorDetalheSnap) => string }[] = [
+    { rotulo: "Regime", valor: (d) => regimeLabel(d.regime) },
+    { rotulo: "Total comprado", valor: (d) => brl(d.valorBase) },
+    {
+      rotulo: "Participação no total",
+      valor: (d) => pct(totalBase > 0 ? (d.valorBase / totalBase) * 100 : 0),
+    },
+    { rotulo: "Crédito estimado", valor: (d) => brl(d.credito) },
+    {
+      rotulo: "Alíquota efetiva de crédito",
+      valor: (d) => pct(d.valorBase > 0 ? (d.credito / d.valorBase) * 100 : 0),
+    },
+    {
+      rotulo: "Custo líquido (compras - crédito)",
+      valor: (d) => brl(d.valorBase - d.credito),
+    },
+    { rotulo: "Notas fiscais", valor: (d) => String(d.notas.length) },
+    { rotulo: "Itens classificados", valor: (d) => String(d.itens) },
+    { rotulo: "Itens em revisão", valor: (d) => String(d.pendentes) },
+    { rotulo: "Meses com movimento", valor: (d) => String(d.meses.length) },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <button
+          type="button"
+          onClick={onFechar}
+          className="text-xs font-semibold text-muted-foreground hover:text-foreground"
+        >
+          ← Voltar para todos fornecedores
+        </button>
+        <h4 className="mt-1 font-presentation-display text-xl text-foreground">
+          Comparação de {itens.length} fornecedores
+        </h4>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-border bg-card">
+        <table className="w-full text-sm">
+          <thead className="bg-secondary/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
+            <tr>
+              <th className="px-4 py-2 font-semibold">Indicador</th>
+              {itens.map((d, i) => (
+                <th key={d.chave} className="px-4 py-2 text-right font-semibold">
+                  <span className="flex items-center justify-end gap-2 normal-case">
+                    <span
+                      className="h-2.5 w-2.5 rounded-full"
+                      style={{ background: CORES_COMPARA[i] }}
+                    />
+                    <span className="truncate text-foreground">
+                      {d.nome ?? d.cnpj ?? "Sem identificação"}
+                    </span>
+                  </span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {linhas.map((l) => (
+              <tr key={l.rotulo} className="border-t border-border/70">
+                <td className="px-4 py-2 text-muted-foreground">{l.rotulo}</td>
+                {itens.map((d) => (
+                  <td
+                    key={d.chave}
+                    className="px-4 py-2 text-right tabular-nums text-foreground"
+                  >
+                    {l.valor(d)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <Box titulo="Evolução do volume comprado e da participação no total">
+        {serie.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Sem datas de emissão nas notas.</p>
+        ) : (
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={serie} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e6e8ef" vertical={false} />
+                <XAxis dataKey="mes" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis
+                  yAxisId="v"
+                  tick={{ fontSize: 11 }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v: number) => brl(v)}
+                  width={90}
+                />
+                <YAxis
+                  yAxisId="p"
+                  orientation="right"
+                  tick={{ fontSize: 11 }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v: number) => `${v}%`}
+                  width={45}
+                />
+                <Tooltip
+                  formatter={(v: number, n: string) => (n.startsWith("Part.") ? pct(v) : brl(v))}
+                />
+                {itens.map((d, i) => (
+                  <Bar
+                    key={`b${d.chave}`}
+                    yAxisId="v"
+                    dataKey={`v${i}`}
+                    name={`Compras · ${d.nome ?? d.cnpj ?? "—"}`}
+                    fill={CORES_COMPARA[i]}
+                    radius={[4, 4, 0, 0]}
+                  />
+                ))}
+                {itens.map((d, i) => (
+                  <Line
+                    key={`l${d.chave}`}
+                    yAxisId="p"
+                    type="monotone"
+                    dataKey={`p${i}`}
+                    name={`Part. · ${d.nome ?? d.cnpj ?? "—"}`}
+                    stroke={CORES_COMPARA[i]}
+                    strokeWidth={2}
+                    strokeDasharray="4 3"
+                    dot={{ r: 2 }}
+                  />
+                ))}
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </Box>
+
+      <p className="text-[11px] text-muted-foreground">
+        Crédito estimado a partir dos itens já classificados; itens em revisão não entram no valor.
+      </p>
+    </div>
+  );
+}
+
 export function ParecerFornecedores({ sec4 }: { sec4: ParecerSnapshot["sec4"] }) {
   const [filtro, setFiltro] = useState<"todos" | "simples" | "regular">("todos");
   const [busca, setBusca] = useState("");
   const [selecionado, setSelecionado] = useState<string | null>(null);
+  const [comparar, setComparar] = useState<string[]>([]);
+  const [modoComparar, setModoComparar] = useState(false);
 
   const lista = sec4.fornecedores;
   const detalhes = useMemo(() => {
