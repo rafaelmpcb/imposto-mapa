@@ -89,8 +89,8 @@ export function HubTabBar({
   onChange: (id: HubTabId) => void;
 }) {
   return (
-    <nav aria-label="Ferramentas do painel" className="mx-auto max-w-6xl px-5">
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
+    <nav aria-label="Ferramentas do painel" className="mx-auto max-w-7xl px-5">
+      <div className="mb-4 mt-6 flex flex-wrap gap-2.5">
         {HUB_TABS.map((tab) => {
           const isActive = tab.id === active;
           const Icon = tab.icon;
@@ -100,36 +100,26 @@ export function HubTabBar({
               type="button"
               onClick={() => onChange(tab.id)}
               aria-current={isActive ? "page" : undefined}
-              className={`group flex flex-col items-start gap-2.5 rounded-xl border p-3.5 text-left transition-all duration-200 ${
+              title={tab.hint}
+              className={`flex basis-[calc(50%-0.625rem)] items-center gap-2.5 rounded-xl border px-3.5 py-3 text-sm font-bold transition-all duration-200 sm:basis-[calc(33.333%-0.834rem)] xl:basis-0 xl:flex-1 xl:justify-center xl:whitespace-nowrap ${
                 isActive
                   ? "border-navy bg-navy text-navy-foreground shadow-md"
                   : "border-border bg-card text-foreground hover:border-navy/40 hover:shadow-sm"
               }`}
             >
               <span
-                className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
                   isActive
                     ? "bg-navy-foreground/15 text-navy-foreground"
                     : "bg-secondary text-navy group-hover:bg-navy/10"
                 }`}
               >
-                <Icon size={18} strokeWidth={2} aria-hidden />
+                <Icon size={16} strokeWidth={2} aria-hidden />
               </span>
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-bold leading-tight">
-                  {tab.label}
-                </span>
-                <span
-                  className={`mt-0.5 block text-xs leading-snug ${
-                    isActive ? "text-navy-foreground/70" : "text-muted-foreground"
-                  }`}
-                >
-                  {tab.hint}
-                </span>
-              </span>
+              <span className="min-w-0 truncate">{tab.label}</span>
               {!tab.ativo ? (
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
                     isActive
                       ? "bg-navy-foreground/15 text-navy-foreground/80"
                       : "bg-muted text-muted-foreground"
