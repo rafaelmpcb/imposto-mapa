@@ -2,6 +2,14 @@ import { useMemo, useState } from "react";
 
 import { Button } from "@/components/simulator/ui";
 import {
+  CaixaChart,
+  FornecedoresChart,
+  PrecoChart,
+  RegimesChart,
+  ResultadoAnoChart,
+  TransicaoChart,
+} from "@/components/cases/ParecerCharts";
+import {
   AREAS_PLANO,
   ESCOPO_LABEL,
   type ParecerEdicoes,
