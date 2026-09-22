@@ -85,7 +85,8 @@ export const gerarFichaNegociacao = createServerFn({ method: "POST" })
       "Tom: técnico, direto, sem floreio. Máximo aproximado de 900 palavras.",
     ].join("\n");
 
-    const runIdFetch = createLovableRunId();
+    const { createLovableAiGatewayRunIdFetch } = await import("@/lib/ai-gateway.server");
+    const runIdFetch = createLovableAiGatewayRunIdFetch();
     const lovable = createOpenAI({
       baseURL: "https://ai.gateway.lovable.dev/v1",
       apiKey: key,
@@ -124,11 +125,3 @@ export const gerarFichaNegociacao = createServerFn({ method: "POST" })
       throw new Error(`Não foi possível gerar a ficha: ${msg}`);
     }
   });
-
-function createLovableRunId() {
-  // import dinâmico evitaria o bundle do cliente, mas o helper é puro e leve
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  return createRunIdFetch();
-}
-
-import { createLovableAiGatewayRunIdFetch as createRunIdFetch } from "@/lib/ai-gateway.server";
