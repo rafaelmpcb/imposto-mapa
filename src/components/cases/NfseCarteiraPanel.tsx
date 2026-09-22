@@ -116,9 +116,9 @@ export function NfseCarteiraPanel({
     setStatus("");
     setLado(ladoAtual);
     try {
-      let brutos: { arquivo: string; xml: string }[];
+      let brutos: NfseArquivo[];
       try {
-        brutos = await readNfeRawFiles(Array.from(files));
+        brutos = await readNfseRawFiles(Array.from(files));
       } catch {
         setError("Não foi possível ler os arquivos. Envie .xml/.json de NFS-e ou um .zip com eles.");
         return;
