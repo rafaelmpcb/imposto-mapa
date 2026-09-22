@@ -461,7 +461,7 @@ function AluguelPage() {
               </Field>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <Button onClick={() => void handleSalvar()} disabled={salvando}>
+              <Button onClick={() => void handleSalvar()} disabled={salvando || aluguel <= 0}>
                 {salvando ? "Salvando…" : "Salvar contrato"}
               </Button>
               <Link to="/meus-calculos" className="text-sm font-semibold text-navy underline">
