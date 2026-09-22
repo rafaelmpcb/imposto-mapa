@@ -713,6 +713,9 @@ function MyCalculations() {
               <Link to="/parametros" className="text-sm font-semibold text-navy underline">
                 Parâmetros e base legal
               </Link>
+              <Link to="/aluguel" className="text-sm font-semibold text-navy underline">
+                Simulador de aluguéis
+              </Link>
             </div>
           </section>
         )}
