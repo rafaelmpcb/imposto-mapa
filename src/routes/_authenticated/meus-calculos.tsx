@@ -416,6 +416,81 @@ function MyCalculations() {
     );
   };
 
+  const renderOtherTab = () => {
+    if (tab === "simulacoes") {
+      return (
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="min-w-64 flex-1">
+              <Field label="Buscar por nome do cliente ou empresa">
+                <TextInput
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Digite parte do nome"
+                  autoComplete="off"
+                />
+              </Field>
+            </div>
+            <Link
+              to="/simulador"
+              className="rounded-md bg-navy px-3 py-2 text-sm font-semibold text-navy-foreground"
+            >
+              Nova simulação
+            </Link>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {allSimulations.length} cálculo{allSimulations.length === 1 ? "" : "s"} no histórico
+          </p>
+          {allSimulations.length === 0 ? (
+            <Notice>Nenhum cálculo salvo ainda.</Notice>
+          ) : (
+            <ul className="space-y-3">{allSimulations.map(renderSimulation)}</ul>
+          )}
+        </section>
+      );
+    }
+    if (tab === "locacao") return <LocacaoHubPanel caseNames={caseNames} />;
+    if (tab === "contratos") {
+      return (
+        <ModuloEmBreve
+          titulo="Gestão de contratos e reequilíbrio econômico"
+          descricao="Revisão da carteira de contratos diante da mudança de carga, com geração de aditivos e cláusulas de reequilíbrio."
+          itens={[
+            "Cadastro dos contratos vigentes e das cláusulas tributárias",
+            "Cálculo do desequilíbrio por contrato ano a ano",
+            "Minuta de aditivo com a fundamentação da revisão",
+          ]}
+        />
+      );
+    }
+    if (tab === "creditos") {
+      return (
+        <ModuloEmBreve
+          titulo="Monetização e transição de saldos credores"
+          descricao="Planejamento do aproveitamento dos saldos acumulados de PIS/COFINS e ICMS durante a transição."
+          itens={[
+            "Levantamento dos saldos por tributo e por período",
+            "Cronograma de aproveitamento e de ressarcimento",
+            "Riscos e alternativas de monetização",
+          ]}
+        />
+      );
+    }
+    return (
+      <ModuloEmBreve
+        titulo="Planejamento de CAPEX e ativo imobilizado"
+        descricao="Comparação entre antecipar o investimento e postergá-lo, confrontando o crédito imediato com a apropriação em 1/48."
+        itens={[
+          "Simulação do momento ideal da aquisição",
+          "Valor presente do crédito em cada cenário",
+          "Efeito no caixa e na depreciação",
+        ]}
+      />
+    );
+  };
+
+
   return (
     <main className="min-h-screen bg-background">
       <header className="bg-navy text-navy-foreground">
