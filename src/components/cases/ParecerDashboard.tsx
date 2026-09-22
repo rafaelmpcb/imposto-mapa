@@ -418,6 +418,7 @@ export function ParecerDashboard({
                   </ul>
                 )}
               </Card>
+              <PrecoChart porAno={snapshot.sec5.porAno} />
             </>
           )}
         </div>
