@@ -389,6 +389,7 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
       pendentes: comprasRows.reduce((a, r) => a + num(r["n_itens_pendentes"]), 0),
       concentracaoTopPct:
         creditoTotal > 0 && fornecedores[0] ? (fornecedores[0].valorApurado / creditoTotal) * 100 : null,
+      detalhes,
     },
     sec5: {
       valorAtual,
