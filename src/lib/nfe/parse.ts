@@ -99,6 +99,10 @@ export function parseItens(infNFe: Element): NfeItem[] {
       vCBS: gCbs ? num(tag(gCbs, "vCBS")) : 0,
       vIBSUF: gUf ? num(tag(gUf, "vIBSUF")) : 0,
       vIBSMun: gMun ? num(tag(gMun, "vIBSMun")) : 0,
+      vICMS: tributo("vICMS"),
+      vIPI: tributo("vIPI"),
+      vPIS: tributo("vPIS"),
+      vCOFINS: tributo("vCOFINS"),
     };
   });
 }

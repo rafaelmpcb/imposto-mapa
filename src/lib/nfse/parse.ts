@@ -27,6 +27,8 @@ export interface NfseServicoItem {
   vCBS: number;
   vIBSUF: number;
   vIBSMun: number;
+  /** ISS destacado no documento (leitura defensiva: ausência = 0). */
+  vISS: number;
 }
 
 export interface NfseNota {
