@@ -197,8 +197,9 @@ export function fluxoMensal(input: CapexInput, ano: number): MesCapex[] {
   const creditaPisCofins = input.regime === "real";
 
   const ibsCbs = creditaIbsCbs ? valor * plena * (FRACAO_IBSCBS[ano] ?? 1) : 0;
+  const elegibilidade = clampPct(ATIVO_PRESETS[input.tipoAtivo]?.elegibilidadeIcmsPct ?? 100);
   const icmsTotal = creditaIcms
-    ? valor * clampPct(input.icmsPct) * (FRACAO_ICMS[ano] ?? 0) * ciap
+    ? valor * clampPct(input.icmsPct) * (FRACAO_ICMS[ano] ?? 0) * ciap * elegibilidade
     : 0;
   const pisCofins =
     creditaPisCofins && creditoPisCofinsVigente(ano)
