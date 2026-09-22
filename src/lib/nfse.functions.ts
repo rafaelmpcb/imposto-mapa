@@ -146,6 +146,7 @@ export const saveNotasServico = createServerFn({ method: "POST" })
           descricao: item.descricao?.slice(0, 300) ?? null,
           valor_servico: item.valorServico,
           tem_classificacao_documento: item.temClassificacaoDocumento,
+          ...(direcao === "prestado" ? { valor_iss: item.vISS } : {}),
         };
         if (item.temClassificacaoDocumento) {
           itensPayload.push({

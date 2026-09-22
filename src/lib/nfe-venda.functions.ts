@@ -110,6 +110,10 @@ export const saveNotasVenda = createServerFn({ method: "POST" })
           quantidade: item.quantidade,
           valor_item: item.valorItem,
           tem_ibscbs: item.temIbscbs,
+          valor_icms: item.vICMS,
+          valor_ipi: item.vIPI,
+          valor_pis: item.vPIS,
+          valor_cofins: item.vCOFINS,
         };
         if (item.temIbscbs) {
           itensPayload.push({

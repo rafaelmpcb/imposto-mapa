@@ -13,6 +13,7 @@ import { DebitoNcmPanel } from "@/components/cases/DebitoNcmPanel";
 import { NfseServicoPanel } from "@/components/cases/NfseServicoPanel";
 import { CreditoNbsPanel } from "@/components/cases/CreditoNbsPanel";
 import { DebitoNbsPanel } from "@/components/cases/DebitoNbsPanel";
+import { PrecoNecessarioPanel } from "@/components/cases/PrecoNecessarioPanel";
 import { RevisaoNbsPanel } from "@/components/cases/RevisaoNbsPanel";
 import { ApuracaoLiquidaPanel } from "@/components/cases/ApuracaoLiquidaPanel";
 import { ConcentracaoPanel } from "@/components/cases/ConcentracaoPanel";
@@ -655,6 +656,8 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
       <CreditoNbsPanel caseId={caseItem.id} reloadKey={nbsReload} />
 
       <DebitoNbsPanel caseId={caseItem.id} reloadKey={nbsReload} />
+
+      <PrecoNecessarioPanel caseId={caseItem.id} reloadKey={nbsReload} />
 
       <RevisaoNbsPanel caseId={caseItem.id} onResolved={() => setNbsReload((v) => v + 1)} />
 

@@ -32,6 +32,11 @@ export interface NfeItem {
   vCBS: number;
   vIBSUF: number;
   vIBSMun: number;
+  /** Tributos atuais do item (leitura defensiva: ausência = 0). */
+  vICMS: number;
+  vIPI: number;
+  vPIS: number;
+  vCOFINS: number;
 }
 
 export interface NfeNota {
@@ -75,6 +80,8 @@ export function parseItens(infNFe: Element): NfeItem[] {
   const dets = Array.from(infNFe.getElementsByTagName("det"));
   return dets.map((det) => {
     const prod = tag(det, "prod");
+    const imposto = tag(det, "imposto");
+    const tributo = (nome: string) => (imposto ? num(tag(imposto, nome)) : 0);
     const ibscbs = tag(det, "IBSCBS");
     const gIbscbs = ibscbs ? tag(ibscbs, "gIBSCBS") : null;
     const gCbs = gIbscbs ? tag(gIbscbs, "gCBS") : ibscbs ? tag(ibscbs, "gCBS") : null;
@@ -92,6 +99,10 @@ export function parseItens(infNFe: Element): NfeItem[] {
       vCBS: gCbs ? num(tag(gCbs, "vCBS")) : 0,
       vIBSUF: gUf ? num(tag(gUf, "vIBSUF")) : 0,
       vIBSMun: gMun ? num(tag(gMun, "vIBSMun")) : 0,
+      vICMS: tributo("vICMS"),
+      vIPI: tributo("vIPI"),
+      vPIS: tributo("vPIS"),
+      vCOFINS: tributo("vCOFINS"),
     };
   });
 }
