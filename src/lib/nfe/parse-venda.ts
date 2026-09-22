@@ -54,7 +54,9 @@ export function parseNfeVendaXml(xml: string, arquivo: string): NfeVendaNota {
     valorTotal: 0,
     dataEmissao: null,
     status: "xml_invalido",
+    itens: [],
   };
+
 
   let doc: Document;
   try {
