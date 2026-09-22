@@ -326,10 +326,6 @@ class Doc {
       } else {
         draw(c.a, 0, NAVY, 0);
       }
-
-      } else {
-        draw(c.a, 0, NAVY);
-      }
       const label = safe(c.label);
       this.page.drawText(label, {
         x: center - this.regular.widthOfTextAtSize(label, 8) / 2,
