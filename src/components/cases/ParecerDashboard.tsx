@@ -425,69 +425,7 @@ export function ParecerDashboard({
               />
             </Card>
           </div>
-          {snapshot.sec4.fornecedores.length === 0 ? (
-            <Vazio>Sem notas de compra processadas neste Caso.</Vazio>
-          ) : (
-            <div className="grid gap-4 lg:grid-cols-2">
-              <FornecedoresChart fornecedores={snapshot.sec4.fornecedores} />
-              <ComposicaoDonut
-                titulo="Participação no crédito"
-                descricao="Quanto cada fornecedor representa do crédito apurado."
-                partes={snapshot.sec4.fornecedores.slice(0, 6).map((f) => ({
-                  name: (f.nome ?? f.cnpj ?? f.codigo).slice(0, 22),
-                  valor: f.valorApurado,
-                }))}
-                centroLabel="Crédito"
-                centroValor={brl(snapshot.sec4.creditoTotal)}
-              />
-            </div>
-          )}
-          {snapshot.sec4.fornecedores.length > 0 ? (
-            <div className="overflow-x-auto rounded-2xl border border-border bg-card">
-              <table className="w-full text-sm">
-                <thead className="bg-secondary/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-2 font-semibold">Fornecedor</th>
-                    <th className="px-4 py-2 text-right font-semibold">Volume</th>
-                    <th className="px-4 py-2 text-right font-semibold">Crédito</th>
-                    <th className="px-4 py-2 text-right font-semibold">Participação</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {snapshot.sec4.fornecedores.slice(0, 12).map((f) => {
-                    const share =
-                      snapshot.sec4.creditoTotal > 0
-                        ? (f.valorApurado / snapshot.sec4.creditoTotal) * 100
-                        : 0;
-                    return (
-                      <tr key={f.codigo} className="border-t border-border/70">
-                        <td className="px-4 py-2 text-foreground">
-                          {f.nome ?? f.cnpj ?? f.codigo}
-                        </td>
-                        <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">
-                          {brl(f.valorBase)}
-                        </td>
-                        <td className="px-4 py-2 text-right tabular-nums text-foreground">
-                          {brl(f.valorApurado)}
-                        </td>
-                        <td className="px-4 py-2 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <span className="h-1.5 w-20 overflow-hidden rounded-full bg-secondary">
-                              <span
-                                className="block h-full rounded-full bg-lavender"
-                                style={{ width: `${Math.min(100, share)}%` }}
-                              />
-                            </span>
-                            <span className="tabular-nums text-muted-foreground">{pct(share)}</span>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
+          <ParecerFornecedores sec4={snapshot.sec4} />
         </div>
       ) : null}
 
