@@ -4,9 +4,9 @@ import { OfficeContactCta } from "@/components/contact/OfficeContactCta";
 
 import { LEGAL_REFERENCE_DATE } from "@/lib/tax/constants";
 
-const TITLE = "Calculadora da Reforma Tributária 2026 — simulador IBS e CBS";
+const TITLE = "Plataforma da Reforma Tributária — calculadoras IBS e CBS e diagnóstico fiscal";
 const DESCRIPTION =
-  "Entenda a Reforma Tributária e simule gratuitamente o impacto do IBS e da CBS na sua empresa ou no seu salário em 2026, 2027 e 2033.";
+  "Suíte de ferramentas para a transição da Reforma Tributária: simulador de impacto IBS/CBS, repactuação de aluguéis, contratos, saldos credores e planejamento de CAPEX.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -21,6 +21,125 @@ export const Route = createFileRoute("/")({
   }),
   component: Landing,
 });
+
+type Modulo = {
+  numero: string;
+  titulo: string;
+  resumo: string;
+  itens: string[];
+  status: "aberto" | "consultoria";
+  selo: string;
+  tone: string;
+  chip: string;
+  to?: "/simulador" | "/aluguel";
+  cta: string;
+};
+
+const MODULOS: Modulo[] = [
+  {
+    numero: "01",
+    titulo: "Simulador de Impacto Fiscal (IBS e CBS)",
+    resumo:
+      "Compare a carga tributária atual com a projetada nos marcos de 2026, 2027 e 2033, por regime e por atividade.",
+    itens: [
+      "Simples Nacional, Lucro Presumido, Lucro Real, MEI e pessoa física",
+      "Comparação entre regimes e reduções de alíquota por atividade",
+      "Relatório com gráficos, memória de cálculo e exportação em PDF",
+    ],
+    status: "aberto",
+    selo: "Disponível online",
+    tone: "border-sky/40 bg-sky-soft",
+    chip: "bg-sky text-white",
+    to: "/simulador",
+    cta: "Abrir simulador",
+  },
+  {
+    numero: "02",
+    titulo: "Locação e Contratos Imobiliários",
+    resumo:
+      "Aluguel de equilíbrio sob o novo modelo, com o redutor imobiliário e a visão do locador e do locatário lado a lado.",
+    itens: [
+      "Cenários atual, sem repactuação e repactuado",
+      "Crédito aproveitável pelo locatário e resultado líquido do locador",
+      "Evolução ano a ano de 2026 a 2033 e cláusula sugerida",
+    ],
+    status: "aberto",
+    selo: "Disponível online",
+    tone: "border-mint/40 bg-mint-soft",
+    chip: "bg-mint text-navy",
+    to: "/aluguel",
+    cta: "Abrir calculadora de aluguéis",
+  },
+  {
+    numero: "03",
+    titulo: "Gestão de Contratos e Reequilíbrio Econômico",
+    resumo:
+      "Revisão da carteira de contratos B2B com matriz de repasse, risco de renegociação e minutas de aditivo.",
+    itens: [
+      "Mapa de contratos por prazo, indexador e cláusula tributária",
+      "Simulação de repasse, absorção e reequilíbrio da margem",
+      "Minutas de aditivo e roteiro de negociação por contraparte",
+    ],
+    status: "consultoria",
+    selo: "Consultoria especializada",
+    tone: "border-lavender/40 bg-lavender-soft",
+    chip: "bg-lavender text-navy",
+    cta: "Solicitar análise contratual",
+  },
+  {
+    numero: "04",
+    titulo: "Saldos Credores Acumulados (ICMS e PIS/COFINS)",
+    resumo:
+      "Diagnóstico e estratégia para monetizar créditos acumulados antes e durante a transição, evitando perda de valor.",
+    itens: [
+      "Levantamento e qualificação dos saldos por tributo e período",
+      "Caminhos de ressarcimento, compensação e homologação",
+      "Cronograma de aproveitamento no novo sistema IBS/CBS",
+    ],
+    status: "consultoria",
+    selo: "Consultoria especializada",
+    tone: "border-amber-tone/40 bg-amber-tone-soft",
+    chip: "bg-amber-tone text-navy",
+    cta: "Solicitar diagnóstico de créditos",
+  },
+  {
+    numero: "05",
+    titulo: "Planejamento de CAPEX e Ativo Imobilizado",
+    resumo:
+      "Quando investir: crédito imediato no novo modelo comparado ao aproveitamento parcelado em 48 meses do regime atual.",
+    itens: [
+      "Comparativo de aquisição antes e depois da transição",
+      "Efeito em caixa, margem e retorno do investimento",
+      "Recomendação de janela de compra por tipo de ativo",
+    ],
+    status: "consultoria",
+    selo: "Consultoria especializada",
+    tone: "border-magenta/40 bg-magenta-soft",
+    chip: "bg-magenta text-white",
+    cta: "Solicitar estudo de CAPEX",
+  },
+];
+
+const JORNADA = [
+  {
+    etapa: "Etapa 1",
+    titulo: "Estimativa preliminar",
+    texto:
+      "Use as calculadoras abertas para ter uma primeira leitura do impacto na sua empresa ou nos seus contratos.",
+  },
+  {
+    etapa: "Etapa 2",
+    titulo: "Auditoria dos dados reais",
+    texto:
+      "O escritório analisa notas fiscais, apurações, despesas e contratos para substituir estimativas por números reais.",
+  },
+  {
+    etapa: "Etapa 3",
+    titulo: "Parecer e plano de ação",
+    texto:
+      "Entrega de parecer executivo com dashboard interativo, argumentos de negociação e próximos passos jurídicos.",
+  },
+];
 
 const TIMELINE = [
   {
@@ -64,43 +183,157 @@ const AUDIENCE = [
   },
 ];
 
+function ModuloCard({ modulo }: { modulo: Modulo }) {
+  return (
+    <article className={`flex flex-col rounded-2xl border p-6 shadow-sm ${modulo.tone}`}>
+      <div className="flex items-start justify-between gap-3">
+        <span className="text-xs font-semibold tracking-[0.2em] text-navy/60">{modulo.numero}</span>
+        <span
+          className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${modulo.chip}`}
+        >
+          {modulo.selo}
+        </span>
+      </div>
+
+      <h3 className="mt-4 text-lg font-semibold leading-snug text-navy">{modulo.titulo}</h3>
+      <p className="mt-2 text-sm leading-relaxed text-navy/75">{modulo.resumo}</p>
+
+      <ul className="mt-4 space-y-2 text-sm leading-relaxed text-navy/70">
+        {modulo.itens.map((item) => (
+          <li key={item} className="flex gap-2">
+            <span aria-hidden className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-navy/40" />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-6 pt-2">
+        {modulo.status === "aberto" && modulo.to ? (
+          <Link
+            to={modulo.to}
+            className="inline-flex items-center justify-center rounded-md bg-navy px-5 py-2.5 text-sm font-semibold text-navy-foreground transition-opacity hover:opacity-90"
+          >
+            {modulo.cta}
+          </Link>
+        ) : (
+          <a
+            href="#contato"
+            className="inline-flex items-center justify-center rounded-md border border-navy/25 bg-card px-5 py-2.5 text-sm font-semibold text-navy transition-colors hover:bg-background"
+          >
+            {modulo.cta}
+          </a>
+        )}
+      </div>
+    </article>
+  );
+}
+
 export default function Landing() {
   return (
     <main className="min-h-screen bg-background">
-      <header className="bg-navy text-navy-foreground">
-        <div className="mx-auto max-w-4xl px-5 py-14 sm:py-20">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-navy-foreground/70">
-             
-          </p>
-          <h1 className="mt-3 text-3xl leading-tight sm:text-5xl">
-            Calculadora da Reforma Tributária: quanto o IBS e a CBS mudam na sua conta
-          </h1>
-          <p className="mt-5 max-w-2xl text-sm leading-relaxed text-navy-foreground/80 sm:text-base">
-            Em cinco etapas rápidas, compare a carga tributária que você paga hoje com a projeção
-            sob o novo sistema, nos cenários de 2026, 2027 e 2033. É uma estimativa — não substitui
-            um diagnóstico fiscal completo.
-          </p>
-          <Link
-            to="/simulador"
-            className="mt-8 inline-flex items-center justify-center rounded-md bg-background px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-          >
-             Começar a simulação
-          </Link>
+      <header className="border-b border-border bg-card">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-4">
+          <div>
+            <p className="text-sm font-semibold text-navy">Plataforma da Reforma Tributária</p>
+            <p className="text-xs text-muted-foreground">EC 132/2023 e LC 214/2025</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <a
+              href="#contato"
+              className="text-sm font-semibold text-navy underline-offset-4 hover:underline"
+            >
+              Falar com o escritório
+            </a>
+            <Link
+              to="/auth"
+              className="rounded-md border border-input bg-background px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+            >
+              Área do advogado
+            </Link>
+          </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-4xl space-y-12 px-5 py-12 sm:py-16">
-        <OfficeContactCta message="Olá! Gostaria de falar sobre o impacto da Reforma Tributária no meu negócio." />
+      <section className="bg-navy text-navy-foreground">
+        <div className="mx-auto max-w-6xl px-5 py-14 sm:py-20">
+          <div className="flex flex-wrap gap-2">
+            {["IBS", "CBS", "Split Payment", "Crédito amplo", "Transição 2026–2033"].map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full border border-navy-foreground/25 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-navy-foreground/80"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+          <h1 className="mt-6 max-w-3xl text-3xl leading-tight sm:text-5xl">
+            Uma suíte de ferramentas para atravessar a Reforma Tributária com números na mão
+          </h1>
+          <p className="mt-5 max-w-2xl text-sm leading-relaxed text-navy-foreground/80 sm:text-base">
+            Calculadoras abertas para uma primeira leitura do impacto e módulos de consultoria
+            conduzidos pelo escritório para contratos, créditos acumulados e investimentos. As
+            simulações online são estimativas e não substituem um diagnóstico fiscal completo.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <a
+              href="#solucoes"
+              className="inline-flex items-center justify-center rounded-md bg-background px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+            >
+              Ver as soluções
+            </a>
+            <Link
+              to="/simulador"
+              className="inline-flex items-center justify-center rounded-md border border-navy-foreground/35 px-6 py-3 text-sm font-semibold text-navy-foreground transition-colors hover:bg-navy-foreground/10"
+            >
+              Simular meu impacto agora
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <div className="mx-auto max-w-6xl space-y-16 px-5 py-14 sm:py-16">
+        <section id="solucoes" className="scroll-mt-16">
+          <h2 className="text-2xl">Soluções da plataforma</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+            Cada módulo trata de um problema distinto da transição. Dois estão abertos para uso
+            imediato; os demais são conduzidos pela equipe a partir dos seus documentos.
+          </p>
+          <div className="mt-7 grid gap-5 lg:grid-cols-2">
+            {MODULOS.map((modulo) => (
+              <ModuloCard key={modulo.numero} modulo={modulo} />
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-2xl">Como o trabalho acontece</h2>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {JORNADA.map((passo) => (
+              <div key={passo.etapa} className="rounded-xl border border-border bg-card p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-navy">
+                  {passo.etapa}
+                </p>
+                <h3 className="mt-1 text-base font-semibold">{passo.titulo}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{passo.texto}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section id="contato" className="scroll-mt-16">
+          <OfficeContactCta message="Olá! Gostaria de falar sobre o impacto da Reforma Tributária no meu negócio." />
+        </section>
+
         <section>
           <h2 className="text-2xl">O que muda com a Reforma Tributária</h2>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
             A Reforma Tributária do consumo (Emenda Constitucional 132/2023, regulamentada pela LC
             214/2025) substitui cinco tributos por dois. PIS e COFINS dão lugar à CBS, de
             competência federal; ICMS e IPI e o ISS municipal dão lugar ao IBS, de competência
             compartilhada entre estados e municípios. O modelo passa a ser não cumulativo pleno: o
             que a empresa paga na compra vira crédito na venda.
           </p>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
             Na prática, o tributo deixa de ser cobrado na origem e passa a ser cobrado no destino, o
             que muda preço, margem, precificação de contratos e planejamento de caixa — mesmo para
             quem terminar pagando um valor parecido.
@@ -109,7 +342,7 @@ export default function Landing() {
 
         <section>
           <h2 className="text-2xl">Cronograma de 2026 a 2033</h2>
-          <ol className="mt-5 space-y-4">
+          <ol className="mt-5 grid gap-4 md:grid-cols-2">
             {TIMELINE.map((item) => (
               <li key={item.year} className="rounded-xl border border-border bg-card p-5">
                 <p className="text-xs font-semibold uppercase tracking-wide text-navy">
@@ -132,23 +365,6 @@ export default function Landing() {
               </div>
             ))}
           </div>
-        </section>
-
-        <section>
-          <h2 className="text-2xl">O que o simulador entrega</h2>
-          <ul className="mt-4 space-y-2 text-sm leading-relaxed text-muted-foreground">
-            <li>Comparação entre a carga atual e a projetada, tributo a tributo.</li>
-            <li>Diferença em reais por mês e em pontos percentuais da carga.</li>
-            <li>Gráficos de impacto imediato e de evolução ao longo da transição.</li>
-            <li>Comparação entre Simples Nacional, Lucro Presumido e Lucro Real após a reforma.</li>
-            <li>Resumo executivo com os benefícios de alíquota aplicáveis à sua atividade.</li>
-          </ul>
-          <Link
-            to="/simulador"
-            className="mt-7 inline-flex items-center justify-center rounded-md bg-navy px-6 py-3 text-sm font-semibold text-navy-foreground transition-colors hover:bg-primary"
-          >
-            Simular o impacto no meu caso
-          </Link>
         </section>
 
         <footer className="border-t border-border pt-6 text-xs leading-relaxed text-muted-foreground">
