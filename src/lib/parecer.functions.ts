@@ -43,6 +43,7 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
     precoMercRes,
     precoServRes,
     precoAnoRes,
+    contratosRes,
   ] = await Promise.all([
     admin.from("cases").select("*").eq("id", caseId).maybeSingle(),
     admin
