@@ -1323,6 +1323,8 @@ export type Database = {
           gerado_em: string
           gerado_por: string | null
           id: string
+          share_enabled: boolean
+          share_token: string | null
           status: string
           updated_at: string
           versao: number
@@ -1336,6 +1338,8 @@ export type Database = {
           gerado_em?: string
           gerado_por?: string | null
           id?: string
+          share_enabled?: boolean
+          share_token?: string | null
           status?: string
           updated_at?: string
           versao: number
@@ -1349,6 +1353,8 @@ export type Database = {
           gerado_em?: string
           gerado_por?: string | null
           id?: string
+          share_enabled?: boolean
+          share_token?: string | null
           status?: string
           updated_at?: string
           versao?: number
