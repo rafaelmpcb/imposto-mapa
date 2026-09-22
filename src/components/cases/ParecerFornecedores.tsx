@@ -777,6 +777,7 @@ export function ParecerFornecedores({ sec4 }: { sec4: ParecerSnapshot["sec4"] })
             </tbody>
             <tfoot>
               <tr className="border-t-2 border-border bg-secondary/40 font-semibold">
+                <td className="px-4 py-2" />
                 <td className="px-4 py-2 text-foreground">{filtrada.length} fornecedor(es)</td>
                 <td className="px-4 py-2 text-right tabular-nums">{brl(totalFiltrado.base)}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{brl(totalFiltrado.credito)}</td>
