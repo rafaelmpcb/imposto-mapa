@@ -23,6 +23,7 @@ import {
   listPareceres,
   salvarEdicoesParecer,
   salvarEscopoCaso,
+  setParecerShare,
 } from "@/lib/parecer.functions";
 import type { CaseRecord } from "@/lib/cases.functions";
 import { brl } from "@/lib/tax/calc";
@@ -71,6 +72,7 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
   const salvar = useServerFn(salvarEdicoesParecer);
   const finalizar = useServerFn(finalizarParecer);
   const salvarEscopo = useServerFn(salvarEscopoCaso);
+  const partilhar = useServerFn(setParecerShare);
 
   const [versoes, setVersoes] = useState<ParecerVersao[]>([]);
   const [atualId, setAtualId] = useState<string | null>(null);
@@ -130,7 +132,34 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
     setEdicoes((e) => ({ ...e, sec3: { achados: lista } }));
   };
 
+  const handleLink = async () => {
+    if (!atual) return;
+    setBusy(true);
+    setMsg("");
+    setErro("");
+    try {
+      let token = atual.share_token;
+      if (!atual.share_enabled || !token) {
+        const res = await withAuthRetry(() => partilhar({ data: { id: atual.id, enabled: true } }));
+        token = res.token;
+        await load();
+      }
+      const url = `${window.location.origin}/relatorio/${token}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        setMsg(`Link do relatório copiado: ${url}`);
+      } catch {
+        setMsg(`Link do relatório: ${url}`);
+      }
+    } catch {
+      setErro("Não foi possível gerar o link do relatório.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleGerar = async () => {
+
     setBusy(true);
     setMsg("");
     setErro("");
@@ -256,10 +285,16 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
               <Button variant="ghost" onClick={() => void handlePdf()} disabled={busy}>
                 Baixar PDF
               </Button>
-              <Button onClick={() => setDashboard(true)}>Dashboard executivo</Button>
+              <Button onClick={() => void handleLink()} disabled={busy}>
+                {atual.share_enabled ? "Copiar link do relatório" : "Gerar link do relatório"}
+              </Button>
+              <Button variant="ghost" onClick={() => setDashboard(true)}>
+                Dashboard executivo
+              </Button>
               <Button variant="ghost" onClick={() => setApresentando(true)}>
                 Apresentação guiada
               </Button>
+
             </>
           ) : null}
         </div>

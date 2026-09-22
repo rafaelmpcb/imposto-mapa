@@ -219,7 +219,10 @@ export interface ParecerVersao {
   edicoes: ParecerEdicoes;
   gerado_em: string;
   finalizado_em: string | null;
+  share_enabled: boolean;
+  share_token: string | null;
 }
+
 
 export interface ChecklistItem {
   id: string;
