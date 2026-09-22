@@ -32,8 +32,21 @@ export function CreditoNcmPanel({ caseId }: { caseId: string }) {
     void load();
   }, [load]);
 
+  const cfopsDisponiveis = useMemo(
+    () => [...new Set(itens.map((i) => i.cfop).filter((c): c is string => Boolean(c)))].sort(),
+    [itens],
+  );
+
+  const itensFiltrados = useMemo(
+    () =>
+      cfopSelecionados.length === 0
+        ? itens
+        : itens.filter((i) => i.cfop && cfopSelecionados.includes(i.cfop)),
+    [itens, cfopSelecionados],
+  );
+
   const resumo = useMemo(() => {
-    const ok = itens.filter((i) => i.status_classificacao === "ok");
+    const ok = itensFiltrados.filter((i) => i.status_classificacao === "ok");
     const semDado = itens.filter(
       (i) => i.status_classificacao === "sem_dado" || i.status_classificacao === "imposto_seletivo",
     );
