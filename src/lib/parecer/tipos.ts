@@ -198,6 +198,34 @@ export interface AluguelSnap {
   variacaoLiquidoPct: number;
 }
 
+export interface ContratoReequilibrioSnap {
+  titulo: string;
+  contraparte: string | null;
+  papel: string;
+  regime: string;
+  perfilContratante: string;
+  cenario: string;
+  status: string;
+  ano: number;
+  precoAtual: number;
+  precoSugerido: number;
+  variacaoPrecoPct: number;
+  margemAtual: number;
+  margemSemReequilibrio: number;
+  custoContratanteAtual: number;
+  custoContratanteSugerido: number;
+}
+
+export interface ReequilibrioSnap {
+  contratos: ContratoReequilibrioSnap[];
+  totalAtual: number;
+  totalSugerido: number;
+  variacaoPrecoPct: number;
+  margemAtual: number;
+  margemSemReequilibrio: number;
+  variacaoMargemPct: number;
+}
+
 export interface ParecerSnapshot {
   geradoEm: string;
   sec1: {
