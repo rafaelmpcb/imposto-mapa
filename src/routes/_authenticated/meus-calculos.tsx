@@ -298,6 +298,24 @@ function MyCalculations() {
     );
   }, [cases, query]);
 
+  const caseNames = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of cases ?? []) map.set(c.id, c.client_name || "Sem identificação");
+    return map;
+  }, [cases]);
+
+  const allSimulations = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    const items = (cases ?? []).flatMap((c) => c.simulations);
+    const sorted = [...items].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+    if (!term) return sorted;
+    return sorted.filter((s) => (s.client_name ?? "").toLowerCase().includes(term));
+  }, [cases, query]);
+
+
+
   const renderSimulation = (item: SavedSimulation) => {
     const diff = Number(item.reform_total) - Number(item.current_total);
     const worse = diff > 0.004;
