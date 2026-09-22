@@ -8,6 +8,7 @@ import { Button, Field, Notice, TextInput } from "@/components/simulator/ui";
 import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
 import { HelpButton } from "@/components/help/HelpPanel";
 import { CaseKanban } from "@/components/cases/CaseKanban";
+import { ParecerPadraoPanel } from "@/components/cases/ParecerPadraoPanel";
 import { DiagnosticoCompleto } from "@/components/cases/DiagnosticoCompleto";
 import { FunnelPanel } from "@/components/cases/FunnelPanel";
 import { StageSelect } from "@/components/cases/StageSelect";
@@ -93,6 +94,7 @@ function MyCalculations() {
   const [copied, setCopied] = useState<string | null>(null);
   const [memoFor, setMemoFor] = useState<SavedSimulation | null>(null);
   const [diagCaseId, setDiagCaseId] = useState<string | null>(null);
+  const [parecerCaseId, setParecerCaseId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState("");
 
   const loadFunnel = async () => {
@@ -580,6 +582,13 @@ function MyCalculations() {
                                : "Diagnóstico Completo"}
                            </Button>
                            <Button
+                             onClick={() =>
+                               setParecerCaseId(parecerCaseId === item.id ? null : item.id)
+                             }
+                           >
+                             {parecerCaseId === item.id ? "Fechar Parecer Padrão" : "Parecer Padrão"}
+                           </Button>
+                           <Button
                              variant="ghost"
                              onClick={() => setOpenCaseId(isOpen ? null : item.id)}
                            >
@@ -610,6 +619,12 @@ function MyCalculations() {
                           )}
                         </div>
                       </div>
+
+                      {parecerCaseId === item.id ? (
+                        <div className="mt-4 border-t border-border pt-4">
+                          <ParecerPadraoPanel caseItem={item} />
+                        </div>
+                      ) : null}
 
                       {diagCaseId === item.id ? (
                         <div className="mt-4 border-t border-border pt-4">
