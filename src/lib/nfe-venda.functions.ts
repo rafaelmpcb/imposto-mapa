@@ -18,12 +18,15 @@ export const saveNotasVenda = createServerFn({ method: "POST" })
 
     const { data: existentes } = await supabaseAdmin
       .from("nota_fiscal_venda_xml")
-      .select("chave_acesso")
+      .select("id,chave_acesso,arquivo_original")
       .eq("case_id", data.caseId);
+    const existentesRows = (existentes ?? []) as {
+      id: string;
+      chave_acesso: string | null;
+      arquivo_original: string;
+    }[];
     const jaGravadas = new Set(
-      ((existentes ?? []) as { chave_acesso: string | null }[])
-        .map((r) => r.chave_acesso)
-        .filter((c): c is string => Boolean(c)),
+      existentesRows.map((r) => r.chave_acesso).filter((c): c is string => Boolean(c)),
     );
 
     const vistas = new Set<string>();
@@ -46,19 +49,19 @@ export const saveNotasVenda = createServerFn({ method: "POST" })
       status_processamento: n.status,
     }));
 
-    if (payload.length === 0) return { ok: true as const, inserted: 0, itens: 0 };
-    const { data: inseridas, error } = await supabaseAdmin
-      .from("nota_fiscal_venda_xml")
-      .insert(payload as never)
-      .select("id,chave_acesso,arquivo_original");
-    if (error) throw new Error(error.message);
+    let inseridas: unknown[] = [];
+    if (payload.length > 0) {
+      const ins = await supabaseAdmin
+        .from("nota_fiscal_venda_xml")
+        .insert(payload as never)
+        .select("id,chave_acesso,arquivo_original");
+      if (ins.error) throw new Error(ins.error.message);
+      inseridas = ins.data ?? [];
+    }
 
     // --- itens da nota: débito de IBS/CBS apurado item a item ---
-    const notasGravadas = (inseridas ?? []) as {
-      id: string;
-      chave_acesso: string | null;
-      arquivo_original: string;
-    }[];
+    // Notas já existentes também são reprocessadas (backfill em reenvio).
+    const notasGravadas = [...existentesRows, ...(inseridas as typeof existentesRows)];
     const idPorChave = new Map<string, string>();
     const idPorArquivo = new Map<string, string>();
     for (const n of notasGravadas) {
@@ -66,7 +69,7 @@ export const saveNotasVenda = createServerFn({ method: "POST" })
       idPorArquivo.set(n.arquivo_original, n.id);
     }
 
-    const notasComItens = novas.filter((n) => (n.itens?.length ?? 0) > 0);
+    const notasComItens = data.notas.filter((n) => (n.itens?.length ?? 0) > 0);
     const ncms = [
       ...new Set(
         notasComItens.flatMap((n) =>
@@ -90,11 +93,13 @@ export const saveNotasVenda = createServerFn({ method: "POST" })
     }
 
     const itensPayload: Record<string, unknown>[] = [];
+    const notaIdsReprocessados = new Set<string>();
     for (const nota of notasComItens) {
       const notaId =
         (nota.chave ? idPorChave.get(nota.chave) : undefined) ??
         idPorArquivo.get(nota.arquivo.slice(0, 200));
-      if (!notaId) continue;
+      if (!notaId || notaIdsReprocessados.has(notaId)) continue;
+      notaIdsReprocessados.add(notaId);
       for (const item of nota.itens ?? []) {
         const base = {
           nota_fiscal_venda_xml_id: notaId,
@@ -134,6 +139,14 @@ export const saveNotasVenda = createServerFn({ method: "POST" })
           opcoes_candidatas: calc.opcoes,
         });
       }
+    }
+
+    if (notaIdsReprocessados.size > 0) {
+      const delItens = await supabaseAdmin
+        .from("nota_fiscal_venda_xml_item")
+        .delete()
+        .in("nota_fiscal_venda_xml_id", [...notaIdsReprocessados]);
+      if (delItens.error) throw new Error(delItens.error.message);
     }
 
     if (itensPayload.length > 0) {

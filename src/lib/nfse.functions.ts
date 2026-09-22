@@ -40,12 +40,16 @@ export const saveNotasServico = createServerFn({ method: "POST" })
 
     const { data: existentes } = await supabaseAdmin
       .from("nota_servico_nfse")
-      .select("chave_acesso")
+      .select("id,chave_acesso,arquivo_original,direcao")
       .eq("case_id", data.caseId);
+    const existentesRows = (existentes ?? []) as {
+      id: string;
+      chave_acesso: string | null;
+      arquivo_original: string;
+      direcao: string;
+    }[];
     const jaGravadas = new Set(
-      ((existentes ?? []) as { chave_acesso: string | null }[])
-        .map((r) => r.chave_acesso)
-        .filter((c): c is string => Boolean(c)),
+      existentesRows.map((r) => r.chave_acesso).filter((c): c is string => Boolean(c)),
     );
 
     const vistas = new Set<string>();
@@ -55,7 +59,6 @@ export const saveNotasServico = createServerFn({ method: "POST" })
       vistas.add(n.chave);
       return true;
     });
-    if (notas.length === 0) return { ok: true as const, inserted: 0, itens: 0 };
 
     const payload = notas.map((n) => ({
       case_id: data.caseId,
@@ -75,17 +78,21 @@ export const saveNotasServico = createServerFn({ method: "POST" })
       status_processamento: n.status,
     }));
 
-    const { data: inseridas, error } = await supabaseAdmin
-      .from("nota_servico_nfse")
-      .insert(payload as never)
-      .select("id,chave_acesso,arquivo_original");
-    if (error) throw new Error(error.message);
+    let inseridas: unknown[] = [];
+    if (payload.length > 0) {
+      const ins = await supabaseAdmin
+        .from("nota_servico_nfse")
+        .insert(payload as never)
+        .select("id,chave_acesso,arquivo_original");
+      if (ins.error) throw new Error(ins.error.message);
+      inseridas = ins.data ?? [];
+    }
 
-    const gravadas = (inseridas ?? []) as {
-      id: string;
-      chave_acesso: string | null;
-      arquivo_original: string;
-    }[];
+    // Notas já gravadas na mesma direção também são reprocessadas em reenvios.
+    const gravadas = [
+      ...existentesRows.filter((n) => n.direcao === direcao),
+      ...(inseridas as { id: string; chave_acesso: string | null; arquivo_original: string }[]),
+    ];
     const idPorChave = new Map<string, string>();
     const idPorArquivo = new Map<string, string>();
     for (const n of gravadas) {
@@ -96,7 +103,7 @@ export const saveNotasServico = createServerFn({ method: "POST" })
     // tabela de exceções por NBS, só para os serviços sem classificação no documento
     const codigos = [
       ...new Set(
-        notas.flatMap((n) =>
+        data.notas.flatMap((n) =>
           (n.itens ?? [])
             .filter((i) => !i.temClassificacaoDocumento && i.nbs)
             .map((i) => (i.nbs as string).trim()),
@@ -122,11 +129,14 @@ export const saveNotasServico = createServerFn({ method: "POST" })
     const fonteDocumento = direcao === "prestado" ? FONTE_DOCUMENTO_EMITIDA : FONTE_DOCUMENTO;
 
     const itensPayload: Record<string, unknown>[] = [];
-    for (const nota of notas) {
+    const notaIdsReprocessados = new Set<string>();
+    for (const nota of data.notas) {
+      if ((nota.itens?.length ?? 0) === 0) continue;
       const notaId =
         (nota.chave ? idPorChave.get(nota.chave) : undefined) ??
         idPorArquivo.get(nota.arquivo.slice(0, 200));
-      if (!notaId) continue;
+      if (!notaId || notaIdsReprocessados.has(notaId)) continue;
+      notaIdsReprocessados.add(notaId);
       for (const item of nota.itens ?? []) {
         const base = {
           nota_servico_id: notaId,
@@ -163,6 +173,14 @@ export const saveNotasServico = createServerFn({ method: "POST" })
           opcoes_candidatas: calc.opcoes,
         });
       }
+    }
+
+    if (notaIdsReprocessados.size > 0) {
+      const delItens = await supabaseAdmin
+        .from(TABELA_ITEM[direcao] as "nota_servico_nfse_item")
+        .delete()
+        .in("nota_servico_id", [...notaIdsReprocessados]);
+      if (delItens.error) throw new Error(delItens.error.message);
     }
 
     if (itensPayload.length > 0) {
