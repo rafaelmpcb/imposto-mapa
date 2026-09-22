@@ -627,7 +627,7 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
     );
     const ultima = s.sec6.linhas[s.sec6.linhas.length - 1];
     if (ultima) {
-      doc.chartTitle(`Para onde vai a receita — ${ultima.ano} (${ultima.cenario})`);
+      doc.chartTitle(`Para onde vai a receita — ${ultima.ano} (${ultima.cenario})`, 70);
       doc.stacked([
         { label: "Custo de aquisição", value: ultima.custo, color: LAVENDER },
         { label: "Despesas operacionais", value: ultima.despesas, color: SKY },
