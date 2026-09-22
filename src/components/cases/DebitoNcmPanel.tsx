@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 
 import { Button, Notice } from "@/components/simulator/ui";
+import { CfopFilter } from "@/components/cases/CfopFilter";
 import { withAuthRetry } from "@/lib/auth-retry";
 import { getCreditoItens } from "@/lib/nfe.functions";
 import { getDebitoItens, type DebitoItem } from "@/lib/nfe-venda.functions";
@@ -55,6 +56,7 @@ export function DebitoNcmPanel({ caseId }: { caseId: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [aviso, setAviso] = useState("");
+  const [cfopSelecionados, setCfopSelecionados] = useState<string[]>([]);
 
   const emRevisao = (s: string) => s === PENDENTE_REVISAO || s === MARCADO_REVISAO;
 
