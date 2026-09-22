@@ -129,11 +129,14 @@ export const saveNotasServico = createServerFn({ method: "POST" })
     const fonteDocumento = direcao === "prestado" ? FONTE_DOCUMENTO_EMITIDA : FONTE_DOCUMENTO;
 
     const itensPayload: Record<string, unknown>[] = [];
-    for (const nota of notas) {
+    const notaIdsReprocessados = new Set<string>();
+    for (const nota of data.notas) {
+      if ((nota.itens?.length ?? 0) === 0) continue;
       const notaId =
         (nota.chave ? idPorChave.get(nota.chave) : undefined) ??
         idPorArquivo.get(nota.arquivo.slice(0, 200));
-      if (!notaId) continue;
+      if (!notaId || notaIdsReprocessados.has(notaId)) continue;
+      notaIdsReprocessados.add(notaId);
       for (const item of nota.itens ?? []) {
         const base = {
           nota_servico_id: notaId,
