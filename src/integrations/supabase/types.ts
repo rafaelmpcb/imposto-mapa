@@ -220,6 +220,41 @@ export type Database = {
           },
         ]
       }
+      cronograma_transicao_ibscbs: {
+        Row: {
+          ano: number
+          case_id: string | null
+          created_at: string
+          fracao_aliquota_plena: number
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          ano: number
+          case_id?: string | null
+          created_at?: string
+          fracao_aliquota_plena: number
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          ano?: number
+          case_id?: string | null
+          created_at?: string
+          fracao_aliquota_plena?: number
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cronograma_transicao_ibscbs_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       item_revisao_evento: {
         Row: {
           acao: string
@@ -597,8 +632,12 @@ export type Database = {
           tem_ibscbs: boolean
           updated_at: string
           valor_base_calculo: number
+          valor_cofins: number
           valor_debito_ibs_cbs: number
+          valor_icms: number
+          valor_ipi: number
           valor_item: number
+          valor_pis: number
         }
         Insert: {
           case_id: string
@@ -616,8 +655,12 @@ export type Database = {
           tem_ibscbs?: boolean
           updated_at?: string
           valor_base_calculo?: number
+          valor_cofins?: number
           valor_debito_ibs_cbs?: number
+          valor_icms?: number
+          valor_ipi?: number
           valor_item?: number
+          valor_pis?: number
         }
         Update: {
           case_id?: string
@@ -635,8 +678,12 @@ export type Database = {
           tem_ibscbs?: boolean
           updated_at?: string
           valor_base_calculo?: number
+          valor_cofins?: number
           valor_debito_ibs_cbs?: number
+          valor_icms?: number
+          valor_ipi?: number
           valor_item?: number
+          valor_pis?: number
         }
         Relationships: [
           {
@@ -651,6 +698,63 @@ export type Database = {
             columns: ["nota_fiscal_venda_xml_id"]
             isOneToOne: false
             referencedRelation: "nota_fiscal_venda_xml"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nota_fiscal_venda_xml_item_preco: {
+        Row: {
+          aliquota_plena_aplicada: number
+          calculado_em: string
+          case_id: string
+          id: string
+          item_id: string
+          preco_necessario: number
+          regime_cliente_snapshot: string | null
+          status_preco: string
+          tributos_atuais_total: number
+          valor_desonerado: number
+          variacao_preco_pct: number
+        }
+        Insert: {
+          aliquota_plena_aplicada?: number
+          calculado_em?: string
+          case_id: string
+          id?: string
+          item_id: string
+          preco_necessario?: number
+          regime_cliente_snapshot?: string | null
+          status_preco?: string
+          tributos_atuais_total?: number
+          valor_desonerado?: number
+          variacao_preco_pct?: number
+        }
+        Update: {
+          aliquota_plena_aplicada?: number
+          calculado_em?: string
+          case_id?: string
+          id?: string
+          item_id?: string
+          preco_necessario?: number
+          regime_cliente_snapshot?: string | null
+          status_preco?: string
+          tributos_atuais_total?: number
+          valor_desonerado?: number
+          variacao_preco_pct?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nota_fiscal_venda_xml_item_preco_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nota_fiscal_venda_xml_item_preco_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: true
+            referencedRelation: "nota_fiscal_venda_xml_item"
             referencedColumns: ["id"]
           },
         ]
@@ -818,6 +922,7 @@ export type Database = {
           updated_at: string
           valor_base_calculo: number
           valor_debito_ibs_cbs: number
+          valor_iss: number
           valor_servico: number
         }
         Insert: {
@@ -836,6 +941,7 @@ export type Database = {
           updated_at?: string
           valor_base_calculo?: number
           valor_debito_ibs_cbs?: number
+          valor_iss?: number
           valor_servico?: number
         }
         Update: {
@@ -854,6 +960,7 @@ export type Database = {
           updated_at?: string
           valor_base_calculo?: number
           valor_debito_ibs_cbs?: number
+          valor_iss?: number
           valor_servico?: number
         }
         Relationships: [
@@ -869,6 +976,63 @@ export type Database = {
             columns: ["nota_servico_id"]
             isOneToOne: false
             referencedRelation: "nota_servico_nfse"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nota_servico_nfse_item_prestado_preco: {
+        Row: {
+          aliquota_plena_aplicada: number
+          calculado_em: string
+          case_id: string
+          id: string
+          item_id: string
+          preco_necessario: number
+          regime_cliente_snapshot: string | null
+          status_preco: string
+          tributos_atuais_total: number
+          valor_desonerado: number
+          variacao_preco_pct: number
+        }
+        Insert: {
+          aliquota_plena_aplicada?: number
+          calculado_em?: string
+          case_id: string
+          id?: string
+          item_id: string
+          preco_necessario?: number
+          regime_cliente_snapshot?: string | null
+          status_preco?: string
+          tributos_atuais_total?: number
+          valor_desonerado?: number
+          variacao_preco_pct?: number
+        }
+        Update: {
+          aliquota_plena_aplicada?: number
+          calculado_em?: string
+          case_id?: string
+          id?: string
+          item_id?: string
+          preco_necessario?: number
+          regime_cliente_snapshot?: string | null
+          status_preco?: string
+          tributos_atuais_total?: number
+          valor_desonerado?: number
+          variacao_preco_pct?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nota_servico_nfse_item_prestado_preco_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nota_servico_nfse_item_prestado_preco_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: true
+            referencedRelation: "nota_servico_nfse_item_prestado"
             referencedColumns: ["id"]
           },
         ]
@@ -890,6 +1054,35 @@ export type Database = {
           value?: string
         }
         Relationships: []
+      }
+      parametro_cenario_compras: {
+        Row: {
+          aliquota_ibs_cbs_plena_pct: number
+          case_id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          aliquota_ibs_cbs_plena_pct?: number
+          case_id: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          aliquota_ibs_cbs_plena_pct?: number
+          case_id?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parametro_cenario_compras_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: true
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pgdasd_extraido: {
         Row: {
@@ -949,6 +1142,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "pgdasd_extraido_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      preco_necessario_projecao_anual: {
+        Row: {
+          ano: number
+          case_id: string
+          created_at: string
+          id: string
+          item_id: string
+          preco_necessario_ano: number
+          tipo_item: string
+          variacao_preco_pct_ano: number
+        }
+        Insert: {
+          ano: number
+          case_id: string
+          created_at?: string
+          id?: string
+          item_id: string
+          preco_necessario_ano?: number
+          tipo_item: string
+          variacao_preco_pct_ano?: number
+        }
+        Update: {
+          ano?: number
+          case_id?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          preco_necessario_ano?: number
+          tipo_item?: string
+          variacao_preco_pct_ano?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preco_necessario_projecao_anual_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
             referencedRelation: "cases"
