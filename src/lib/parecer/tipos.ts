@@ -123,6 +123,32 @@ export interface Achado {
   decisao: string;
 }
 
+export interface ContratoAluguelSnap {
+  titulo: string;
+  contraparte: string | null;
+  papel: string;
+  regime: string;
+  criterio: string;
+  ano: number;
+  aluguelAtual: number;
+  aluguelSugerido: number;
+  variacaoAluguelPct: number;
+  liquidoAtual: number;
+  liquidoSemRepactuacao: number;
+  custoAtualLocatario: number;
+  custoSemRepactuacao: number;
+}
+
+export interface AluguelSnap {
+  contratos: ContratoAluguelSnap[];
+  totalAtual: number;
+  totalSugerido: number;
+  variacaoAluguelPct: number;
+  liquidoAtual: number;
+  liquidoSemRepactuacao: number;
+  variacaoLiquidoPct: number;
+}
+
 export interface ParecerSnapshot {
   geradoEm: string;
   sec1: {
@@ -185,6 +211,8 @@ export interface ParecerSnapshot {
     cenarios: { label: string; total: number | null; rate: number | null; atual: boolean; nota?: string }[];
     resultadoLiquido: number | null;
   };
+  /** Submódulo Contratos e Aluguéis (opcional: só existe se houver contrato no Caso). */
+  secAluguel?: AluguelSnap;
   sec9: { sugestoes: Record<string, string> };
   sec10: { limitacoes: string[] };
 }
