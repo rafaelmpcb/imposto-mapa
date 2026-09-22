@@ -68,15 +68,6 @@ function Numero({ valor, sub }: { valor: string; sub?: string | undefined }) {
   );
 }
 
-function Barra({ valor, max }: { valor: number; max: number }) {
-  const w = max > 0 ? Math.max(2, Math.round((valor / max) * 100)) : 0;
-  return (
-    <div className="h-2 w-full rounded-full bg-secondary">
-      <div className="h-2 rounded-full bg-navy" style={{ width: `${w}%` }} />
-    </div>
-  );
-}
-
 function Vazio({ children }: { children: React.ReactNode }) {
   return (
     <p className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
@@ -135,7 +126,6 @@ export function ParecerDashboard({
 
   const precoAno = snapshot.sec5.porAno.find((p) => p.ano === anoSel) ?? null;
   const caixaAno = snapshot.sec7.resumoAnual.find((r) => r.ano === anoSel) ?? null;
-  const maxFornecedor = Math.max(1, ...snapshot.sec4.fornecedores.map((f) => f.valorApurado));
 
   return (
     <section className="space-y-5 rounded-xl border border-border bg-background p-5">
