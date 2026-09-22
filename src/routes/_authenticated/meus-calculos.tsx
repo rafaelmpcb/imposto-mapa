@@ -16,6 +16,8 @@ import { HubTabBar, type HubTabId } from "@/components/hub/HubTabs";
 import { ModuloEmBreve } from "@/components/hub/ModuloEmBreve";
 import { LocacaoHubPanel } from "@/components/hub/LocacaoHubPanel";
 import { CapexHubPanel } from "@/components/hub/CapexHubPanel";
+import { SaldosHubPanel } from "@/components/hub/SaldosHubPanel";
+
 import type { CnpjData } from "@/lib/cnpj/types";
 import {
   deleteCase,
@@ -465,19 +467,8 @@ function MyCalculations() {
         />
       );
     }
-    if (tab === "creditos") {
-      return (
-        <ModuloEmBreve
-          titulo="Monetização e transição de saldos credores"
-          descricao="Planejamento do aproveitamento dos saldos acumulados de PIS/COFINS e ICMS durante a transição."
-          itens={[
-            "Levantamento dos saldos por tributo e por período",
-            "Cronograma de aproveitamento e de ressarcimento",
-            "Riscos e alternativas de monetização",
-          ]}
-        />
-      );
-    }
+    if (tab === "creditos") return <SaldosHubPanel caseNames={caseNames} />;
+
     return <CapexHubPanel caseNames={caseNames} />;
   };
 
