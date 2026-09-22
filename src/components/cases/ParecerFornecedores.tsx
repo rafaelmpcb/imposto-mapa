@@ -18,6 +18,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { FichaNegociacaoDialog } from "@/components/cases/FichaNegociacaoDialog";
 import { brl } from "@/lib/tax/calc";
 import type { FornecedorDetalheSnap, ParecerSnapshot } from "@/lib/parecer/tipos";
 
@@ -81,6 +82,7 @@ function DetalheFornecedor({
   }));
   const share = totalBase > 0 ? (d.valorBase / totalBase) * 100 : 0;
   const efetiva = d.valorBase > 0 ? (d.credito / d.valorBase) * 100 : 0;
+  const [ficha, setFicha] = useState(false);
 
   return (
     <div className="space-y-4">
@@ -100,7 +102,22 @@ function DetalheFornecedor({
             {d.cnpj ?? "CNPJ não informado"} · {regimeLabel(d.regime)} · {d.notas.length} nota(s)
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => setFicha(true)}
+          className="rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
+        >
+          Gerar argumentário de negociação
+        </button>
       </div>
+
+      <FichaNegociacaoDialog
+        aberto={ficha}
+        onOpenChange={setFicha}
+        relacao="fornecedor"
+        detalhe={d}
+        totalBase={totalBase}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Box titulo="Total comprado">
