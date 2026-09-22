@@ -21,7 +21,7 @@ export const getApuracaoLiquida = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const caseId = data.caseId;
 
-    const [compras, servicosTomados, servicosPrestados, vendas] = await Promise.all([
+    const [compras, servicosTomados, servicosPrestados, vendas, vendaItens] = await Promise.all([
       supabaseAdmin
         .from("nota_fiscal_compra_xml_item")
         .select("valor_item,valor_credito_ibs_cbs,status_classificacao")
@@ -36,9 +36,14 @@ export const getApuracaoLiquida = createServerFn({ method: "POST" })
         .eq("case_id", caseId),
       supabaseAdmin
         .from("nota_fiscal_venda_xml")
-        .select("valor_total,status_processamento")
+        .select("id,valor_total,status_processamento")
+        .eq("case_id", caseId),
+      supabaseAdmin
+        .from("nota_fiscal_venda_xml_item")
+        .select("nota_fiscal_venda_xml_id,valor_item,valor_debito_ibs_cbs,status_classificacao")
         .eq("case_id", caseId),
     ]);
+
 
     const asRows = (r: { data: unknown }) => (r.data ?? []) as Record<string, unknown>[];
 
