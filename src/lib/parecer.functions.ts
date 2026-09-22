@@ -90,12 +90,18 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
   const pendencias: ParecerSnapshot["sec2"]["pendencias"] = [];
   const excecoesMap = new Map<string, number>();
   for (const fluxo of fluxosItens) {
-    const res = await admin
+    const res = await (admin as unknown as {
+      from: (t: string) => {
+        select: (c: string) => {
+          eq: (k: string, v: string) => { limit: (n: number) => Promise<{ data: unknown }> };
+        };
+      };
+    })
       .from(fluxo.tabela)
       .select(`status_classificacao,fonte,${fluxo.valorCol}`)
       .eq("case_id", caseId)
       .limit(5000);
-    const rows = (res.data ?? []) as Record<string, unknown>[];
+    const rows = ((res.data ?? []) as Record<string, unknown>[]);
     const pend = rows.filter((r) => PENDENTES.includes(String(r["status_classificacao"] ?? "")));
     if (pend.length > 0) {
       pendencias.push({
@@ -445,8 +451,8 @@ export const gerarParecer = createServerFn({ method: "POST" })
         case_id: data.caseId,
         versao: ultima ? Number(ultima["versao"]) + 1 : 1,
         status: "rascunho",
-        dados_compilados_json: snapshot as unknown as Record<string, unknown>,
-        edicoes_analista_json: (ultima?.["edicoes_analista_json"] ?? {}) as Record<string, unknown>,
+        dados_compilados_json: snapshot as unknown as never,
+        edicoes_analista_json: (ultima?.["edicoes_analista_json"] ?? {}) as never,
         gerado_por: context.userId,
       })
       .select("*")
@@ -462,8 +468,8 @@ export const salvarEdicoesParecer = createServerFn({ method: "POST" })
   .inputValidator((input: { id: string; edicoes: ParecerEdicoes; status?: ParecerStatus }) => input)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: Record<string, unknown> = {
-      edicoes_analista_json: data.edicoes as unknown as Record<string, unknown>,
+    const patch: Record<string, never> = {
+      edicoes_analista_json: data.edicoes as unknown as never,
     };
     if (data.status) patch["status"] = data.status;
     const { error } = await supabaseAdmin.from("parecer_padrao").update(patch).eq("id", data.id);
@@ -480,7 +486,7 @@ export const finalizarParecer = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin
       .from("parecer_padrao")
       .update({
-        edicoes_analista_json: data.edicoes as unknown as Record<string, unknown>,
+        edicoes_analista_json: data.edicoes as unknown as never,
         status: "finalizado",
         finalizado_em: new Date().toISOString(),
       })
