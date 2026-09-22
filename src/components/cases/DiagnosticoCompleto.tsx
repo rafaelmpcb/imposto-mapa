@@ -651,6 +651,8 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
 
       <RevisaoNbsPanel caseId={caseItem.id} onResolved={() => setNbsReload((v) => v + 1)} />
 
+      <ApuracaoLiquidaPanel caseId={caseItem.id} reloadKey={nbsReload} />
+
       {fornecedores.classificadas > 0 ? (
         <div className="rounded-xl border border-navy/30 bg-navy/5 p-4">
           <p className="text-sm font-semibold text-foreground">
