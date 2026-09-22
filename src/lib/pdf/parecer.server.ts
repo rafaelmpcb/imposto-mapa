@@ -502,9 +502,27 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
     if (s.sec4.concentracaoTopPct != null) {
       doc.text(`Maior fornecedor concentra ${pct(s.sec4.concentracaoTopPct)} do crédito apurado.`, { size: 10 });
     }
-    doc.gap(4);
     const w = [220, 110, 110, 60];
+    const topFornecedores = s.sec4.fornecedores.slice(0, 8);
+    if (topFornecedores.length > 0 && s.sec4.creditoTotal > 0) {
+      doc.chartTitle("Concentração do crédito por fornecedor");
+      doc.hBars(
+        topFornecedores.map((f, i) => ({
+          label: f.nome ?? f.cnpj ?? "-",
+          value: f.valorApurado,
+          texto: `${money(f.valorApurado)}  ·  ${pct((f.valorApurado / s.sec4.creditoTotal) * 100)}`,
+          color: i === 0 ? MAGENTA : LAVENDER,
+        })),
+        { labelWidth: 180 },
+      );
+      doc.legend([
+        { label: "Maior concentração", color: MAGENTA },
+        { label: "Demais fornecedores", color: LAVENDER },
+      ]);
+    }
+    doc.gap(4);
     doc.row(["Fornecedor", "Base", "Crédito", "Itens"], w, { bold: true });
+
     for (const f of s.sec4.fornecedores) {
       doc.row([f.nome ?? f.cnpj ?? "-", money(f.valorBase), money(f.valorApurado), String(f.itens)], w);
     }
