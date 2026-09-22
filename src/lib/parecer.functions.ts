@@ -73,6 +73,7 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
     admin.from("nota_fiscal_venda_xml_item_preco").select("*").eq("case_id", caseId),
     admin.from("nota_servico_nfse_item_prestado_preco").select("*").eq("case_id", caseId),
     admin.from("preco_necessario_projecao_anual").select("*").eq("case_id", caseId).order("ano"),
+    admin.from("contrato_aluguel").select("*").eq("case_id", caseId).order("created_at"),
   ]);
 
   const caseRow = caseRes.data as Record<string, unknown> | null;
