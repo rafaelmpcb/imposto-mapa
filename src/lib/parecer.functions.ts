@@ -881,7 +881,7 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
     )}% nos itens analisados.`;
   }
   if (contratosSnap) {
-    sugestoes["contratual"] = `Renegociar ${contratosSnap.contratos.length} contrato(s) de prestação continuada: sem reequilíbrio, a margem do prestador varia ${contratosSnap.variacaoMargemPct.toFixed(
+    sugestoes["juridico"] = `Renegociar ${contratosSnap.contratos.length} contrato(s) de prestação continuada: sem reequilíbrio, a margem do prestador varia ${contratosSnap.variacaoMargemPct.toFixed(
       1,
     )}% e o preço de equilíbrio soma ${contratosSnap.totalSugerido.toLocaleString("pt-BR", {
       style: "currency",
@@ -890,7 +890,8 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
   }
 
   if (aluguelSnap) {
-    sugestoes["juridico"] = `Revisar ${aluguelSnap.contratos.length} contrato(s) de locação: sem repactuação, o resultado do locador varia ${aluguelSnap.variacaoLiquidoPct.toFixed(
+    const prefixo = sugestoes["juridico"] ? `${sugestoes["juridico"]} ` : "";
+    sugestoes["juridico"] = `${prefixo}Revisar ${aluguelSnap.contratos.length} contrato(s) de locação: sem repactuação, o resultado do locador varia ${aluguelSnap.variacaoLiquidoPct.toFixed(
       1,
     )}% e o aluguel de equilíbrio fica em ${aluguelSnap.totalSugerido.toLocaleString("pt-BR", {
       style: "currency",
