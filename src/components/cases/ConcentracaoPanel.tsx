@@ -143,6 +143,7 @@ export function ConcentracaoPanel({ caseId, reloadKey = 0 }: { caseId: string; r
     setVisao(v);
     setDrillCodigo(null);
     setDrillContraparte(null);
+    setCfopSelecionados([]);
   };
 
   if (!dados) return null;
@@ -195,6 +196,19 @@ export function ConcentracaoPanel({ caseId, reloadKey = 0 }: { caseId: string; r
       </div>
 
       {error ? <Notice tone="warning">{error}</Notice> : null}
+
+      <CfopFilter
+        cfops={cfopsDisponiveis}
+        selecionados={cfopSelecionados}
+        onToggle={(c) => {
+          setDrillCodigo(null);
+          setDrillContraparte(null);
+          setCfopSelecionados((prev) =>
+            prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c],
+          );
+        }}
+        onLimpar={() => setCfopSelecionados([])}
+      />
 
       {visao === "vendas" && atual && atual.notasVendaSemItens > 0 ? (
         <Notice tone="warning">
