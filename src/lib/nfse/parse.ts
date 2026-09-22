@@ -249,3 +249,159 @@ export function aggregateNfse(notas: NfseNota[], lado: "tomado" | "prestado"): N
   }
   return [...mapa.values()].map((a) => ({ ...a, valor: Math.round(a.valor * 100) / 100 }));
 }
+
+/* ------------------------------------------------------------------ *
+ * Leitura dos arquivos enviados (.xml, .json ou .zip com vários)
+ * ------------------------------------------------------------------ */
+
+/** Conteúdo bruto de cada documento encontrado nos arquivos enviados. */
+export interface NfseArquivo {
+  arquivo: string;
+  conteudo: string;
+  formato: "xml" | "json";
+}
+
+export async function readNfseRawFiles(files: File[]): Promise<NfseArquivo[]> {
+  const { default: JSZip } = await import("jszip");
+  const out: NfseArquivo[] = [];
+  const add = (arquivo: string, conteudo: string) => {
+    const lower = arquivo.toLowerCase();
+    if (lower.endsWith(".json")) out.push({ arquivo, conteudo, formato: "json" });
+    else if (lower.endsWith(".xml")) out.push({ arquivo, conteudo, formato: "xml" });
+  };
+  for (const file of files) {
+    if (file.name.toLowerCase().endsWith(".zip")) {
+      const zip = await JSZip.loadAsync(await file.arrayBuffer());
+      for (const entry of Object.values(zip.files)) {
+        if (entry.dir) continue;
+        add(entry.name.split("/").pop() ?? entry.name, await entry.async("string"));
+      }
+    } else {
+      add(file.name, await file.text());
+    }
+  }
+  return out;
+}
+
+/** Busca, em profundidade, o primeiro valor cuja chave case com um dos nomes. */
+function deepFind(node: unknown, names: string[]): unknown {
+  const alvo = names.map((n) => n.toLowerCase());
+  const fila: unknown[] = [node];
+  while (fila.length > 0) {
+    const atual = fila.shift();
+    if (!atual || typeof atual !== "object") continue;
+    for (const [key, value] of Object.entries(atual as Record<string, unknown>)) {
+      if (alvo.includes(key.toLowerCase()) && value !== null && typeof value !== "object") {
+        return value;
+      }
+    }
+    for (const value of Object.values(atual as Record<string, unknown>)) {
+      if (value && typeof value === "object") fila.push(value);
+    }
+  }
+  return undefined;
+}
+
+const deepText = (node: unknown, names: string[]) => {
+  const v = deepFind(node, names);
+  return v === undefined || v === null ? "" : String(v).trim();
+};
+
+/** Escopo (objeto) com um dos nomes informados. */
+function deepScope(node: unknown, names: string[]): unknown {
+  const alvo = names.map((n) => n.toLowerCase());
+  const fila: unknown[] = [node];
+  while (fila.length > 0) {
+    const atual = fila.shift();
+    if (!atual || typeof atual !== "object") continue;
+    for (const [key, value] of Object.entries(atual as Record<string, unknown>)) {
+      if (alvo.includes(key.toLowerCase()) && value && typeof value === "object") return value;
+    }
+    for (const value of Object.values(atual as Record<string, unknown>)) {
+      if (value && typeof value === "object") fila.push(value);
+    }
+  }
+  return undefined;
+}
+
+/** Leitura defensiva da NFS-e Nacional entregue em JSON. */
+export function parseNfseJson(raw: string, arquivo: string): NfseNota {
+  const vazio: NfseNota = {
+    arquivo,
+    chave: null,
+    numero: null,
+    serie: null,
+    cnpjPrestador: null,
+    razaoSocialPrestador: null,
+    cnpjTomador: null,
+    razaoSocialTomador: null,
+    codigoServico: null,
+    regimePrestador: null,
+    valorTotal: 0,
+    dataEmissao: null,
+    status: "xml_invalido",
+    itens: [],
+  };
+
+  let json: unknown;
+  try {
+    json = JSON.parse(raw);
+  } catch {
+    return vazio;
+  }
+
+  const prest = deepScope(json, ["prest", "prestador", "prestadorServico", "emit"]);
+  const toma = deepScope(json, ["toma", "tomador", "tomadorServico", "dest"]);
+  const cnpjDe = (scope: unknown) => {
+    const d = onlyDigits(deepText(scope ?? {}, ["CNPJ", "cnpj", "cpfCnpj"]));
+    return d.length === 14 ? d : null;
+  };
+  const numeroBr = (v: string) => {
+    if (!v) return 0;
+    const n = v.includes(",") ? v.replace(/\./g, "").replace(",", ".") : v;
+    return Number(n) || 0;
+  };
+
+  const chave = onlyDigits(deepText(json, ["chNFSe", "chaveAcesso", "chave"])) || null;
+  const numero = deepText(json, ["nNFSe", "numero", "nDPS"]) || null;
+  const valorTotal = numeroBr(
+    deepText(json, ["vLiq", "vServ", "valorServicos", "valorLiquidoNfse"]),
+  );
+  const cnpjPrestador = cnpjDe(prest);
+  const opSimpNac = deepText(json, ["opSimpNac"]);
+  const optante = deepText(json, ["optanteSimplesNacional"]);
+  const regimePrestador =
+    opSimpNac === "1"
+      ? ("regular" as const)
+      : opSimpNac === "2" || opSimpNac === "3"
+        ? ("simples" as const)
+        : optante === "1"
+          ? ("simples" as const)
+          : optante === "2"
+            ? ("regular" as const)
+            : null;
+
+  return {
+    arquivo,
+    chave,
+    numero,
+    serie: deepText(json, ["serie"]) || null,
+    cnpjPrestador,
+    razaoSocialPrestador: deepText(prest ?? {}, ["xNome", "razaoSocial", "nome"]) || null,
+    cnpjTomador: cnpjDe(toma),
+    razaoSocialTomador: deepText(toma ?? {}, ["xNome", "razaoSocial", "nome"]) || null,
+    codigoServico: deepText(json, ["cNBS", "codigoNbs", "cTribNac", "itemListaServico"]) || null,
+    regimePrestador,
+    valorTotal,
+    dataEmissao: toIso(deepText(json, ["dhEmi", "dataEmissao", "dhProc", "dCompet"])),
+    status: !(chave && numero) ? "nao_e_nfse_nacional" : cnpjPrestador ? "ok" : "sem_cnpj",
+    itens: [],
+  };
+}
+
+/** Lê o documento conforme o formato do arquivo. */
+export function parseNfseArquivo(item: NfseArquivo): NfseNota {
+  return item.formato === "json"
+    ? parseNfseJson(item.conteudo, item.arquivo)
+    : parseNfseXml(item.conteudo, item.arquivo);
+}
