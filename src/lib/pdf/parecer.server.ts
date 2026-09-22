@@ -51,6 +51,16 @@ function pct(value: number): string {
   return `${value.toFixed(1).replace(".", ",")}%`;
 }
 
+/** Valor curto para rótulo de gráfico: "R$ 1,2 mi", "R$ 320 mil". */
+function compact(value: number): string {
+  const abs = Math.abs(value);
+  const sign = value < 0 ? "-" : "";
+  if (abs >= 1_000_000) return `${sign}R$ ${(abs / 1_000_000).toFixed(1).replace(".", ",")} mi`;
+  if (abs >= 1_000) return `${sign}R$ ${Math.round(abs / 1_000)} mil`;
+  return `${sign}R$ ${Math.round(abs)}`;
+}
+
+
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return "-";
   const d = new Date(iso);
