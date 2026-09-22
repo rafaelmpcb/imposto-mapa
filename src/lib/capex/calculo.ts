@@ -170,7 +170,10 @@ export interface ResultadoCapex {
     ipiPct: number;
     fatorCiapPct: number;
     custoOportunidadeAaPct: number;
+    elegibilidadeIcmsPct: number;
   };
+  /** Observação sobre o tipo de ativo escolhido. */
+  notaAtivo: string;
   anoSelecionado: AnoCapex;
   /** Estudo de todos os anos de aquisição possíveis. */
   anos: AnoCapex[];
