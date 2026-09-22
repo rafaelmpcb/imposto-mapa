@@ -468,11 +468,11 @@ export const salvarEdicoesParecer = createServerFn({ method: "POST" })
   .inputValidator((input: { id: string; edicoes: ParecerEdicoes; status?: ParecerStatus }) => input)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: Record<string, never> = {
+    const patch: Record<string, unknown> = {
       edicoes_analista_json: data.edicoes as unknown as never,
     };
     if (data.status) patch["status"] = data.status;
-    const { error } = await supabaseAdmin.from("parecer_padrao").update(patch).eq("id", data.id);
+    const { error } = await supabaseAdmin.from("parecer_padrao").update(patch as never).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
