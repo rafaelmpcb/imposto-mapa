@@ -88,8 +88,10 @@ export function parseNfeVendaXml(xml: string, arquivo: string): NfeVendaNota {
     valorTotal: valor,
     dataEmissao: emissao ? new Date(emissao).toISOString() : null,
     status: cnpj.length === 14 ? "ok" : "sem_cnpj_destinatario",
+    itens: parseItens(infNFe),
   };
 }
+
 
 /** Lê arquivos .xml soltos e/ou um .zip com notas dentro. */
 export async function readNfeVendaFiles(files: File[]): Promise<NfeVendaNota[]> {
