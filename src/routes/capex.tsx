@@ -200,17 +200,21 @@ function CapexPage() {
               <MoneyInput value={valor} onChange={setValor} />
             </Field>
 
-            <Field label="Tipo de ativo">
-              <Select
-                value={tipoAtivo}
-                onChange={(e) => setTipoAtivo(e.target.value as TipoAtivo)}
-              >
+            <Field
+              label="Tipo de ativo"
+              hint="Cada tipo de bem tem premissas próprias de ICMS, IPI e aproveitamento do crédito — você pode ajustá-las depois."
+            >
+              <Select value={tipoAtivo} onChange={(e) => trocarAtivo(e.target.value as TipoAtivo)}>
                 {(Object.keys(TIPO_ATIVO_LABEL) as TipoAtivo[]).map((t) => (
                   <option key={t} value={t}>
                     {TIPO_ATIVO_LABEL[t]}
                   </option>
                 ))}
               </Select>
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                {ATIVO_PRESETS[tipoAtivo].nota} Aproveitamento estimado do ICMS neste tipo de bem:{" "}
+                {ATIVO_PRESETS[tipoAtivo].elegibilidadeIcmsPct}%.
+              </p>
             </Field>
 
             <Field
