@@ -14,6 +14,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { SimuladorTabs } from "@/components/simulator/SimuladorTabs";
 import { Button, Field, MoneyInput, NumberInput, Notice, Select, TextInput } from "@/components/simulator/ui";
 import { withAuthRetry } from "@/lib/auth-retry";
 import { listCasosParaAluguel, salvarContratoAluguel } from "@/lib/aluguel.functions";
@@ -205,7 +206,9 @@ function AluguelPage() {
   };
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
+    <main className="min-h-screen bg-background">
+      <SimuladorTabs active="/aluguel" />
+      <div className="mx-auto max-w-6xl px-4 py-8">
       <header className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-navy">
           Contratos e aluguéis
@@ -451,6 +454,7 @@ function AluguelPage() {
             {aviso ? <Notice>{aviso}</Notice> : null}
           </div>
         </section>
+      </div>
       </div>
     </main>
   );
