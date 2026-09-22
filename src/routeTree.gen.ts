@@ -15,6 +15,7 @@ import { Route as AluguelRouteImport } from './routes/aluguel'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CapexRouteImport } from './routes/capex'
 import { Route as ContratosRouteImport } from './routes/contratos'
+import { Route as MonofasicoRouteImport } from './routes/monofasico'
 import { Route as SaldosCredoresRouteImport } from './routes/saldos-credores'
 import { Route as SimuladorRouteImport } from './routes/simulador'
 import { Route as AuthenticatedConfigAliquotasRouteImport } from './routes/_authenticated/config-aliquotas'
@@ -52,6 +53,11 @@ const CapexRoute = CapexRouteImport.update({
 const ContratosRoute = ContratosRouteImport.update({
   id: '/contratos',
   path: '/contratos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonofasicoRoute = MonofasicoRouteImport.update({
+  id: '/monofasico',
+  path: '/monofasico',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SaldosCredoresRoute = SaldosCredoresRouteImport.update({
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/capex': typeof CapexRoute
   '/contratos': typeof ContratosRoute
+  '/monofasico': typeof MonofasicoRoute
   '/saldos-credores': typeof SaldosCredoresRoute
   '/simulador': typeof SimuladorRoute
   '/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/capex': typeof CapexRoute
   '/contratos': typeof ContratosRoute
+  '/monofasico': typeof MonofasicoRoute
   '/saldos-credores': typeof SaldosCredoresRoute
   '/simulador': typeof SimuladorRoute
   '/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/capex': typeof CapexRoute
   '/contratos': typeof ContratosRoute
+  '/monofasico': typeof MonofasicoRoute
   '/saldos-credores': typeof SaldosCredoresRoute
   '/simulador': typeof SimuladorRoute
   '/_authenticated/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/capex'
     | '/contratos'
+    | '/monofasico'
     | '/saldos-credores'
     | '/simulador'
     | '/config-aliquotas'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/capex'
     | '/contratos'
+    | '/monofasico'
     | '/saldos-credores'
     | '/simulador'
     | '/config-aliquotas'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/capex'
     | '/contratos'
+    | '/monofasico'
     | '/saldos-credores'
     | '/simulador'
     | '/_authenticated/config-aliquotas'
@@ -211,6 +223,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CapexRoute: typeof CapexRoute
   ContratosRoute: typeof ContratosRoute
+  MonofasicoRoute: typeof MonofasicoRoute
   SaldosCredoresRoute: typeof SaldosCredoresRoute
   SimuladorRoute: typeof SimuladorRoute
   RelatorioTokenRoute: typeof RelatorioTokenRoute
@@ -261,6 +274,13 @@ declare module '@tanstack/react-router' {
       path: '/contratos'
       fullPath: '/contratos'
       preLoaderRoute: typeof ContratosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/monofasico': {
+      id: '/monofasico'
+      path: '/monofasico'
+      fullPath: '/monofasico'
+      preLoaderRoute: typeof MonofasicoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/saldos-credores': {
@@ -351,6 +371,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CapexRoute: CapexRoute,
   ContratosRoute: ContratosRoute,
+  MonofasicoRoute: MonofasicoRoute,
   SaldosCredoresRoute: SaldosCredoresRoute,
   SimuladorRoute: SimuladorRoute,
   RelatorioTokenRoute: RelatorioTokenRoute,
