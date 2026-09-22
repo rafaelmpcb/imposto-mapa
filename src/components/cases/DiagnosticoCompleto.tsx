@@ -18,6 +18,8 @@ import { PrecoNecessarioPanel } from "@/components/cases/PrecoNecessarioPanel";
 import { RevisaoNbsPanel } from "@/components/cases/RevisaoNbsPanel";
 import { ApuracaoLiquidaPanel } from "@/components/cases/ApuracaoLiquidaPanel";
 import { ConcentracaoPanel } from "@/components/cases/ConcentracaoPanel";
+import { DrePanel } from "@/components/cases/DrePanel";
+import { FluxoCaixaPanel } from "@/components/cases/FluxoCaixaPanel";
 import { withAuthRetry } from "@/lib/auth-retry";
 import {
   deleteCarteiraRow,
@@ -661,6 +663,10 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
       <DebitoNbsPanel caseId={caseItem.id} reloadKey={nbsReload} />
 
       <PrecoNecessarioPanel caseId={caseItem.id} reloadKey={nbsReload} />
+
+      <DrePanel caseId={caseItem.id} reloadKey={nbsReload} />
+
+      <FluxoCaixaPanel caseId={caseItem.id} reloadKey={nbsReload} />
 
       <RevisaoNbsPanel caseId={caseItem.id} onResolved={() => setNbsReload((v) => v + 1)} />
 
