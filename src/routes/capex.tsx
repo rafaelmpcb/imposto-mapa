@@ -30,6 +30,7 @@ import { salvarEstudoCapex } from "@/lib/capex.functions";
 import {
   ALIQUOTA_PLENA_PADRAO_PCT,
   ANOS_CAPEX,
+  ATIVO_PRESETS,
   AVISO_CAPEX,
   ICMS_PADRAO_PCT,
   REGIME_CAPEX_LABEL,
