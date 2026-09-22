@@ -25,6 +25,7 @@ const MODULOS = [
   { id: "visao", label: "Visão geral" },
   { id: "regimes", label: "Regimes" },
   { id: "compras", label: "Compras e créditos" },
+  { id: "clientes", label: "Clientes e crédito transferido" },
   { id: "precos", label: "Preço e margem" },
   { id: "caixa", label: "Caixa e split" },
   { id: "plano", label: "Achados e plano" },
