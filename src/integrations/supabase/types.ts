@@ -208,6 +208,86 @@ export type Database = {
         }
         Relationships: []
       }
+      caso_monofasico_item: {
+        Row: {
+          arquivo_original: string
+          case_id: string
+          cfop: string | null
+          chave_acesso: string | null
+          classificacao: string
+          competencia: string | null
+          created_at: string
+          cst_cofins: string | null
+          cst_pis: string | null
+          data_emissao: string | null
+          descricao: string | null
+          grupo: string | null
+          id: string
+          indebito_estimado: number
+          modelo: string | null
+          ncm: string | null
+          numero_nota: string | null
+          regime: string
+          valor_cofins: number
+          valor_item: number
+          valor_pis: number
+        }
+        Insert: {
+          arquivo_original: string
+          case_id: string
+          cfop?: string | null
+          chave_acesso?: string | null
+          classificacao: string
+          competencia?: string | null
+          created_at?: string
+          cst_cofins?: string | null
+          cst_pis?: string | null
+          data_emissao?: string | null
+          descricao?: string | null
+          grupo?: string | null
+          id?: string
+          indebito_estimado?: number
+          modelo?: string | null
+          ncm?: string | null
+          numero_nota?: string | null
+          regime: string
+          valor_cofins?: number
+          valor_item?: number
+          valor_pis?: number
+        }
+        Update: {
+          arquivo_original?: string
+          case_id?: string
+          cfop?: string | null
+          chave_acesso?: string | null
+          classificacao?: string
+          competencia?: string | null
+          created_at?: string
+          cst_cofins?: string | null
+          cst_pis?: string | null
+          data_emissao?: string | null
+          descricao?: string | null
+          grupo?: string | null
+          id?: string
+          indebito_estimado?: number
+          modelo?: string | null
+          ncm?: string | null
+          numero_nota?: string | null
+          regime?: string
+          valor_cofins?: number
+          valor_item?: number
+          valor_pis?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "caso_monofasico_item_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       composicao_carteira: {
         Row: {
           case_id: string
@@ -962,6 +1042,48 @@ export type Database = {
           observacao?: string | null
           reducao_pct?: number
           requer_revisao_humana?: boolean
+        }
+        Relationships: []
+      }
+      ncm_monofasico_pis_cofins: {
+        Row: {
+          atualizado_em: string
+          base_legal: string
+          cst_alternativos: string[]
+          cst_esperado: string
+          descricao: string
+          fonte: string
+          grupo: string
+          id: string
+          ncm_prefixo: string
+          observacao: string | null
+          vigencia_inicio: string
+        }
+        Insert: {
+          atualizado_em?: string
+          base_legal: string
+          cst_alternativos?: string[]
+          cst_esperado?: string
+          descricao: string
+          fonte?: string
+          grupo: string
+          id?: string
+          ncm_prefixo: string
+          observacao?: string | null
+          vigencia_inicio?: string
+        }
+        Update: {
+          atualizado_em?: string
+          base_legal?: string
+          cst_alternativos?: string[]
+          cst_esperado?: string
+          descricao?: string
+          fonte?: string
+          grupo?: string
+          id?: string
+          ncm_prefixo?: string
+          observacao?: string | null
+          vigencia_inicio?: string
         }
         Relationships: []
       }
