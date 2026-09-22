@@ -217,7 +217,7 @@ function MonofasicoPage() {
               </Select>
             </Field>
 
-            <Field label="Regime tributário" hint={REGIMES.find((r) => r.id === regime)?.hint}>
+            <Field label="Regime tributário" hint={REGIMES.find((r) => r.id === regime)?.hint ?? ""}>
               <Select
                 value={regime}
                 onChange={(e) => setRegime(e.target.value as RegimeMonofasico)}
