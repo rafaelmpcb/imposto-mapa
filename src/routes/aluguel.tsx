@@ -155,6 +155,9 @@ function AluguelPage() {
     (typeof resultado.cenarios)[number],
   ];
 
+  // Resultados e gráficos só aparecem depois que o lead informa o aluguel.
+  const pronto = aluguel > 0;
+
   const dadosBarras = [
     {
       nome: "Receita líquida do locador",
