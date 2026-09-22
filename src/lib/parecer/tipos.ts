@@ -88,6 +88,8 @@ export const LIMITACOES = {
     "A mecânica jurídica e os prazos legais de liquidação do split payment ainda dependem de regulamentação infralegal; a leitura aqui é financeira e gerencial.",
   preco:
     "O preço necessário é piso técnico de neutralidade tributária, não recomendação comercial de preço.",
+  aluguel:
+    "Nos contratos de locação, o redutor aplicável, a rampa de transição e a condição do locador (contribuinte ou não) são premissas editáveis; contratos antigos registrados podem seguir regra específica de transição.",
 } as const;
 
 export interface CargaLinhaSnap {
@@ -121,6 +123,32 @@ export interface Achado {
   impacto: string;
   causa: string;
   decisao: string;
+}
+
+export interface ContratoAluguelSnap {
+  titulo: string;
+  contraparte: string | null;
+  papel: string;
+  regime: string;
+  criterio: string;
+  ano: number;
+  aluguelAtual: number;
+  aluguelSugerido: number;
+  variacaoAluguelPct: number;
+  liquidoAtual: number;
+  liquidoSemRepactuacao: number;
+  custoAtualLocatario: number;
+  custoSemRepactuacao: number;
+}
+
+export interface AluguelSnap {
+  contratos: ContratoAluguelSnap[];
+  totalAtual: number;
+  totalSugerido: number;
+  variacaoAluguelPct: number;
+  liquidoAtual: number;
+  liquidoSemRepactuacao: number;
+  variacaoLiquidoPct: number;
 }
 
 export interface ParecerSnapshot {
@@ -185,6 +213,8 @@ export interface ParecerSnapshot {
     cenarios: { label: string; total: number | null; rate: number | null; atual: boolean; nota?: string }[];
     resultadoLiquido: number | null;
   };
+  /** Submódulo Contratos e Aluguéis (opcional: só existe se houver contrato no Caso). */
+  secAluguel?: AluguelSnap;
   sec9: { sugestoes: Record<string, string> };
   sec10: { limitacoes: string[] };
 }

@@ -771,6 +771,28 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
 
   /* 9 */
   doc.heading(9, SECOES[8]!.titulo);
+  if (s.secAluguel) {
+    doc.text("Contratos e aluguéis", { size: 10, bold: true, color: NAVY });
+    doc.text(
+      `${s.secAluguel.contratos.length} contrato(s) de locação. Aluguel contratado hoje: ${money(
+        s.secAluguel.totalAtual,
+      )} · aluguel de equilíbrio em ${money(s.secAluguel.totalSugerido)} (${
+        s.secAluguel.variacaoAluguelPct >= 0 ? "+" : ""
+      }${s.secAluguel.variacaoAluguelPct.toFixed(1)}%). Sem repactuação, o resultado do locador varia ${s.secAluguel.variacaoLiquidoPct.toFixed(
+        1,
+      )}%.`,
+      { size: 10 },
+    );
+    for (const c of s.secAluguel.contratos) {
+      doc.text(
+        `• ${c.titulo}${c.contraparte ? ` (${c.contraparte})` : ""} — ${c.ano}: ${money(
+          c.aluguelAtual,
+        )} → ${money(c.aluguelSugerido)} (${c.variacaoAluguelPct >= 0 ? "+" : ""}${c.variacaoAluguelPct.toFixed(1)}%)`,
+        { size: 9, color: MUTED },
+      );
+    }
+    doc.gap(4);
+  }
   for (const area of AREAS_PLANO) {
     const edit = e.sec9?.[area.id];
     doc.gap(4);

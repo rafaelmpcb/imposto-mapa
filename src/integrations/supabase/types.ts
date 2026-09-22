@@ -264,6 +264,80 @@ export type Database = {
           },
         ]
       }
+      contrato_aluguel: {
+        Row: {
+          aliquota_plena_pct: number
+          aluguel_mensal: number
+          ano_referencia: number
+          aproveitamento_credito_pct: number
+          case_id: string | null
+          contraparte: string | null
+          created_at: string
+          created_by: string | null
+          criterio: string
+          id: string
+          mantida_pct: number
+          observacao: string | null
+          papel: string
+          redutor_pct: number
+          regime_locador: string
+          resultado_json: Json
+          substituida_pct: number
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          aliquota_plena_pct?: number
+          aluguel_mensal?: number
+          ano_referencia?: number
+          aproveitamento_credito_pct?: number
+          case_id?: string | null
+          contraparte?: string | null
+          created_at?: string
+          created_by?: string | null
+          criterio?: string
+          id?: string
+          mantida_pct?: number
+          observacao?: string | null
+          papel?: string
+          redutor_pct?: number
+          regime_locador: string
+          resultado_json?: Json
+          substituida_pct?: number
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          aliquota_plena_pct?: number
+          aluguel_mensal?: number
+          ano_referencia?: number
+          aproveitamento_credito_pct?: number
+          case_id?: string | null
+          contraparte?: string | null
+          created_at?: string
+          created_by?: string | null
+          criterio?: string
+          id?: string
+          mantida_pct?: number
+          observacao?: string | null
+          papel?: string
+          redutor_pct?: number
+          regime_locador?: string
+          resultado_json?: Json
+          substituida_pct?: number
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contrato_aluguel_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cronograma_transicao_ibscbs: {
         Row: {
           ano: number

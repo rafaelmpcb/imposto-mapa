@@ -43,6 +43,7 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
     precoMercRes,
     precoServRes,
     precoAnoRes,
+    contratosRes,
   ] = await Promise.all([
     admin.from("cases").select("*").eq("id", caseId).maybeSingle(),
     admin
@@ -73,6 +74,7 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
     admin.from("nota_fiscal_venda_xml_item_preco").select("*").eq("case_id", caseId),
     admin.from("nota_servico_nfse_item_prestado_preco").select("*").eq("case_id", caseId),
     admin.from("preco_necessario_projecao_anual").select("*").eq("case_id", caseId).order("ano"),
+    admin.from("contrato_aluguel").select("*").eq("case_id", caseId).order("created_at"),
   ]);
 
   const caseRow = caseRes.data as Record<string, unknown> | null;
@@ -284,6 +286,56 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
     }
   }
 
+  /* ---------- Submódulo: Contratos e Aluguéis ---------- */
+  const contratoRows = (contratosRes.data ?? []) as Record<string, unknown>[];
+  const contratos = contratoRows.map((row) => {
+    const res = (row["resultado_json"] ?? {}) as {
+      cenarios?: { valorContrato?: number; liquidoLocador?: number; custoEfetivoLocatario?: number }[];
+      repactuacao?: { aluguelSugerido?: number; variacaoAluguelPct?: number };
+    };
+    const atual = res.cenarios?.[0];
+    const sem = res.cenarios?.[1];
+    return {
+      titulo: String(row["titulo"] ?? "Contrato de locação"),
+      contraparte: (row["contraparte"] as string | null) ?? null,
+      papel: String(row["papel"] ?? "locador"),
+      regime: String(row["regime_locador"] ?? ""),
+      criterio: String(row["criterio"] ?? ""),
+      ano: num(row["ano_referencia"]),
+      aluguelAtual: num(atual?.valorContrato ?? row["aluguel_mensal"]),
+      aluguelSugerido: num(res.repactuacao?.aluguelSugerido),
+      variacaoAluguelPct: num(res.repactuacao?.variacaoAluguelPct),
+      liquidoAtual: num(atual?.liquidoLocador),
+      liquidoSemRepactuacao: num(sem?.liquidoLocador),
+      custoAtualLocatario: num(atual?.custoEfetivoLocatario),
+      custoSemRepactuacao: num(sem?.custoEfetivoLocatario),
+    };
+  });
+  const soma = (pick: (c: (typeof contratos)[number]) => number) =>
+    contratos.reduce((a, c) => a + pick(c), 0);
+  const totalAtual = soma((c) => c.aluguelAtual);
+  const liquidoAtualTotal = soma((c) => c.liquidoAtual);
+  const liquidoSemRepacTotal = soma((c) => c.liquidoSemRepactuacao);
+  const totalSugerido = soma((c) => c.aluguelSugerido);
+  const aluguelSnap =
+    contratos.length > 0
+      ? {
+          contratos,
+          totalAtual,
+          totalSugerido,
+          variacaoAluguelPct:
+            totalAtual > 0 ? ((totalSugerido - totalAtual) / totalAtual) * 100 : 0,
+          liquidoAtual: liquidoAtualTotal,
+          liquidoSemRepactuacao: liquidoSemRepacTotal,
+          variacaoLiquidoPct:
+            liquidoAtualTotal > 0
+              ? ((liquidoSemRepacTotal - liquidoAtualTotal) / liquidoAtualTotal) * 100
+              : 0,
+        }
+      : undefined;
+
+  if (aluguelSnap) limitacoes.push(LIMITACOES.aluguel);
+
   const snap: ParecerSnapshot = {
     geradoEm: new Date().toISOString(),
     sec1: {
@@ -345,6 +397,7 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
       cenarios,
       resultadoLiquido: dreDoAno?.resultadoLiquido ?? null,
     },
+    ...(aluguelSnap ? { secAluguel: aluguelSnap } : {}),
     sec9: { sugestoes: {} },
     sec10: { limitacoes },
   };
@@ -361,6 +414,14 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
     sugestoes["vendas"] = `Definir política de repasse: o preço necessário varia em média ${variacaoMediaPct.toFixed(
       1,
     )}% nos itens analisados.`;
+  }
+  if (aluguelSnap) {
+    sugestoes["juridico"] = `Revisar ${aluguelSnap.contratos.length} contrato(s) de locação: sem repactuação, o resultado do locador varia ${aluguelSnap.variacaoLiquidoPct.toFixed(
+      1,
+    )}% e o aluguel de equilíbrio fica em ${aluguelSnap.totalSugerido.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    })} por mês.`;
   }
   snap.sec9.sugestoes = sugestoes;
 
