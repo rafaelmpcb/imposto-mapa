@@ -88,9 +88,10 @@ export function ParecerDashboard({
   snapshot: ParecerSnapshot;
   edicoes: ParecerEdicoes;
   versao: number;
-  onSair: () => void;
-  onPdf: () => void;
-  onApresentar: () => void;
+  onSair?: (() => void) | undefined;
+  onPdf?: (() => void) | undefined;
+  onApresentar?: (() => void) | undefined;
+
 }) {
   const [modulo, setModulo] = useState<ModuloId>("visao");
 
