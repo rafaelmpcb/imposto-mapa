@@ -12,6 +12,7 @@ import { NfseServicoPanel } from "@/components/cases/NfseServicoPanel";
 import { CreditoNbsPanel } from "@/components/cases/CreditoNbsPanel";
 import { DebitoNbsPanel } from "@/components/cases/DebitoNbsPanel";
 import { RevisaoNbsPanel } from "@/components/cases/RevisaoNbsPanel";
+import { ApuracaoLiquidaPanel } from "@/components/cases/ApuracaoLiquidaPanel";
 import { withAuthRetry } from "@/lib/auth-retry";
 import {
   deleteCarteiraRow,
