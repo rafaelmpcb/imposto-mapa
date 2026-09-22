@@ -610,6 +610,9 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
   /* ---------- Seção 4b: detalhe por fornecedor (notas, meses, NCM) ---------- */
   const detalhes = await compilarDetalheFornecedores(admin, caseId, regimePorCnpj);
 
+  /* ---------- Seção 5b: clientes e crédito transferido ---------- */
+  const clientesDetalhe = await compilarDetalheClientes(admin, caseId);
+
   /* ---------- Seção 5: preço necessário ---------- */
   const precoRows = [
     ...((precoMercRes.data ?? []) as Record<string, unknown>[]),
