@@ -8,6 +8,7 @@ import {
   ResultadoAnoChart,
   TransicaoChart,
 } from "@/components/cases/ParecerCharts";
+import { ParecerClientes } from "@/components/cases/ParecerClientes";
 import { ParecerFornecedores } from "@/components/cases/ParecerFornecedores";
 import { ParecerPrecoVenda } from "@/components/cases/ParecerPrecoVenda";
 import {
@@ -24,6 +25,7 @@ const MODULOS = [
   { id: "visao", label: "Visão geral" },
   { id: "regimes", label: "Regimes" },
   { id: "compras", label: "Compras e créditos" },
+  { id: "clientes", label: "Clientes e crédito transferido" },
   { id: "precos", label: "Preço e margem" },
   { id: "caixa", label: "Caixa e split" },
   { id: "plano", label: "Achados e plano" },
@@ -427,6 +429,10 @@ export function ParecerDashboard({
           </div>
           <ParecerFornecedores sec4={snapshot.sec4} />
         </div>
+      ) : null}
+
+      {modulo === "clientes" ? (
+        <ParecerClientes clientes={snapshot.sec5.clientes ?? []} />
       ) : null}
 
       {modulo === "precos" ? (

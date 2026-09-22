@@ -187,6 +187,225 @@ async function compilarDetalheFornecedores(
     }));
 }
 
+/**
+ * Retrato por cliente: notas de venda (mercadoria) e de serviço prestado,
+ * histórico mensal, participação no faturamento do mês e principais NCM/NBS.
+ * `credito` aqui é o crédito de IBS/CBS transferido ao cliente — o mesmo
+ * débito já apurado item a item. Nada é recalculado.
+ */
+async function compilarDetalheClientes(
+  admin: Admin,
+  caseId: string,
+): Promise<FornecedorDetalheSnap[]> {
+  const [vendasRes, vendaItensRes, nfseRes, nfseItensRes, carteiraRes] = await Promise.all([
+    admin
+      .from("nota_fiscal_venda_xml")
+      .select(
+        "id,chave_acesso,numero_nota,serie,data_emissao,valor_total,cnpj_destinatario,razao_social_destinatario",
+      )
+      .eq("case_id", caseId)
+      .eq("status_processamento", "ok")
+      .limit(5000),
+    admin
+      .from("nota_fiscal_venda_xml_item")
+      .select(
+        "nota_fiscal_venda_xml_id,ncm,descricao,valor_item,valor_base_calculo,valor_debito_ibs_cbs,status_classificacao",
+      )
+      .eq("case_id", caseId)
+      .limit(20000),
+    admin
+      .from("nota_servico_nfse")
+      .select(
+        "id,chave_acesso,numero_nota,serie,data_emissao,valor_total,cnpj_tomador,razao_social_tomador",
+      )
+      .eq("case_id", caseId)
+      .eq("direcao", "prestado")
+      .limit(5000),
+    admin
+      .from("nota_servico_nfse_item_prestado")
+      .select(
+        "nota_servico_id,nbs,descricao,valor_servico,valor_base_calculo,valor_debito_ibs_cbs,status_classificacao",
+      )
+      .eq("case_id", caseId)
+      .limit(20000),
+    admin
+      .from("composicao_carteira")
+      .select("cnpj,regime")
+      .eq("case_id", caseId)
+      .eq("tipo", "cliente"),
+  ]);
+
+  const regimePorCnpj = new Map<string, string>();
+  for (const r of (carteiraRes.data ?? []) as Record<string, unknown>[]) {
+    const c = String(r["cnpj"] ?? "").replace(/\D/g, "");
+    if (c) regimePorCnpj.set(c, String(r["regime"] ?? "pendente"));
+  }
+
+  type Agg = { base: number; debito: number; itens: number; pendentes: number };
+  const porNota = new Map<string, Agg>();
+  const codPorNota = new Map<
+    string,
+    Map<string, { descricao: string | null; base: number; debito: number }>
+  >();
+
+  const acumularItens = (
+    rows: Record<string, unknown>[],
+    fkCol: string,
+    codCol: string,
+    valorCol: string,
+  ) => {
+    for (const it of rows) {
+      const id = String(it[fkCol] ?? "");
+      if (!id) continue;
+      const status = String(it["status_classificacao"] ?? "");
+      if (status === "excluido_analista") continue;
+      const base = num(it["valor_base_calculo"]) || num(it[valorCol]);
+      const a = porNota.get(id) ?? { base: 0, debito: 0, itens: 0, pendentes: 0 };
+      a.base += base;
+      a.debito += num(it["valor_debito_ibs_cbs"]);
+      a.itens += 1;
+      if (PENDENTES.includes(status)) a.pendentes += 1;
+      porNota.set(id, a);
+
+      const cod = String(it[codCol] ?? "").trim() || "sem código";
+      const mapa = codPorNota.get(id) ?? new Map();
+      const cur = mapa.get(cod) ?? {
+        descricao: (it["descricao"] as string | null) ?? null,
+        base: 0,
+        debito: 0,
+      };
+      cur.base += base;
+      cur.debito += num(it["valor_debito_ibs_cbs"]);
+      mapa.set(cod, cur);
+      codPorNota.set(id, mapa);
+    }
+  };
+
+  acumularItens(
+    (vendaItensRes.data ?? []) as Record<string, unknown>[],
+    "nota_fiscal_venda_xml_id",
+    "ncm",
+    "valor_item",
+  );
+  acumularItens(
+    (nfseItensRes.data ?? []) as Record<string, unknown>[],
+    "nota_servico_id",
+    "nbs",
+    "valor_servico",
+  );
+
+  type Cli = FornecedorDetalheSnap & {
+    _meses: Map<string, { valorBase: number; credito: number; notas: number }>;
+    _cods: Map<string, { descricao: string | null; base: number; debito: number }>;
+  };
+  const clientes = new Map<string, Cli>();
+  const totalMes = new Map<string, number>();
+
+  const notas = [
+    ...((vendasRes.data ?? []) as Record<string, unknown>[]).map((n) => ({
+      n,
+      cnpj: (n["cnpj_destinatario"] as string | null) ?? null,
+      nome: (n["razao_social_destinatario"] as string | null) ?? null,
+    })),
+    ...((nfseRes.data ?? []) as Record<string, unknown>[]).map((n) => ({
+      n,
+      cnpj: (n["cnpj_tomador"] as string | null) ?? null,
+      nome: (n["razao_social_tomador"] as string | null) ?? null,
+    })),
+  ];
+  if (notas.length === 0) return [];
+
+  for (const { n, cnpj, nome } of notas) {
+    const id = String(n["id"] ?? "");
+    const chave = cnpj ?? nome ?? "sem identificação";
+    const agg = porNota.get(id) ?? { base: 0, debito: 0, itens: 0, pendentes: 0 };
+    const dataStr = (n["data_emissao"] as string | null) ?? null;
+    const competencia = dataStr ? dataStr.slice(0, 7) : "sem data";
+
+    const c =
+      clientes.get(chave) ??
+      ({
+        chave,
+        cnpj,
+        nome,
+        regime: cnpj ? (regimePorCnpj.get(cnpj.replace(/\D/g, "")) ?? null) : null,
+        valorBase: 0,
+        credito: 0,
+        itens: 0,
+        pendentes: 0,
+        notas: [],
+        meses: [],
+        topNcms: [],
+        _meses: new Map(),
+        _cods: new Map(),
+      } as Cli);
+
+    const base = agg.base || num(n["valor_total"]);
+    c.valorBase += base;
+    c.credito += agg.debito;
+    c.itens += agg.itens;
+    c.pendentes += agg.pendentes;
+    c.notas.push({
+      chave: (n["chave_acesso"] as string | null) ?? null,
+      numero: (n["numero_nota"] as string | null) ?? null,
+      serie: (n["serie"] as string | null) ?? null,
+      data: dataStr,
+      valorTotal: num(n["valor_total"]),
+      valorBase: base,
+      credito: agg.debito,
+      itens: agg.itens,
+      pendentes: agg.pendentes,
+    });
+
+    const m = c._meses.get(competencia) ?? { valorBase: 0, credito: 0, notas: 0 };
+    m.valorBase += base;
+    m.credito += agg.debito;
+    m.notas += 1;
+    c._meses.set(competencia, m);
+    totalMes.set(competencia, (totalMes.get(competencia) ?? 0) + base);
+
+    for (const [cod, v] of codPorNota.get(id) ?? []) {
+      const cur = c._cods.get(cod) ?? { descricao: v.descricao, base: 0, debito: 0 };
+      cur.base += v.base;
+      cur.debito += v.debito;
+      c._cods.set(cod, cur);
+    }
+
+    clientes.set(chave, c);
+  }
+
+  return [...clientes.values()]
+    .sort((a, b) => b.valorBase - a.valorBase)
+    .slice(0, 50)
+    .map((c) => ({
+      chave: c.chave,
+      cnpj: c.cnpj,
+      nome: c.nome,
+      regime: c.regime,
+      valorBase: c.valorBase,
+      credito: c.credito,
+      itens: c.itens,
+      pendentes: c.pendentes,
+      notas: c.notas.sort((a, b) => (b.data ?? "").localeCompare(a.data ?? "")).slice(0, 100),
+      meses: [...c._meses.entries()]
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([competencia, m]) => ({
+          competencia,
+          valorBase: m.valorBase,
+          credito: m.credito,
+          notas: m.notas,
+          participacaoPct:
+            (totalMes.get(competencia) ?? 0) > 0
+              ? (m.valorBase / (totalMes.get(competencia) ?? 1)) * 100
+              : 0,
+        })),
+      topNcms: [...c._cods.entries()]
+        .sort((a, b) => b[1].base - a[1].base)
+        .slice(0, 5)
+        .map(([ncm, v]) => ({ ncm, descricao: v.descricao, valorBase: v.base, credito: v.debito })),
+    }));
+}
+
 /** Lê as tabelas de origem e monta o retrato das 10 seções. Não recalcula nada. */
 async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSnapshot> {
   const [
@@ -391,6 +610,9 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
   /* ---------- Seção 4b: detalhe por fornecedor (notas, meses, NCM) ---------- */
   const detalhes = await compilarDetalheFornecedores(admin, caseId, regimePorCnpj);
 
+  /* ---------- Seção 5b: clientes e crédito transferido ---------- */
+  const clientesDetalhe = await compilarDetalheClientes(admin, caseId);
+
   /* ---------- Seção 5: preço necessário ---------- */
   const precoRows = [
     ...((precoMercRes.data ?? []) as Record<string, unknown>[]),
@@ -563,6 +785,7 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
         precoNecessario: a.precoNecessario,
         variacaoPct: a.n > 0 ? a.soma / a.n : 0,
       })),
+      clientes: clientesDetalhe,
     },
     sec6: { linhas: dreLinhas },
     sec7: {

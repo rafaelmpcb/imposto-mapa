@@ -158,6 +158,13 @@ export interface FornecedorDetalheSnap {
   topNcms: { ncm: string; descricao: string | null; valorBase: number; credito: number }[];
 }
 
+/**
+ * Retrato por cliente (vendas e serviços prestados). Mesma estrutura do
+ * fornecedor: aqui `credito` é o crédito de IBS/CBS transferido ao cliente,
+ * que corresponde ao débito apurado nas notas emitidas para ele.
+ */
+export type ClienteDetalheSnap = FornecedorDetalheSnap;
+
 export interface Achado {
   titulo: string;
   impacto: string;
@@ -227,6 +234,8 @@ export interface ParecerSnapshot {
     variacaoMediaPct: number;
     porPerfil: { perfil: string; valorAtual: number; precoNecessario: number; itens: number }[];
     porAno: { ano: number; precoNecessario: number; variacaoPct: number }[];
+    /** Clientes atendidos: volume vendido e crédito de IBS/CBS transferido. */
+    clientes?: ClienteDetalheSnap[];
   };
   sec6: {
     linhas: {
