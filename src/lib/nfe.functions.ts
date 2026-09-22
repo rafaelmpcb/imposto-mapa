@@ -106,11 +106,13 @@ export const saveNotasCompra = createServerFn({ method: "POST" })
     }
 
     const itensPayload: Record<string, unknown>[] = [];
+    const notaIdsReprocessados = new Set<string>();
     for (const nota of notasComItens) {
       const notaId =
         (nota.chave ? idPorChave.get(nota.chave) : undefined) ??
         idPorArquivo.get(nota.arquivo.slice(0, 200));
-      if (!notaId) continue;
+      if (!notaId || notaIdsReprocessados.has(notaId)) continue;
+      notaIdsReprocessados.add(notaId);
       for (const item of nota.itens ?? []) {
         const base = {
           nota_fiscal_compra_xml_id: notaId,
