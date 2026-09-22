@@ -220,6 +220,68 @@ export type Database = {
           },
         ]
       }
+      item_revisao_evento: {
+        Row: {
+          acao: string
+          anexo: string | null
+          case_id: string
+          cclasstrib: string | null
+          created_at: string
+          decidido_por: string | null
+          id: string
+          item_id: string
+          observacao: string | null
+          origem: string
+          reducao_pct: number | null
+          status_anterior: string | null
+          status_novo: string | null
+          valor_anterior: number | null
+          valor_novo: number | null
+        }
+        Insert: {
+          acao: string
+          anexo?: string | null
+          case_id: string
+          cclasstrib?: string | null
+          created_at?: string
+          decidido_por?: string | null
+          id?: string
+          item_id: string
+          observacao?: string | null
+          origem: string
+          reducao_pct?: number | null
+          status_anterior?: string | null
+          status_novo?: string | null
+          valor_anterior?: number | null
+          valor_novo?: number | null
+        }
+        Update: {
+          acao?: string
+          anexo?: string | null
+          case_id?: string
+          cclasstrib?: string | null
+          created_at?: string
+          decidido_por?: string | null
+          id?: string
+          item_id?: string
+          observacao?: string | null
+          origem?: string
+          reducao_pct?: number | null
+          status_anterior?: string | null
+          status_novo?: string | null
+          valor_anterior?: number | null
+          valor_novo?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_revisao_evento_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nbs_excecao_ibscbs: {
         Row: {
           aliquota_cbs_2026: number
