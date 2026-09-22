@@ -67,6 +67,8 @@ export const saveNotasServico = createServerFn({ method: "POST" })
       razao_social_prestador: n.razaoSocialPrestador?.slice(0, 200) ?? null,
       cnpj_tomador: n.cnpjTomador,
       razao_social_tomador: n.razaoSocialTomador?.slice(0, 200) ?? null,
+      codigo_servico: n.codigoServico,
+      regime_prestador: n.regimePrestador,
       direcao,
       valor_total: n.valorTotal,
       data_emissao: n.dataEmissao,
