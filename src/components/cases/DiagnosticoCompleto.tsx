@@ -8,6 +8,8 @@ import { PgdasdPanel } from "@/components/cases/PgdasdPanel";
 import { NfeUnificadoPanel } from "@/components/cases/NfeUnificadoPanel";
 import { NfseCarteiraPanel } from "@/components/cases/NfseCarteiraPanel";
 import { CreditoNcmPanel } from "@/components/cases/CreditoNcmPanel";
+import { DebitoNcmPanel } from "@/components/cases/DebitoNcmPanel";
+
 import { NfseServicoPanel } from "@/components/cases/NfseServicoPanel";
 import { CreditoNbsPanel } from "@/components/cases/CreditoNbsPanel";
 import { DebitoNbsPanel } from "@/components/cases/DebitoNbsPanel";
