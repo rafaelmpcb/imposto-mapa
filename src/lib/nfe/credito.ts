@@ -5,7 +5,16 @@
  * reduzida conforme a tabela de exceções por NCM (LC 214/2025).
  */
 
-export type ItemStatus = "ok" | "ambiguo_revisao_pendente" | "imposto_seletivo" | "sem_dado";
+export type ItemStatus =
+  | "ok"
+  | "ambiguo_revisao_pendente"
+  | "imposto_seletivo"
+  | "sem_dado"
+  /** Marcado pelo analista para decidir depois (fora das somas). */
+  | "marcado_revisao"
+  /** Descartado pelo analista (fora das somas, sem virar pendência). */
+  | "excluido_analista";
+
 
 export interface NcmExcecao {
   ncm: string;
