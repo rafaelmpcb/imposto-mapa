@@ -786,17 +786,11 @@ function MyCalculations() {
             )}
 
             <div className="flex flex-wrap gap-4 pt-2">
-              <Link to="/simulador" className="text-sm font-semibold text-navy underline">
-                Voltar ao simulador
-              </Link>
               <Link to="/config-aliquotas" className="text-sm font-semibold text-navy underline">
                 Configuração de alíquotas
               </Link>
               <Link to="/parametros" className="text-sm font-semibold text-navy underline">
                 Parâmetros e base legal
-              </Link>
-              <Link to="/aluguel" className="text-sm font-semibold text-navy underline">
-                Simulador de aluguéis
               </Link>
             </div>
           </section>
