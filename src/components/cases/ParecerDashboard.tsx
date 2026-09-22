@@ -4,11 +4,11 @@ import { Button } from "@/components/simulator/ui";
 import {
   CaixaChart,
   ComposicaoDonut,
-  FornecedoresChart,
   RegimesChart,
   ResultadoAnoChart,
   TransicaoChart,
 } from "@/components/cases/ParecerCharts";
+import { ParecerFornecedores } from "@/components/cases/ParecerFornecedores";
 import { ParecerPrecoVenda } from "@/components/cases/ParecerPrecoVenda";
 import {
   AREAS_PLANO,
