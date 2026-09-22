@@ -211,3 +211,41 @@ function regimeDoDocumento(root: Element): "simples" | "regular" | null {
   if (abrasf === "2") return "regular";
   return null;
 }
+
+/** Contraparte agregada a partir das notas de serviço. */
+export interface NfseAgregado {
+  cnpj: string;
+  nome: string;
+  valor: number;
+  notas: number;
+  regimeDocumento: "simples" | "regular" | null;
+}
+
+/**
+ * Agrupa as notas pelo CNPJ da contraparte, somando os valores.
+ * `lado` = "tomado" agrupa pelo prestador; "prestado" agrupa pelo tomador.
+ */
+export function aggregateNfse(notas: NfseNota[], lado: "tomado" | "prestado"): NfseAgregado[] {
+  const mapa = new Map<string, NfseAgregado>();
+  for (const nota of notas) {
+    const cnpj = lado === "tomado" ? nota.cnpjPrestador : nota.cnpjTomador;
+    if (!cnpj) continue;
+    const nome =
+      (lado === "tomado" ? nota.razaoSocialPrestador : nota.razaoSocialTomador) ?? cnpj;
+    const atual = mapa.get(cnpj);
+    if (atual) {
+      atual.valor += nota.valorTotal;
+      atual.notas += 1;
+      if (!atual.regimeDocumento && lado === "tomado") atual.regimeDocumento = nota.regimePrestador;
+    } else {
+      mapa.set(cnpj, {
+        cnpj,
+        nome,
+        valor: nota.valorTotal,
+        notas: 1,
+        regimeDocumento: lado === "tomado" ? nota.regimePrestador : null,
+      });
+    }
+  }
+  return [...mapa.values()].map((a) => ({ ...a, valor: Math.round(a.valor * 100) / 100 }));
+}
