@@ -241,3 +241,73 @@ export function CaixaChart({ resumo }: { resumo: ParecerSnapshot["sec7"]["resumo
     </ChartBox>
   );
 }
+
+const PALETA = [
+  "var(--color-navy, #12234a)",
+  "var(--color-mint, #4fd1a5)",
+  "var(--color-lavender, #7c5cd6)",
+  "var(--color-magenta, #d6479b)",
+  "var(--color-sky, #4f8fd1)",
+  "var(--color-amber-tone, #e0a33a)",
+];
+
+/** Donut genérico de composição — só desenha as partes já calculadas. */
+export function ComposicaoDonut({
+  titulo,
+  descricao,
+  partes,
+  centroLabel,
+  centroValor,
+}: {
+  titulo: string;
+  descricao?: string;
+  partes: { name: string; valor: number }[];
+  centroLabel?: string;
+  centroValor?: string;
+}) {
+  const data = partes.filter((p) => p.valor > 0).map((p) => ({ ...p, valor: Math.round(p.valor) }));
+  if (data.length === 0) return null;
+  return (
+    <ChartBox titulo={titulo} {...(descricao ? { descricao } : {})} altura={250}>
+      <PieChart>
+        <Pie
+          data={data}
+          dataKey="valor"
+          nameKey="name"
+          innerRadius="58%"
+          outerRadius="85%"
+          paddingAngle={2}
+          stroke="none"
+committed        >
+          {data.map((d, i) => (
+            <Cell key={d.name} fill={PALETA[i % PALETA.length]} />
+          ))}
+        </Pie>
+        {centroValor ? (
+          <>
+            <text
+              x="50%"
+              y="46%"
+              textAnchor="middle"
+              className="fill-muted-foreground"
+              style={{ fontSize: 11 }}
+            >
+              {centroLabel ?? ""}
+            </text>
+            <text
+              x="50%"
+              y="58%"
+              textAnchor="middle"
+              className="fill-foreground"
+              style={{ fontSize: 16, fontWeight: 600 }}
+            >
+              {centroValor}
+            </text>
+          </>
+        ) : null}
+        <Tooltip formatter={(v: number) => brl(v)} />
+        <Legend wrapperStyle={{ fontSize: 12 }} />
+      </PieChart>
+    </ChartBox>
+  );
+}
