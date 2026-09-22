@@ -525,7 +525,7 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
     const w = [220, 110, 110, 60];
     const topFornecedores = s.sec4.fornecedores.slice(0, 8);
     if (topFornecedores.length > 0 && s.sec4.creditoTotal > 0) {
-      doc.chartTitle("Concentração do crédito por fornecedor");
+      doc.chartTitle("Concentração do crédito por fornecedor", topFornecedores.length * 18 + 34);
       doc.hBars(
         topFornecedores.map((f, i) => ({
           label: f.nome ?? f.cnpj ?? "-",
@@ -587,7 +587,7 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
       doc.row([p.perfil, money(p.valorAtual), money(p.precoNecessario), String(p.itens)], w);
     }
     if (s.sec5.porAno.length > 0) {
-      doc.chartTitle("Repasse necessário ano a ano");
+      doc.chartTitle("Repasse necessário ano a ano", s.sec5.porAno.length * 18 + 34);
       doc.hBars(
         s.sec5.porAno.map((a) => ({
           label: String(a.ano),
@@ -678,7 +678,7 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
     if (s.sec7.resultadoLiquidoAno != null) {
       doc.text(`Resultado líquido projetado no ano: ${money(s.sec7.resultadoLiquidoAno)}`, { size: 10 });
     }
-    doc.chartTitle("Da venda bruta ao efeito líquido no caixa");
+    doc.chartTitle("Da venda bruta ao efeito líquido no caixa", 4 * 18 + 34);
     doc.hBars(
       [
         { label: "Venda bruta do mês", value: s.sec7.vendasBrutas, texto: money(s.sec7.vendasBrutas), color: SKY },
@@ -723,7 +723,7 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
     const comValor = s.sec8.cenarios.filter((c) => c.total != null);
     if (comValor.length > 0) {
       const menor = Math.min(...comValor.map((c) => c.total as number));
-      doc.chartTitle("Carga estimada por regime no ano projetado");
+      doc.chartTitle("Carga estimada por regime no ano projetado", comValor.length * 18 + 46);
       doc.hBars(
         comValor.map((c) => ({
           label: `${c.label}${c.atual ? " (atual)" : ""}`,
