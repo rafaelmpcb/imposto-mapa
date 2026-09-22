@@ -498,9 +498,10 @@ function MyCalculations() {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-navy-foreground/70">
             Área restrita do escritório
           </p>
-          <h1 className="mt-3 text-3xl leading-tight sm:text-4xl">Meus Cálculos</h1>
+          <h1 className="mt-3 text-3xl leading-tight sm:text-4xl">Painel de gestão</h1>
           <p className="mt-3 max-w-2xl text-sm text-navy-foreground/80">
-            Casos de clientes, com o histórico de simulações de cada um e o funil comercial.
+            Todas as ferramentas do escritório em um só lugar: casos e funil, simulações de impacto
+            fiscal, locação e os módulos em preparação.
           </p>
           <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-navy-foreground/80">
             {userEmail ? <span>Conectado como {userEmail}</span> : null}
