@@ -615,6 +615,74 @@ export type Database = {
           },
         ]
       }
+      estudo_monofasico: {
+        Row: {
+          aliquota_efetiva_das_pct: number
+          case_id: string | null
+          created_at: string
+          created_by: string | null
+          faturamento_mensal: number
+          honorario_exito_pct: number
+          id: string
+          meses_retroativos: number
+          observacao: string | null
+          parcela_pis_cofins_pct: number
+          participacao_monofasica_pct: number
+          regime: string
+          resultado_json: Json | null
+          segmento: string
+          selic_aa_pct: number
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          aliquota_efetiva_das_pct?: number
+          case_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          faturamento_mensal?: number
+          honorario_exito_pct?: number
+          id?: string
+          meses_retroativos?: number
+          observacao?: string | null
+          parcela_pis_cofins_pct?: number
+          participacao_monofasica_pct?: number
+          regime?: string
+          resultado_json?: Json | null
+          segmento?: string
+          selic_aa_pct?: number
+          titulo?: string
+          updated_at?: string
+        }
+        Update: {
+          aliquota_efetiva_das_pct?: number
+          case_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          faturamento_mensal?: number
+          honorario_exito_pct?: number
+          id?: string
+          meses_retroativos?: number
+          observacao?: string | null
+          parcela_pis_cofins_pct?: number
+          participacao_monofasica_pct?: number
+          regime?: string
+          resultado_json?: Json | null
+          segmento?: string
+          selic_aa_pct?: number
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estudo_monofasico_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       estudo_saldos_credores: {
         Row: {
           case_id: string | null
