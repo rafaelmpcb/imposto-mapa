@@ -624,6 +624,47 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
           {/* 9 */}
           <article id="secao-9" className="scroll-mt-6 space-y-3 border-t border-border pt-4">
             <h3 className="text-sm font-semibold text-foreground">9. {SECOES[8]!.titulo}</h3>
+
+            {snap.secAluguel ? (
+              <div className="space-y-2 rounded-md border border-navy/30 bg-navy/5 p-3">
+                <p className="text-sm font-semibold text-foreground">Contratos e aluguéis</p>
+                <p className="text-xs text-muted-foreground">
+                  {snap.secAluguel.contratos.length} contrato(s) de locação simulados neste Caso.
+                  Aluguel contratado hoje:{" "}
+                  <strong className="tabular-nums">
+                    {snap.secAluguel.totalAtual.toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                  </strong>{" "}
+                  · aluguel de equilíbrio:{" "}
+                  <strong className="tabular-nums">
+                    {snap.secAluguel.totalSugerido.toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                  </strong>{" "}
+                  ({snap.secAluguel.variacaoAluguelPct >= 0 ? "+" : ""}
+                  {snap.secAluguel.variacaoAluguelPct.toFixed(1)}%).
+                </p>
+                <ul className="space-y-1 text-xs text-muted-foreground">
+                  {snap.secAluguel.contratos.map((c, i) => (
+                    <li key={`${c.titulo}-${i}`}>
+                      <strong className="text-foreground">{c.titulo}</strong>
+                      {c.contraparte ? ` · ${c.contraparte}` : ""} — {c.ano}:{" "}
+                      {c.aluguelAtual.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} →{" "}
+                      {c.aluguelSugerido.toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      })}{" "}
+                      ({c.variacaoAluguelPct >= 0 ? "+" : ""}
+                      {c.variacaoAluguelPct.toFixed(1)}%)
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
             {AREAS_PLANO.map((area) => {
               const edit = edicoes.sec9?.[area.id] ?? {};
               const setArea = (patch: Record<string, string>) =>
