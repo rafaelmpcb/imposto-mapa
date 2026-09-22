@@ -51,7 +51,7 @@ function Card({
   );
 }
 
-function Numero({ valor, sub }: { valor: string; sub?: string }) {
+function Numero({ valor, sub }: { valor: string; sub?: string | undefined }) {
   return (
     <div>
       <p className="font-presentation-display text-3xl leading-tight">{valor}</p>
