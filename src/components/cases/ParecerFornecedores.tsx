@@ -552,6 +552,26 @@ export function ParecerFornecedores({ sec4 }: { sec4: ParecerSnapshot["sec4"] })
     );
   }
 
+  const selecionados = (sec4.detalhes ?? []).filter((d) => comparar.includes(d.chave));
+  if (modoComparar && selecionados.length >= 2) {
+    return (
+      <CompararFornecedores
+        itens={selecionados}
+        totalBase={abc.total}
+        onFechar={() => setModoComparar(false)}
+      />
+    );
+  }
+
+  const alternar = (chave: string) =>
+    setComparar((atual) =>
+      atual.includes(chave)
+        ? atual.filter((c) => c !== chave)
+        : atual.length >= 4
+          ? atual
+          : [...atual, chave],
+    );
+
 
 
   return (
