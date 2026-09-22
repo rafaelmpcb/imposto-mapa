@@ -5,11 +5,11 @@ import {
   CaixaChart,
   ComposicaoDonut,
   FornecedoresChart,
-  PrecoChart,
   RegimesChart,
   ResultadoAnoChart,
   TransicaoChart,
 } from "@/components/cases/ParecerCharts";
+import { ParecerPrecoVenda } from "@/components/cases/ParecerPrecoVenda";
 import {
   AREAS_PLANO,
   ESCOPO_LABEL,
@@ -492,46 +492,14 @@ export function ParecerDashboard({
       ) : null}
 
       {modulo === "precos" ? (
-        <div className="space-y-4">
-          {snapshot.sec5.valorAtual === 0 ? (
-            <Vazio>Sem vendas analisadas para calcular o preço necessário.</Vazio>
-          ) : (
-            <>
-              <div className="grid gap-4 md:grid-cols-3">
-                <Card tone="sky" titulo="Vendas analisadas">
-                  <Numero valor={brl(snapshot.sec5.valorAtual)} />
-                </Card>
-                <Card tone="lavender" titulo="Preço necessário">
-                  <Numero valor={brl(snapshot.sec5.precoNecessario)} />
-                </Card>
-                <Card destaque titulo={`Variação necessária${precoAno ? ` em ${precoAno.ano}` : ""}`}>
-                  <Numero
-                    valor={pct(precoAno?.variacaoPct ?? snapshot.sec5.variacaoMediaPct)}
-                    sub="Piso técnico de neutralidade tributária, não recomendação comercial."
-                  />
-                </Card>
-              </div>
-              <Card titulo="Por perfil de cliente">
-                {snapshot.sec5.porPerfil.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Sem quebra por perfil de cliente.</p>
-                ) : (
-                  <ul className="space-y-1 text-sm">
-                    {snapshot.sec5.porPerfil.map((p) => (
-                      <li key={p.perfil} className="flex justify-between gap-3">
-                        <span className="text-foreground">{p.perfil}</span>
-                        <span className="text-muted-foreground">
-                          {brl(p.valorAtual)} → {brl(p.precoNecessario)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </Card>
-              <PrecoChart porAno={snapshot.sec5.porAno} />
-            </>
-          )}
-        </div>
+        <ParecerPrecoVenda
+          sec5={snapshot.sec5}
+          sec4={snapshot.sec4}
+          ano={precoAno?.ano ?? anoSel}
+          onAno={(a) => setAno(a)}
+        />
       ) : null}
+
 
       {modulo === "caixa" ? (
         <div className="space-y-4">
