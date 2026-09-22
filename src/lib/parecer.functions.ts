@@ -397,6 +397,7 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
       cenarios,
       resultadoLiquido: dreDoAno?.resultadoLiquido ?? null,
     },
+    ...(aluguelSnap ? { secAluguel: aluguelSnap } : {}),
     sec9: { sugestoes: {} },
     sec10: { limitacoes },
   };
@@ -413,6 +414,14 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
     sugestoes["vendas"] = `Definir política de repasse: o preço necessário varia em média ${variacaoMediaPct.toFixed(
       1,
     )}% nos itens analisados.`;
+  }
+  if (aluguelSnap) {
+    sugestoes["juridico"] = `Revisar ${aluguelSnap.contratos.length} contrato(s) de locação: sem repactuação, o resultado do locador varia ${aluguelSnap.variacaoLiquidoPct.toFixed(
+      1,
+    )}% e o aluguel de equilíbrio fica em ${aluguelSnap.totalSugerido.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    })} por mês.`;
   }
   snap.sec9.sugestoes = sugestoes;
 
