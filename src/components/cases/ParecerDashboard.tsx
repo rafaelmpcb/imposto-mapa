@@ -446,6 +446,7 @@ export function ParecerDashboard({
                   />
                 </Card>
               </div>
+              <CaixaChart resumo={snapshot.sec7.resumoAnual} />
               <Card titulo={`Resumo anual${caixaAno ? ` · ${caixaAno.ano}` : ""}`}>
                 {snapshot.sec7.resumoAnual.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Sem série anual de caixa.</p>
