@@ -1,57 +1,28 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 
-const TABS = [
-  { to: "/simulador", label: "Empresas e salários (IBS/CBS)" },
-  { to: "/aluguel", label: "Locação e contratos" },
-  { to: "/capex", label: "Planejamento de CAPEX" },
-  { to: "/contratos", label: "Contratos e reequilíbrio" },
-  { to: "/saldos-credores", label: "Saldos credores" },
-  { to: "/monofasico", label: "Recuperação monofásica" },
-] as const;
+type CalcRoute =
+  | "/simulador"
+  | "/aluguel"
+  | "/capex"
+  | "/contratos"
+  | "/saldos-credores"
+  | "/monofasico";
 
-/** Abas de navegação entre as calculadoras públicas. */
-export function SimuladorTabs({
-  active,
-}: {
-  active:
-    | "/simulador"
-    | "/aluguel"
-    | "/capex"
-    | "/contratos"
-    | "/saldos-credores"
-    | "/monofasico";
-}) {
-
+/** Cabeçalho de navegação das calculadoras públicas: botão Início centralizado. */
+export function SimuladorTabs({ active }: { active?: CalcRoute }) {
+  void active;
   return (
-    <nav className="mx-auto max-w-6xl px-5">
-      <div className="flex items-end gap-4">
+    <nav className="mx-auto max-w-6xl px-5 pt-5">
+      <div className="flex justify-center">
         <Link
           to="/"
-          className="mb-2 flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-navy transition-colors hover:bg-accent hover:text-foreground"
+          className="inline-flex items-center gap-2 rounded-full bg-navy px-6 py-2.5 text-sm font-bold text-primary-foreground shadow-md transition-transform hover:-translate-y-0.5 hover:bg-navy/90 hover:shadow-lg"
           aria-label="Voltar à tela inicial do portal"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
+          <ArrowLeft className="h-4 w-4" />
           Início
         </Link>
-        <div className="flex gap-1 overflow-x-auto border-b border-border">
-          {TABS.map((t) => {
-            const isActive = t.to === active;
-            return (
-              <Link
-                key={t.to}
-                to={t.to}
-                className={`whitespace-nowrap rounded-t-lg px-4 py-3 text-sm font-semibold transition-colors ${
-                  isActive
-                    ? "border-b-2 border-navy text-navy"
-                    : "border-b-2 border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {t.label}
-              </Link>
-            );
-          })}
-        </div>
       </div>
     </nav>
   );
