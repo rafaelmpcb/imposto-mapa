@@ -1,13 +1,14 @@
 /**
  * Leitura de notas fiscais de venda (XML de NF-e), no navegador.
- * Só o cabeçalho é usado: destinatário (cliente), valor total, data, chave,
- * número e série. Os itens (det) são ignorados de propósito.
+ * O cabeçalho identifica o destinatário (cliente), valor total, data, chave,
+ * número e série. Os itens (det) são lidos para apurar o débito de IBS/CBS.
  * O CRT da nota NÃO é usado: ele é o regime de quem emite, não do cliente.
  */
 
 import JSZip from "jszip";
 
 import { onlyDigits } from "@/lib/carteira/types";
+import { parseItens, type NfeItem } from "@/lib/nfe/parse";
 
 export type NfeVendaStatus = "ok" | "sem_cnpj_destinatario" | "xml_invalido" | "nao_e_nfe";
 
@@ -21,7 +22,9 @@ export interface NfeVendaNota {
   valorTotal: number;
   dataEmissao: string | null;
   status: NfeVendaStatus;
+  itens: NfeItem[];
 }
+
 
 export interface NfeVendaAgregado {
   cnpj: string;
