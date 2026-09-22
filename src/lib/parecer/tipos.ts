@@ -88,6 +88,8 @@ export const LIMITACOES = {
     "A mecânica jurídica e os prazos legais de liquidação do split payment ainda dependem de regulamentação infralegal; a leitura aqui é financeira e gerencial.",
   preco:
     "O preço necessário é piso técnico de neutralidade tributária, não recomendação comercial de preço.",
+  aluguel:
+    "Nos contratos de locação, o redutor aplicável, a rampa de transição e a condição do locador (contribuinte ou não) são premissas editáveis; contratos antigos registrados podem seguir regra específica de transição.",
 } as const;
 
 export interface CargaLinhaSnap {
