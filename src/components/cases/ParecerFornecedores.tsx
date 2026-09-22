@@ -4,16 +4,37 @@
  * organiza/apresenta. Não recalcula crédito, imposto ou classificação.
  */
 import { useMemo, useState } from "react";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import {
+  Bar,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  Line,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { brl } from "@/lib/tax/calc";
-import type { ParecerSnapshot } from "@/lib/parecer/tipos";
+import type { FornecedorDetalheSnap, ParecerSnapshot } from "@/lib/parecer/tipos";
 
 const COR_NORMAL = "#f97316";
 const COR_SIMPLES = "#12234a";
 const COR_OUTRO = "#c7cbd6";
 
 const pct = (v: number) => `${v.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
+
+const competenciaLabel = (c: string) => {
+  if (!/^\d{4}-\d{2}$/.test(c)) return c;
+  const [ano, mes] = c.split("-");
+  return `${mes}/${ano!.slice(2)}`;
+};
+
+const dataLabel = (d: string | null) =>
+  d ? new Date(d).toLocaleDateString("pt-BR") : "sem data";
 
 type Forn = ParecerSnapshot["sec4"]["fornecedores"][number];
 
