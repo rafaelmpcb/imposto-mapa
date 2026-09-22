@@ -5,6 +5,7 @@ import { sugerirAchados } from "@/lib/parecer/compilar";
 import {
   LIMITACOES,
   type CaseEscopo,
+  type FornecedorDetalheSnap,
   type ParecerEdicoes,
   type ParecerSnapshot,
   type ParecerStatus,
@@ -24,6 +25,167 @@ const REGIME_LABEL: Record<string, string> = {
   presumido: "Lucro Presumido",
   real: "Lucro Real",
 };
+
+/**
+ * Retrato por fornecedor: notas de compra, histórico mensal, participação no
+ * total comprado no mês e principais NCMs. Apenas agrega o que já está gravado.
+ */
+async function compilarDetalheFornecedores(
+  admin: Admin,
+  caseId: string,
+  regimePorCnpj: Map<string, string>,
+): Promise<FornecedorDetalheSnap[]> {
+  const [notasRes, itensRes] = await Promise.all([
+    admin
+      .from("nota_fiscal_compra_xml")
+      .select(
+        "id,chave_acesso,numero_nota,serie,data_emissao,valor_total,cnpj_emitente,razao_social_emitente",
+      )
+      .eq("case_id", caseId)
+      .eq("status_processamento", "ok")
+      .limit(5000),
+    admin
+      .from("nota_fiscal_compra_xml_item")
+      .select(
+        "nota_fiscal_compra_xml_id,ncm,descricao,valor_item,valor_base_calculo,valor_credito_ibs_cbs,status_classificacao",
+      )
+      .eq("case_id", caseId)
+      .limit(20000),
+  ]);
+
+  const notas = (notasRes.data ?? []) as Record<string, unknown>[];
+  if (notas.length === 0) return [];
+  const itens = (itensRes.data ?? []) as Record<string, unknown>[];
+
+  type Agg = { base: number; credito: number; itens: number; pendentes: number };
+  const porNota = new Map<string, Agg>();
+  const ncmPorNota = new Map<string, Map<string, { descricao: string | null; base: number; credito: number }>>();
+  for (const it of itens) {
+    const id = String(it["nota_fiscal_compra_xml_id"] ?? "");
+    if (!id) continue;
+    const status = String(it["status_classificacao"] ?? "");
+    if (status === "excluido_analista") continue;
+    const a = porNota.get(id) ?? { base: 0, credito: 0, itens: 0, pendentes: 0 };
+    const base = num(it["valor_base_calculo"]) || num(it["valor_item"]);
+    a.base += base;
+    a.credito += num(it["valor_credito_ibs_cbs"]);
+    a.itens += 1;
+    if (PENDENTES.includes(status)) a.pendentes += 1;
+    porNota.set(id, a);
+
+    const ncm = String(it["ncm"] ?? "").trim() || "sem NCM";
+    const mapa = ncmPorNota.get(id) ?? new Map();
+    const atual = mapa.get(ncm) ?? {
+      descricao: (it["descricao"] as string | null) ?? null,
+      base: 0,
+      credito: 0,
+    };
+    atual.base += base;
+    atual.credito += num(it["valor_credito_ibs_cbs"]);
+    mapa.set(ncm, atual);
+    ncmPorNota.set(id, mapa);
+  }
+
+  type Forn = FornecedorDetalheSnap & {
+    _meses: Map<string, { valorBase: number; credito: number; notas: number }>;
+    _ncms: Map<string, { descricao: string | null; base: number; credito: number }>;
+  };
+  const fornecedores = new Map<string, Forn>();
+  const totalMes = new Map<string, number>();
+
+  for (const n of notas) {
+    const id = String(n["id"] ?? "");
+    const cnpj = (n["cnpj_emitente"] as string | null) ?? null;
+    const nome = (n["razao_social_emitente"] as string | null) ?? null;
+    const chave = cnpj ?? nome ?? "sem identificação";
+    const agg = porNota.get(id) ?? { base: 0, credito: 0, itens: 0, pendentes: 0 };
+    const dataStr = (n["data_emissao"] as string | null) ?? null;
+    const competencia = dataStr ? dataStr.slice(0, 7) : "sem data";
+
+    const f =
+      fornecedores.get(chave) ??
+      ({
+        chave,
+        cnpj,
+        nome,
+        regime: cnpj ? (regimePorCnpj.get(cnpj.replace(/\D/g, "")) ?? null) : null,
+        valorBase: 0,
+        credito: 0,
+        itens: 0,
+        pendentes: 0,
+        notas: [],
+        meses: [],
+        topNcms: [],
+        _meses: new Map(),
+        _ncms: new Map(),
+      } as Forn);
+
+    f.valorBase += agg.base;
+    f.credito += agg.credito;
+    f.itens += agg.itens;
+    f.pendentes += agg.pendentes;
+    f.notas.push({
+      chave: (n["chave_acesso"] as string | null) ?? null,
+      numero: (n["numero_nota"] as string | null) ?? null,
+      serie: (n["serie"] as string | null) ?? null,
+      data: dataStr,
+      valorTotal: num(n["valor_total"]),
+      valorBase: agg.base,
+      credito: agg.credito,
+      itens: agg.itens,
+      pendentes: agg.pendentes,
+    });
+
+    const m = f._meses.get(competencia) ?? { valorBase: 0, credito: 0, notas: 0 };
+    m.valorBase += agg.base;
+    m.credito += agg.credito;
+    m.notas += 1;
+    f._meses.set(competencia, m);
+    totalMes.set(competencia, (totalMes.get(competencia) ?? 0) + agg.base);
+
+    for (const [ncm, v] of ncmPorNota.get(id) ?? []) {
+      const cur = f._ncms.get(ncm) ?? { descricao: v.descricao, base: 0, credito: 0 };
+      cur.base += v.base;
+      cur.credito += v.credito;
+      f._ncms.set(ncm, cur);
+    }
+
+    fornecedores.set(chave, f);
+  }
+
+  return [...fornecedores.values()]
+    .sort((a, b) => b.valorBase - a.valorBase)
+    .slice(0, 50)
+    .map((f) => ({
+      chave: f.chave,
+      cnpj: f.cnpj,
+      nome: f.nome,
+      regime: f.regime,
+      valorBase: f.valorBase,
+      credito: f.credito,
+      itens: f.itens,
+      pendentes: f.pendentes,
+      notas: f.notas
+        .sort((a, b) => (b.data ?? "").localeCompare(a.data ?? ""))
+        .slice(0, 100),
+      meses: [...f._meses.entries()]
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([competencia, m]) => ({
+          competencia,
+          valorBase: m.valorBase,
+          credito: m.credito,
+          notas: m.notas,
+          participacaoPct:
+            (totalMes.get(competencia) ?? 0) > 0
+              ? (m.valorBase / (totalMes.get(competencia) ?? 1)) * 100
+              : 0,
+        })),
+      topNcms: [...f._ncms.entries()]
+        .sort((a, b) => b[1].base - a[1].base)
+        .slice(0, 5)
+        .map(([ncm, v]) => ({ ncm, descricao: v.descricao, valorBase: v.base, credito: v.credito })),
+    }));
+}
 
 /** Lê as tabelas de origem e monta o retrato das 10 seções. Não recalcula nada. */
 async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSnapshot> {
@@ -226,6 +388,9 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
   const creditoTotal = comprasRows.reduce((a, r) => a + num(r["valor_apurado_total"]), 0);
   const baseTotal = comprasRows.reduce((a, r) => a + num(r["valor_base_total"]), 0);
 
+  /* ---------- Seção 4b: detalhe por fornecedor (notas, meses, NCM) ---------- */
+  const detalhes = await compilarDetalheFornecedores(admin, caseId, regimePorCnpj);
+
   /* ---------- Seção 5: preço necessário ---------- */
   const precoRows = [
     ...((precoMercRes.data ?? []) as Record<string, unknown>[]),
@@ -386,6 +551,7 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
       pendentes: comprasRows.reduce((a, r) => a + num(r["n_itens_pendentes"]), 0),
       concentracaoTopPct:
         creditoTotal > 0 && fornecedores[0] ? (fornecedores[0].valorApurado / creditoTotal) * 100 : null,
+      detalhes,
     },
     sec5: {
       valorAtual,

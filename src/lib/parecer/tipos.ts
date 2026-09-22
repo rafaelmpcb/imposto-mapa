@@ -120,6 +120,44 @@ export interface ConcentracaoSnap {
   regime?: string | null;
 }
 
+/** Nota de compra individual de um fornecedor (retrato, sem recálculo). */
+export interface FornecedorNotaSnap {
+  chave: string | null;
+  numero: string | null;
+  serie: string | null;
+  data: string | null;
+  valorTotal: number;
+  valorBase: number;
+  credito: number;
+  itens: number;
+  pendentes: number;
+}
+
+/** Histórico mensal de compras de um fornecedor. */
+export interface FornecedorMesSnap {
+  /** Competência AAAA-MM. */
+  competencia: string;
+  valorBase: number;
+  credito: number;
+  notas: number;
+  /** Participação do fornecedor no total comprado naquele mês (%). */
+  participacaoPct: number;
+}
+
+export interface FornecedorDetalheSnap {
+  chave: string;
+  cnpj: string | null;
+  nome: string | null;
+  regime: string | null;
+  valorBase: number;
+  credito: number;
+  itens: number;
+  pendentes: number;
+  notas: FornecedorNotaSnap[];
+  meses: FornecedorMesSnap[];
+  topNcms: { ncm: string; descricao: string | null; valorBase: number; credito: number }[];
+}
+
 export interface Achado {
   titulo: string;
   impacto: string;
@@ -180,6 +218,8 @@ export interface ParecerSnapshot {
     ncms: ConcentracaoSnap[];
     pendentes: number;
     concentracaoTopPct: number | null;
+    /** Detalhamento por fornecedor: notas, histórico mensal e participação. */
+    detalhes?: FornecedorDetalheSnap[];
   };
   sec5: {
     valorAtual: number;
