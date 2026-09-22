@@ -88,7 +88,7 @@ function Kpi({
 }
 
 function AluguelPage() {
-  const [aluguel, setAluguel] = useState(10000);
+  const [aluguel, setAluguel] = useState(0);
   const [regime, setRegime] = useState<RegimeLocador>("presumido");
   const [aproveitamento, setAproveitamento] = useState(100);
   const [ano, setAno] = useState(2033);
