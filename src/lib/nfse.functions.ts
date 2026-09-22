@@ -103,7 +103,7 @@ export const saveNotasServico = createServerFn({ method: "POST" })
     // tabela de exceções por NBS, só para os serviços sem classificação no documento
     const codigos = [
       ...new Set(
-        notas.flatMap((n) =>
+        data.notas.flatMap((n) =>
           (n.itens ?? [])
             .filter((i) => !i.temClassificacaoDocumento && i.nbs)
             .map((i) => (i.nbs as string).trim()),
