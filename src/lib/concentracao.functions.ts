@@ -7,6 +7,8 @@ export const LIMITE_CONCENTRACAO_CRITICA = 60;
 
 export type ConcentracaoLinha = {
   codigo: string;
+  /** CFOP da linha (só mercadorias; serviços não têm CFOP). */
+  cfop: string | null;
   cnpj: string | null;
   nome: string | null;
   valorBase: number;
@@ -35,6 +37,7 @@ const asRows = (r: { data: unknown }) => (r.data ?? []) as Record<string, unknow
 const toLinhas = (rows: Record<string, unknown>[]): ConcentracaoLinha[] =>
   rows.map((r) => ({
     codigo: String(r["codigo"] ?? "—"),
+    cfop: (r["cfop"] as string | null) ?? null,
     cnpj: (r["cnpj_contraparte"] as string | null) ?? null,
     nome: (r["nome_contraparte"] as string | null) ?? null,
     valorBase: Number(r["valor_base_total"] ?? 0),
