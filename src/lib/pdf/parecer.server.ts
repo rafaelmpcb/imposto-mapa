@@ -182,7 +182,7 @@ class Doc {
   }
 
   heading(numero: number, titulo: string): void {
-    this.ensure(46);
+    this.ensure(96);
     this.gap(10);
     this.text(`${numero}. ${titulo}`, { size: 13, bold: true, color: NAVY, after: 2 });
   }
