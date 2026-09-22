@@ -360,25 +360,11 @@ export function ParecerDashboard({
               />
             </Card>
           </div>
-          <Card titulo="Fornecedores por crédito apurado">
-            {snapshot.sec4.fornecedores.length === 0 ? (
-              <Vazio>Sem notas de compra processadas neste Caso.</Vazio>
-            ) : (
-              <ul className="space-y-3">
-                {snapshot.sec4.fornecedores.slice(0, 8).map((f) => (
-                  <li key={f.codigo} className="space-y-1">
-                    <div className="flex justify-between gap-3 text-sm">
-                      <span className="truncate text-foreground">
-                        {f.nome ?? f.cnpj ?? f.codigo}
-                      </span>
-                      <span className="text-muted-foreground">{brl(f.valorApurado)}</span>
-                    </div>
-                    <Barra valor={f.valorApurado} max={maxFornecedor} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+          {snapshot.sec4.fornecedores.length === 0 ? (
+            <Vazio>Sem notas de compra processadas neste Caso.</Vazio>
+          ) : (
+            <FornecedoresChart fornecedores={snapshot.sec4.fornecedores} />
+          )}
         </div>
       ) : null}
 
