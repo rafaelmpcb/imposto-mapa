@@ -536,18 +536,36 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
       { size: 10 },
     );
     const w = [180, 130, 130, 60];
+    if (s.sec5.porPerfil.length > 0) {
+      doc.chartTitle("Preço atual x preço necessário, por perfil de cliente");
+      doc.vBars(
+        s.sec5.porPerfil.map((p) => ({ label: p.perfil, a: p.valorAtual, b: p.precoNecessario })),
+        { legendA: "Praticado hoje", legendB: "Necessário na reforma", fmt: (v) => money(v) },
+      );
+    }
     doc.gap(4);
     doc.row(["Perfil do cliente", "Valor atual", "Preço necessário", "Itens"], w, { bold: true });
     for (const p of s.sec5.porPerfil) {
       doc.row([p.perfil, money(p.valorAtual), money(p.precoNecessario), String(p.itens)], w);
     }
     if (s.sec5.porAno.length > 0) {
+      doc.chartTitle("Repasse necessário ano a ano");
+      doc.hBars(
+        s.sec5.porAno.map((a) => ({
+          label: String(a.ano),
+          value: a.precoNecessario,
+          texto: `${money(a.precoNecessario)}  ·  ${pct(a.variacaoPct)}`,
+          color: AMBER,
+        })),
+        { labelWidth: 70 },
+      );
       doc.gap(6);
       doc.row(["Ano", "Preço necessário", "Variação"], [80, 160, 120], { bold: true });
       for (const a of s.sec5.porAno) {
         doc.row([String(a.ano), money(a.precoNecessario), pct(a.variacaoPct)], [80, 160, 120]);
       }
     }
+
     doc.gap(4);
     doc.text("O preço necessário é piso técnico de neutralidade tributária, não recomendação comercial.", {
       size: 9,
