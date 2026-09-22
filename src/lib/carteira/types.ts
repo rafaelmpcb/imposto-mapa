@@ -66,9 +66,9 @@ export const DIAGNOSTIC_DOCS: DiagnosticDocDef[] = [
   },
   {
     key: "servicos_tomados",
-    title: "Notas de serviço tomadas (NFS-e)",
+    title: "Notas de serviço (NFS-e) tomadas e prestadas",
     description:
-      "Arquivos .xml de NFS-e (ou um .zip com eles) dos serviços contratados pelo cliente. Usados para apurar o crédito de IBS/CBS serviço a serviço, por código NBS.",
+      "Arquivos .xml de NFS-e (ou um .zip com eles) dos serviços contratados e dos serviços prestados pelo cliente. Usados para apurar, serviço a serviço por código NBS, o crédito de IBS/CBS nas compras e o débito nas vendas.",
     active: true,
   },
   {
