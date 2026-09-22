@@ -116,6 +116,8 @@ export interface ConcentracaoSnap {
   valorApurado: number;
   itens: number;
   pendentes: number;
+  /** Regime do fornecedor quando classificado na composição de carteira. */
+  regime?: string | null;
 }
 
 export interface Achado {
