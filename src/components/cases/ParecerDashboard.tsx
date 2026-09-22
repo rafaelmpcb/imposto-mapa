@@ -10,6 +10,7 @@ import {
   ResultadoAnoChart,
   TransicaoChart,
 } from "@/components/cases/ParecerCharts";
+import { ParecerPrecoVenda } from "@/components/cases/ParecerPrecoVenda";
 import {
   AREAS_PLANO,
   ESCOPO_LABEL,
