@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 
 import { Button, Notice, TextInput } from "@/components/simulator/ui";
 import { ParecerApresentacao } from "@/components/cases/ParecerApresentacao";
+import { ParecerDashboard } from "@/components/cases/ParecerDashboard";
 import { withAuthRetry } from "@/lib/auth-retry";
 import { supabase } from "@/integrations/supabase/client";
 import { avaliarChecklist } from "@/lib/parecer/compilar";
@@ -81,6 +82,7 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
   const [erro, setErro] = useState("");
   const [busy, setBusy] = useState(false);
   const [apresentando, setApresentando] = useState(false);
+  const [dashboard, setDashboard] = useState(false);
 
   const load = useCallback(async () => {
     setErro("");
@@ -215,6 +217,22 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
     );
   }
 
+  if (dashboard && snap && atual) {
+    return (
+      <ParecerDashboard
+        snapshot={snap}
+        edicoes={edicoes}
+        versao={atual.versao}
+        onSair={() => setDashboard(false)}
+        onPdf={() => void handlePdf()}
+        onApresentar={() => {
+          setDashboard(false);
+          setApresentando(true);
+        }}
+      />
+    );
+  }
+
   return (
     <section className="space-y-4 rounded-xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -238,6 +256,7 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
               <Button variant="ghost" onClick={() => void handlePdf()} disabled={busy}>
                 Baixar PDF
               </Button>
+              <Button onClick={() => setDashboard(true)}>Dashboard executivo</Button>
               <Button variant="ghost" onClick={() => setApresentando(true)}>
                 Apresentação guiada
               </Button>
