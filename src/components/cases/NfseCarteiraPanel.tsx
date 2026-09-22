@@ -10,8 +10,13 @@ import {
   getContrapartesExistentes,
   saveNotasServico,
 } from "@/lib/nfse.functions";
-import { aggregateNfse, parseNfseXml, type NfseNota } from "@/lib/nfse/parse";
-import { readNfeRawFiles } from "@/lib/nfe/parse";
+import {
+  aggregateNfse,
+  parseNfseArquivo,
+  readNfseRawFiles,
+  type NfseArquivo,
+  type NfseNota,
+} from "@/lib/nfse/parse";
 import { formatCnpjMask } from "@/lib/carteira/types";
 import { brl } from "@/lib/tax/calc";
 
