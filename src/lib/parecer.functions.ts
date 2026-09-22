@@ -5,6 +5,7 @@ import { sugerirAchados } from "@/lib/parecer/compilar";
 import {
   LIMITACOES,
   type CaseEscopo,
+  type FornecedorDetalheSnap,
   type ParecerEdicoes,
   type ParecerSnapshot,
   type ParecerStatus,
