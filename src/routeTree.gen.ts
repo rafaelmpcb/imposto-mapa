@@ -16,6 +16,7 @@ import { Route as SimuladorRouteImport } from './routes/simulador'
 import { Route as AuthenticatedConfigAliquotasRouteImport } from './routes/_authenticated/config-aliquotas'
 import { Route as AuthenticatedMeusCalculosRouteImport } from './routes/_authenticated/meus-calculos'
 import { Route as AuthenticatedParametrosRouteImport } from './routes/_authenticated/parametros'
+import { Route as RelatorioTokenRouteImport } from './routes/relatorio.$token'
 import { Route as STokenRouteImport } from './routes/s.$token'
 import { Route as ApiPublicParecerPdfRouteImport } from './routes/api/public/parecer-pdf'
 import { Route as ApiPublicRelatorioPdfRouteImport } from './routes/api/public/relatorio-pdf'
@@ -56,6 +57,11 @@ const AuthenticatedParametrosRoute = AuthenticatedParametrosRouteImport.update({
   path: '/parametros',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const RelatorioTokenRoute = RelatorioTokenRouteImport.update({
+  id: '/relatorio/$token',
+  path: '/relatorio/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const STokenRoute = STokenRouteImport.update({
   id: '/s/$token',
   path: '/s/$token',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
   '/meus-calculos': typeof AuthenticatedMeusCalculosRoute
   '/parametros': typeof AuthenticatedParametrosRoute
+  '/relatorio/$token': typeof RelatorioTokenRoute
   '/s/$token': typeof STokenRoute
   '/api/public/parecer-pdf': typeof ApiPublicParecerPdfRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
   '/meus-calculos': typeof AuthenticatedMeusCalculosRoute
   '/parametros': typeof AuthenticatedParametrosRoute
+  '/relatorio/$token': typeof RelatorioTokenRoute
   '/s/$token': typeof STokenRoute
   '/api/public/parecer-pdf': typeof ApiPublicParecerPdfRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/_authenticated/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
   '/_authenticated/meus-calculos': typeof AuthenticatedMeusCalculosRoute
   '/_authenticated/parametros': typeof AuthenticatedParametrosRoute
+  '/relatorio/$token': typeof RelatorioTokenRoute
   '/s/$token': typeof STokenRoute
   '/api/public/parecer-pdf': typeof ApiPublicParecerPdfRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/config-aliquotas'
     | '/meus-calculos'
     | '/parametros'
+    | '/relatorio/$token'
     | '/s/$token'
     | '/api/public/parecer-pdf'
     | '/api/public/relatorio-pdf'
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/config-aliquotas'
     | '/meus-calculos'
     | '/parametros'
+    | '/relatorio/$token'
     | '/s/$token'
     | '/api/public/parecer-pdf'
     | '/api/public/relatorio-pdf'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/_authenticated/config-aliquotas'
     | '/_authenticated/meus-calculos'
     | '/_authenticated/parametros'
+    | '/relatorio/$token'
     | '/s/$token'
     | '/api/public/parecer-pdf'
     | '/api/public/relatorio-pdf'
@@ -149,6 +161,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   SimuladorRoute: typeof SimuladorRoute
+  RelatorioTokenRoute: typeof RelatorioTokenRoute
   STokenRoute: typeof STokenRoute
   ApiPublicParecerPdfRoute: typeof ApiPublicParecerPdfRoute
   ApiPublicRelatorioPdfRoute: typeof ApiPublicRelatorioPdfRoute
@@ -205,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedParametrosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/relatorio/$token': {
+      id: '/relatorio/$token'
+      path: '/relatorio/$token'
+      fullPath: '/relatorio/$token'
+      preLoaderRoute: typeof RelatorioTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/s/$token': {
       id: '/s/$token'
       path: '/s/$token'
@@ -249,6 +269,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   SimuladorRoute: SimuladorRoute,
+  RelatorioTokenRoute: RelatorioTokenRoute,
   STokenRoute: STokenRoute,
   ApiPublicParecerPdfRoute: ApiPublicParecerPdfRoute,
   ApiPublicRelatorioPdfRoute: ApiPublicRelatorioPdfRoute,
