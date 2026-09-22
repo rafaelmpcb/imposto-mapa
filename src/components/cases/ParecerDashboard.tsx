@@ -150,16 +150,23 @@ export function ParecerDashboard({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-muted-foreground">Versão {versao}</span>
-          <Button variant="ghost" onClick={onApresentar}>
-            Apresentação guiada
-          </Button>
-          <Button variant="ghost" onClick={onPdf}>
-            Baixar PDF
-          </Button>
-          <Button variant="ghost" onClick={onSair}>
-            Sair do dashboard
-          </Button>
+          {onApresentar ? (
+            <Button variant="ghost" onClick={onApresentar}>
+              Apresentação guiada
+            </Button>
+          ) : null}
+          {onPdf ? (
+            <Button variant="ghost" onClick={onPdf}>
+              Baixar PDF
+            </Button>
+          ) : null}
+          {onSair ? (
+            <Button variant="ghost" onClick={onSair}>
+              Sair do dashboard
+            </Button>
+          ) : null}
         </div>
+
       </header>
 
       <div className="flex flex-wrap items-center gap-2">
