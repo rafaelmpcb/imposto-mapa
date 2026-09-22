@@ -130,13 +130,13 @@ export function NfseCarteiraPanel({
 
       const validas: NfseNota[] = [];
       const recusadas: NaoProcessada[] = [];
-      for (const { arquivo, xml } of brutos) {
-        const nota = parseNfseXml(xml, arquivo);
+      for (const bruto of brutos) {
+        const nota = parseNfseArquivo(bruto);
         if (nota.status === "ok" || nota.status === "sem_cnpj") {
           validas.push(nota);
         } else {
           recusadas.push({
-            arquivo,
+            arquivo: bruto.arquivo,
             motivo: "não processado — não é NFS-e Nacional reconhecida",
           });
         }
