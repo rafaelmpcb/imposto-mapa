@@ -202,7 +202,34 @@ function MonofasicoPage() {
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground">{DESCRIPTION}</p>
         </header>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,340px)_1fr]">
+        <nav className="mb-6 flex flex-wrap gap-2">
+          {(
+            [
+              { id: "estimativa", label: "Estimativa comercial" },
+              { id: "auditoria", label: "Auditoria pelos XMLs" },
+            ] as const
+          ).map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setAba(t.id)}
+              className={`rounded-md border px-4 py-2 text-sm font-semibold transition-colors ${
+                aba === t.id
+                  ? "border-navy bg-navy text-navy-foreground"
+                  : "border-input bg-card text-foreground hover:bg-secondary"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+
+        {aba === "auditoria" ? <AuditoriaXmlPanel casos={casos} /> : null}
+
+        <div
+          className={`grid gap-6 lg:grid-cols-[minmax(0,340px)_1fr] ${aba === "auditoria" ? "hidden" : ""}`}
+        >
+
           <section className="space-y-4 rounded-xl border border-border bg-card p-4">
             <Field label="Segmento de atuação" hint={segmentoAtual?.exemplos ?? ""}>
               <Select
