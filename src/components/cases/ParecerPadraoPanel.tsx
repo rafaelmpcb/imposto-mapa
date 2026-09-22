@@ -282,8 +282,23 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
                 Baixar PDF
               </Button>
               <Button onClick={() => void handleLink()} disabled={busy}>
-                {atual.share_enabled ? "Copiar link do relatório" : "Gerar link do relatório"}
+                Abrir relatório
               </Button>
+              {atual.share_enabled && atual.share_token ? (
+                <Button
+                  variant="ghost"
+                  disabled={busy}
+                  onClick={() => {
+                    const url = `${window.location.origin}/relatorio/${atual.share_token}`;
+                    void navigator.clipboard
+                      .writeText(url)
+                      .then(() => setMsg("Link do relatório copiado."))
+                      .catch(() => setMsg(`Link do relatório: ${url}`));
+                  }}
+                >
+                  Copiar link
+                </Button>
+              ) : null}
               <Button variant="ghost" onClick={() => setDashboard(true)}>
                 Dashboard executivo
               </Button>
