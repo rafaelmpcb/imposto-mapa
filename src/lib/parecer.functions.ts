@@ -425,6 +425,7 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
     precoServRes,
     precoAnoRes,
     contratosRes,
+    reequilibrioRes,
     carteiraRes,
   ] = await Promise.all([
     admin.from("cases").select("*").eq("id", caseId).maybeSingle(),
@@ -457,6 +458,7 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
     admin.from("nota_servico_nfse_item_prestado_preco").select("*").eq("case_id", caseId),
     admin.from("preco_necessario_projecao_anual").select("*").eq("case_id", caseId).order("ano"),
     admin.from("contrato_aluguel").select("*").eq("case_id", caseId).order("created_at"),
+    admin.from("contrato_reequilibrio").select("*").eq("case_id", caseId).order("created_at"),
     admin
       .from("composicao_carteira")
       .select("cnpj,nome,regime,tipo")
@@ -740,6 +742,62 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
 
   if (aluguelSnap) limitacoes.push(LIMITACOES.aluguel);
 
+  /* ---------- Submódulo: Gestão de contratos e reequilíbrio ---------- */
+  const reequilibrioRows = (reequilibrioRes.data ?? []) as Record<string, unknown>[];
+  const contratosReq = reequilibrioRows.map((row) => {
+    const res = (row["resultado_json"] ?? {}) as {
+      atual?: { precoContrato?: number; margemPrestador?: number; custoLiquidoContratante?: number };
+      semReequilibrio?: { margemPrestador?: number };
+      cenarioEscolhido?: string;
+      cenarios?: {
+        id?: string;
+        precoSugerido?: number;
+        variacaoPrecoPct?: number;
+        detalhe?: { custoLiquidoContratante?: number };
+      }[];
+    };
+    const escolhido =
+      res.cenarios?.find((c) => c.id === (res.cenarioEscolhido ?? row["cenario"])) ?? res.cenarios?.[2];
+    return {
+      titulo: String(row["titulo"] ?? "Contrato de prestação continuada"),
+      contraparte: (row["contraparte"] as string | null) ?? null,
+      papel: String(row["papel"] ?? "prestador"),
+      regime: String(row["regime_prestador"] ?? ""),
+      perfilContratante: String(row["perfil_contratante"] ?? ""),
+      cenario: String(res.cenarioEscolhido ?? row["cenario"] ?? ""),
+      status: String(row["status"] ?? "a_revisar"),
+      ano: num(row["ano_referencia"]),
+      precoAtual: num(res.atual?.precoContrato ?? row["preco_mensal_atual"]),
+      precoSugerido: num(escolhido?.precoSugerido),
+      variacaoPrecoPct: num(escolhido?.variacaoPrecoPct),
+      margemAtual: num(res.atual?.margemPrestador),
+      margemSemReequilibrio: num(res.semReequilibrio?.margemPrestador),
+      custoContratanteAtual: num(res.atual?.custoLiquidoContratante),
+      custoContratanteSugerido: num(escolhido?.detalhe?.custoLiquidoContratante),
+    };
+  });
+  const somaReq = (pick: (c: (typeof contratosReq)[number]) => number) =>
+    contratosReq.reduce((a, c) => a + pick(c), 0);
+  const reqAtual = somaReq((c) => c.precoAtual);
+  const reqSugerido = somaReq((c) => c.precoSugerido);
+  const reqMargemAtual = somaReq((c) => c.margemAtual);
+  const reqMargemSem = somaReq((c) => c.margemSemReequilibrio);
+  const contratosSnap =
+    contratosReq.length > 0
+      ? {
+          contratos: contratosReq,
+          totalAtual: reqAtual,
+          totalSugerido: reqSugerido,
+          variacaoPrecoPct: reqAtual > 0 ? ((reqSugerido - reqAtual) / reqAtual) * 100 : 0,
+          margemAtual: reqMargemAtual,
+          margemSemReequilibrio: reqMargemSem,
+          variacaoMargemPct:
+            reqMargemAtual > 0 ? ((reqMargemSem - reqMargemAtual) / reqMargemAtual) * 100 : 0,
+        }
+      : undefined;
+
+  if (contratosSnap) limitacoes.push(LIMITACOES.contratos);
+
   const snap: ParecerSnapshot = {
     geradoEm: new Date().toISOString(),
     sec1: {
@@ -804,6 +862,7 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
       resultadoLiquido: dreDoAno?.resultadoLiquido ?? null,
     },
     ...(aluguelSnap ? { secAluguel: aluguelSnap } : {}),
+    ...(contratosSnap ? { secContratos: contratosSnap } : {}),
     sec9: { sugestoes: {} },
     sec10: { limitacoes },
   };
@@ -821,6 +880,15 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
       1,
     )}% nos itens analisados.`;
   }
+  if (contratosSnap) {
+    sugestoes["contratual"] = `Renegociar ${contratosSnap.contratos.length} contrato(s) de prestação continuada: sem reequilíbrio, a margem do prestador varia ${contratosSnap.variacaoMargemPct.toFixed(
+      1,
+    )}% e o preço de equilíbrio soma ${contratosSnap.totalSugerido.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    })}.`;
+  }
+
   if (aluguelSnap) {
     sugestoes["juridico"] = `Revisar ${aluguelSnap.contratos.length} contrato(s) de locação: sem repactuação, o resultado do locador varia ${aluguelSnap.variacaoLiquidoPct.toFixed(
       1,
