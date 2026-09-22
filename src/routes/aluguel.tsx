@@ -205,7 +205,9 @@ function AluguelPage() {
   };
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
+    <main className="min-h-screen bg-background">
+      <SimuladorTabs active="/aluguel" />
+      <div className="mx-auto max-w-6xl px-4 py-8">
       <header className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-navy">
           Contratos e aluguéis
