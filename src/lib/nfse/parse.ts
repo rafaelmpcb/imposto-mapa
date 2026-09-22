@@ -139,6 +139,8 @@ export function parseNfseXml(xml: string, arquivo: string): NfseNota {
     razaoSocialPrestador: null,
     cnpjTomador: null,
     razaoSocialTomador: null,
+    codigoServico: null,
+    regimePrestador: null,
     valorTotal: 0,
     dataEmissao: null,
     status: "xml_invalido",
