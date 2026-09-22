@@ -127,6 +127,7 @@ export function parseServicos(root: Element, valorTotal: number): NfseServicoIte
       vCBS: gCbs ? num(findTag(gCbs, ["vCBS"])) : 0,
       vIBSUF: gUf ? num(findTag(gUf, ["vIBSUF"])) : 0,
       vIBSMun: gMun ? num(findTag(gMun, ["vIBSMun"])) : 0,
+      vISS: num(findTag(bloco, ["vISS", "ValorIss", "valorIss", "vISSQN"])),
     };
   });
 }
