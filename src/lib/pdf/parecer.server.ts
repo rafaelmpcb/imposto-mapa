@@ -20,6 +20,14 @@ const NAVY = rgb(0.086, 0.145, 0.247);
 const TEXT = rgb(0.12, 0.13, 0.15);
 const MUTED = rgb(0.42, 0.45, 0.5);
 const LINE = rgb(0.85, 0.87, 0.9);
+/* Paleta dos gráficos — mesma linguagem visual do relatório em tela. */
+const TRACK = rgb(0.93, 0.93, 0.96);
+const MINT = rgb(0.16, 0.71, 0.56);
+const LAVENDER = rgb(0.45, 0.42, 0.85);
+const MAGENTA = rgb(0.83, 0.26, 0.55);
+const SKY = rgb(0.22, 0.55, 0.85);
+const AMBER = rgb(0.92, 0.65, 0.19);
+
 
 function safe(text: string): string {
   return text
@@ -42,6 +50,16 @@ function money(value: number): string {
 function pct(value: number): string {
   return `${value.toFixed(1).replace(".", ",")}%`;
 }
+
+/** Valor curto para rótulo de gráfico: "R$ 1,2 mi", "R$ 320 mil". */
+function compact(value: number): string {
+  const abs = Math.abs(value);
+  const sign = value < 0 ? "-" : "";
+  if (abs >= 1_000_000) return `${sign}R$ ${(abs / 1_000_000).toFixed(1).replace(".", ",")} mi`;
+  if (abs >= 1_000) return `${sign}R$ ${Math.round(abs / 1_000)} mil`;
+  return `${sign}R$ ${Math.round(abs)}`;
+}
+
 
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return "-";
@@ -164,7 +182,7 @@ class Doc {
   }
 
   heading(numero: number, titulo: string): void {
-    this.ensure(46);
+    this.ensure(96);
     this.gap(10);
     this.text(`${numero}. ${titulo}`, { size: 13, bold: true, color: NAVY, after: 2 });
   }
@@ -185,10 +203,209 @@ class Doc {
     });
   }
 
+  /**
+   * Título curto de um gráfico. `reserva` garante que título e gráfico
+   * fiquem na mesma página (evita título órfão no pé da folha).
+   */
+  chartTitle(titulo: string, reserva = 150): void {
+    this.ensure(reserva + 26);
+    this.gap(6);
+    this.text(titulo, { size: 10, bold: true, color: NAVY });
+  }
+
+
+  /**
+   * Barras horizontais: rótulo à esquerda, barra proporcional ao maior valor
+   * e valor formatado à direita. Usa o módulo dos valores para o comprimento.
+   */
+  hBars(
+    items: { label: string; value: number; texto: string; color?: ReturnType<typeof rgb> }[],
+    opts: { labelWidth?: number } = {},
+  ): void {
+    if (items.length === 0) return;
+    const labelW = opts.labelWidth ?? 150;
+    const valueW = 92;
+    const trackW = CONTENT_WIDTH - labelW - valueW - 12;
+    const max = Math.max(...items.map((i) => Math.abs(i.value)), 1);
+    const barH = 11;
+    const step = barH + 7;
+    this.ensure(items.length * step + 10);
+    this.gap(6);
+    for (const item of items) {
+      this.ensure(step);
+      this.y -= step;
+      let label = safe(item.label);
+      while (label.length > 1 && this.regular.widthOfTextAtSize(label, 8.5) > labelW - 8) {
+        label = label.slice(0, -1);
+      }
+      this.page.drawText(label, {
+        x: MARGIN,
+        y: this.y + 2,
+        size: 8.5,
+        font: this.regular,
+        color: TEXT,
+      });
+      this.page.drawRectangle({
+        x: MARGIN + labelW,
+        y: this.y,
+        width: trackW,
+        height: barH,
+        color: TRACK,
+      });
+      const w = Math.max((Math.abs(item.value) / max) * trackW, item.value === 0 ? 0 : 2);
+      this.page.drawRectangle({
+        x: MARGIN + labelW,
+        y: this.y,
+        width: w,
+        height: barH,
+        color: item.color ?? NAVY,
+      });
+      const texto = safe(item.texto);
+      this.page.drawText(texto, {
+        x: MARGIN + CONTENT_WIDTH - this.bold.widthOfTextAtSize(texto, 8.5),
+        y: this.y + 2,
+        size: 8.5,
+        font: this.bold,
+        color: TEXT,
+      });
+    }
+    this.gap(4);
+  }
+
+  /**
+   * Colunas verticais agrupadas (até duas séries por categoria), com legenda.
+   * Serve para comparar "hoje" e "pós-reforma" ano a ano.
+   */
+  vBars(
+    categorias: { label: string; a: number; b?: number | undefined }[],
+    opts: { legendA: string; legendB?: string },
+  ): void {
+    if (categorias.length === 0) return;
+    const plotH = 96;
+    const blockH = plotH + 56;
+    this.ensure(blockH);
+    this.gap(6);
+    const baseY = this.y - plotH - 24;
+    const slot = CONTENT_WIDTH / categorias.length;
+    const hasB = opts.legendB != null;
+    const barW = Math.min(hasB ? 26 : 40, (slot - 16) / (hasB ? 2 : 1));
+    const values = categorias.flatMap((c) => [c.a, c.b ?? 0]);
+    const max = Math.max(...values.map(Math.abs), 1);
+
+    this.page.drawLine({
+      start: { x: MARGIN, y: baseY },
+      end: { x: MARGIN + CONTENT_WIDTH, y: baseY },
+      thickness: 0.8,
+      color: LINE,
+    });
+
+    categorias.forEach((c, i) => {
+      const center = MARGIN + slot * i + slot / 2;
+      const draw = (
+        value: number,
+        offset: number,
+        color: ReturnType<typeof rgb>,
+        lift: number,
+      ) => {
+        const h = Math.max((Math.abs(value) / max) * plotH, value === 0 ? 0 : 2);
+        const x = center + offset - barW / 2;
+        this.page.drawRectangle({ x, y: baseY, width: barW, height: h, color });
+        const txt = safe(compact(value));
+        const size = 7;
+        this.page.drawText(txt, {
+          x: x + barW / 2 - this.regular.widthOfTextAtSize(txt, size) / 2,
+          y: baseY + h + 4 + lift,
+          size,
+          font: this.regular,
+          color: MUTED,
+        });
+      };
+      if (hasB) {
+        draw(c.a, -(barW / 2 + 3), NAVY, 9);
+        draw(c.b ?? 0, barW / 2 + 3, MINT, 0);
+      } else {
+        draw(c.a, 0, NAVY, 0);
+      }
+      const label = safe(c.label);
+      this.page.drawText(label, {
+        x: center - this.regular.widthOfTextAtSize(label, 8) / 2,
+        y: baseY - 12,
+        size: 8,
+        font: this.regular,
+        color: TEXT,
+      });
+    });
+
+    this.y = baseY - 26;
+    this.legend(
+      hasB
+        ? [
+            { label: opts.legendA, color: NAVY },
+            { label: opts.legendB as string, color: MINT },
+          ]
+        : [{ label: opts.legendA, color: NAVY }],
+    );
+  }
+
+  /** Barra única 100% empilhada, com legenda de composição. */
+  stacked(parts: { label: string; value: number; color: ReturnType<typeof rgb> }[]): void {
+    const total = parts.reduce((s, p) => s + Math.max(p.value, 0), 0);
+    if (total <= 0) return;
+    const h = 20;
+    this.ensure(h + 34);
+    this.gap(8);
+    this.y -= h;
+    let x = MARGIN;
+    for (const p of parts) {
+      const w = (Math.max(p.value, 0) / total) * CONTENT_WIDTH;
+      if (w <= 0) continue;
+      this.page.drawRectangle({ x, y: this.y, width: w, height: h, color: p.color });
+      const share = `${Math.round((Math.max(p.value, 0) / total) * 100)}%`;
+      if (w > 26) {
+        this.page.drawText(share, {
+          x: x + w / 2 - this.bold.widthOfTextAtSize(share, 7.5) / 2,
+          y: this.y + 6,
+          size: 7.5,
+          font: this.bold,
+          color: rgb(1, 1, 1),
+        });
+      }
+      x += w;
+    }
+    this.gap(6);
+    this.legend(parts.map((p) => ({ label: p.label, color: p.color })));
+  }
+
+  /** Legenda horizontal com quadradinhos de cor. */
+  legend(items: { label: string; color: ReturnType<typeof rgb> }[]): void {
+    this.ensure(16);
+    this.y -= 12;
+    let x = MARGIN;
+    for (const item of items) {
+      const label = safe(item.label);
+      const w = this.regular.widthOfTextAtSize(label, 8) + 22;
+      if (x + w > MARGIN + CONTENT_WIDTH) {
+        this.y -= 12;
+        x = MARGIN;
+      }
+      this.page.drawRectangle({ x, y: this.y, width: 8, height: 8, color: item.color });
+      this.page.drawText(label, {
+        x: x + 12,
+        y: this.y,
+        size: 8,
+        font: this.regular,
+        color: MUTED,
+      });
+      x += w;
+    }
+    this.gap(6);
+  }
+
   async bytes(): Promise<Uint8Array> {
     return this.doc.save();
   }
 }
+
 
 export interface ParecerPdfPayload {
   snapshot: ParecerSnapshot;
@@ -305,9 +522,27 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
     if (s.sec4.concentracaoTopPct != null) {
       doc.text(`Maior fornecedor concentra ${pct(s.sec4.concentracaoTopPct)} do crédito apurado.`, { size: 10 });
     }
-    doc.gap(4);
     const w = [220, 110, 110, 60];
+    const topFornecedores = s.sec4.fornecedores.slice(0, 8);
+    if (topFornecedores.length > 0 && s.sec4.creditoTotal > 0) {
+      doc.chartTitle("Concentração do crédito por fornecedor", topFornecedores.length * 18 + 34);
+      doc.hBars(
+        topFornecedores.map((f, i) => ({
+          label: f.nome ?? f.cnpj ?? "-",
+          value: f.valorApurado,
+          texto: `${money(f.valorApurado)}  ·  ${pct((f.valorApurado / s.sec4.creditoTotal) * 100)}`,
+          color: i === 0 ? MAGENTA : LAVENDER,
+        })),
+        { labelWidth: 180 },
+      );
+      doc.legend([
+        { label: "Maior concentração", color: MAGENTA },
+        { label: "Demais fornecedores", color: LAVENDER },
+      ]);
+    }
+    doc.gap(4);
     doc.row(["Fornecedor", "Base", "Crédito", "Itens"], w, { bold: true });
+
     for (const f of s.sec4.fornecedores) {
       doc.row([f.nome ?? f.cnpj ?? "-", money(f.valorBase), money(f.valorApurado), String(f.itens)], w);
     }
@@ -339,18 +574,36 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
       { size: 10 },
     );
     const w = [180, 130, 130, 60];
+    if (s.sec5.porPerfil.length > 0) {
+      doc.chartTitle("Preço atual x preço necessário, por perfil de cliente");
+      doc.vBars(
+        s.sec5.porPerfil.map((p) => ({ label: p.perfil, a: p.valorAtual, b: p.precoNecessario })),
+        { legendA: "Praticado hoje", legendB: "Necessário na reforma" },
+      );
+    }
     doc.gap(4);
     doc.row(["Perfil do cliente", "Valor atual", "Preço necessário", "Itens"], w, { bold: true });
     for (const p of s.sec5.porPerfil) {
       doc.row([p.perfil, money(p.valorAtual), money(p.precoNecessario), String(p.itens)], w);
     }
     if (s.sec5.porAno.length > 0) {
+      doc.chartTitle("Repasse necessário ano a ano", s.sec5.porAno.length * 18 + 34);
+      doc.hBars(
+        s.sec5.porAno.map((a) => ({
+          label: String(a.ano),
+          value: a.precoNecessario,
+          texto: `${money(a.precoNecessario)}  ·  ${pct(a.variacaoPct)}`,
+          color: AMBER,
+        })),
+        { labelWidth: 70 },
+      );
       doc.gap(6);
       doc.row(["Ano", "Preço necessário", "Variação"], [80, 160, 120], { bold: true });
       for (const a of s.sec5.porAno) {
         doc.row([String(a.ano), money(a.precoNecessario), pct(a.variacaoPct)], [80, 160, 120]);
       }
     }
+
     doc.gap(4);
     doc.text("O preço necessário é piso técnico de neutralidade tributária, não recomendação comercial.", {
       size: 9,
@@ -364,8 +617,27 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
   if (s.sec6.linhas.length === 0) {
     doc.text("DRE ainda não gerada para este Caso (lacuna documentada).", { size: 10 });
   } else {
+    doc.chartTitle("Resultado líquido projetado por cenário");
+    doc.vBars(
+      s.sec6.linhas.slice(0, 8).map((l) => ({
+        label: `${l.ano} ${l.cenario}`,
+        a: l.resultadoLiquido ?? 0,
+      })),
+      { legendA: "Resultado líquido" },
+    );
+    const ultima = s.sec6.linhas[s.sec6.linhas.length - 1];
+    if (ultima) {
+      doc.chartTitle(`Para onde vai a receita — ${ultima.ano} (${ultima.cenario})`, 70);
+      doc.stacked([
+        { label: "Custo de aquisição", value: ultima.custo, color: LAVENDER },
+        { label: "Despesas operacionais", value: ultima.despesas, color: SKY },
+        { label: "IRPJ/CSLL", value: ultima.ircs ?? 0, color: MAGENTA },
+        { label: "Resultado líquido", value: Math.max(ultima.resultadoLiquido ?? 0, 0), color: MINT },
+      ]);
+    }
     const w = [55, 80, 90, 90, 80, 100];
     doc.row(["Ano", "Cenário", "Receita", "Custo", "IR/CS", "Resultado"], w, { bold: true });
+
     for (const l of s.sec6.linhas) {
       doc.row(
         [
@@ -406,12 +678,32 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
     if (s.sec7.resultadoLiquidoAno != null) {
       doc.text(`Resultado líquido projetado no ano: ${money(s.sec7.resultadoLiquidoAno)}`, { size: 10 });
     }
+    doc.chartTitle("Da venda bruta ao efeito líquido no caixa", 4 * 18 + 34);
+    doc.hBars(
+      [
+        { label: "Venda bruta do mês", value: s.sec7.vendasBrutas, texto: money(s.sec7.vendasBrutas), color: SKY },
+        { label: "IBS/CBS retido na origem", value: s.sec7.debitoRetido, texto: money(s.sec7.debitoRetido), color: MAGENTA },
+        {
+          label: "Crédito de compras",
+          value: s.sec7.creditoDisponivel,
+          texto: money(s.sec7.creditoDisponivel),
+          color: MINT,
+        },
+        { label: "Efeito líquido no caixa", value: s.sec7.debitoLiquido, texto: money(s.sec7.debitoLiquido), color: NAVY },
+      ],
+      { labelWidth: 165 },
+    );
     doc.gap(4);
     doc.text(
       "Mostrar apenas a retenção da venda, sem o crédito de compras, é uma meia-leitura: o efeito líquido é o número que orienta a decisão.",
       { size: 9, color: MUTED },
     );
     if (s.sec7.resumoAnual.length > 0) {
+      doc.chartTitle("Retenção e efeito líquido ano a ano");
+      doc.vBars(
+        s.sec7.resumoAnual.map((a) => ({ label: String(a.ano), a: a.retido, b: a.liquido })),
+        { legendA: "Retido na origem", legendB: "Efeito líquido" },
+      );
       doc.gap(6);
       const w = [70, 140, 140, 140];
       doc.row(["Ano", "Retido", "Crédito disponível", "Efeito líquido"], w, { bold: true });
@@ -419,6 +711,7 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
         doc.row([String(a.ano), money(a.retido), money(a.credito), money(a.liquido)], w);
       }
     }
+
   }
   analista(doc, e.sec7);
 
@@ -427,8 +720,28 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
   if (s.sec8.cenarios.length === 0) {
     doc.text("Comparativo de regimes indisponível (lacuna documentada).", { size: 10 });
   } else {
+    const comValor = s.sec8.cenarios.filter((c) => c.total != null);
+    if (comValor.length > 0) {
+      const menor = Math.min(...comValor.map((c) => c.total as number));
+      doc.chartTitle("Carga estimada por regime no ano projetado", comValor.length * 18 + 46);
+      doc.hBars(
+        comValor.map((c) => ({
+          label: `${c.label}${c.atual ? " (atual)" : ""}`,
+          value: c.total as number,
+          texto: `${money(c.total as number)}${(c.total as number) === menor ? "  ·  menor carga" : ""}`,
+          color: (c.total as number) === menor ? MINT : c.atual ? NAVY : LAVENDER,
+        })),
+        { labelWidth: 175 },
+      );
+      doc.legend([
+        { label: "Menor carga estimada", color: MINT },
+        { label: "Regime atual", color: NAVY },
+        { label: "Demais cenários", color: LAVENDER },
+      ]);
+    }
     const w = [220, 120, 90, 70];
     doc.row(["Regime", "Carga estimada", "Alíquota", "Atual"], w, { bold: true });
+
     for (const c of s.sec8.cenarios) {
       doc.row(
         [
