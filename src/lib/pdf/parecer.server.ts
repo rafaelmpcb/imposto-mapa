@@ -193,11 +193,16 @@ class Doc {
     });
   }
 
-  /** Título curto de um gráfico, com respiro acima. */
-  chartTitle(titulo: string): void {
+  /**
+   * Título curto de um gráfico. `reserva` garante que título e gráfico
+   * fiquem na mesma página (evita título órfão no pé da folha).
+   */
+  chartTitle(titulo: string, reserva = 150): void {
+    this.ensure(reserva + 26);
     this.gap(6);
     this.text(titulo, { size: 10, bold: true, color: NAVY });
   }
+
 
   /**
    * Barras horizontais: rótulo à esquerda, barra proporcional ao maior valor
