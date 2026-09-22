@@ -173,19 +173,41 @@ export function parseNfseXml(xml: string, arquivo: string): NfseNota {
 
   const cnpjPrestador = cnpjOf(prestScope);
   const itens = parseServicos(root, valorTotal);
+  const numero = text(findTag(root, ["nNFSe", "Numero", "nDPS"])) || null;
+
+  // Só é NFS-e Nacional quando o documento traz chave de acesso e número.
+  const nacional = Boolean(chave && numero);
 
   return {
     arquivo,
     chave,
-    numero: text(findTag(root, ["nNFSe", "Numero", "nDPS"])) || null,
+    numero,
     serie: text(findTag(root, ["serie", "Serie"])) || null,
     cnpjPrestador,
     razaoSocialPrestador: nomeOf(prestScope),
     cnpjTomador: cnpjOf(tomaScope),
     razaoSocialTomador: nomeOf(tomaScope),
+    codigoServico: itens.find((i) => i.nbs)?.nbs ?? itens.find((i) => i.itemLc116)?.itemLc116 ?? null,
+    regimePrestador: regimeDoDocumento(root),
     valorTotal: valorTotal || itens.reduce((acc, i) => acc + i.valorServico, 0),
     dataEmissao: toIso(emissao),
-    status: cnpjPrestador ? "ok" : "sem_cnpj",
+    status: !nacional ? "nao_e_nfse_nacional" : cnpjPrestador ? "ok" : "sem_cnpj",
     itens,
   };
+}
+
+/**
+ * Regime do prestador quando o próprio documento informa (equivalente ao CRT da NF-e).
+ * No leiaute nacional vem em regTrib/opSimpNac: 1 = não optante, 2 e 3 = Simples.
+ */
+function regimeDoDocumento(root: Element): "simples" | "regular" | null {
+  const nacionalNode = findTag(root, ["opSimpNac"]);
+  const nacionalVal = text(nacionalNode);
+  if (nacionalVal === "1") return "regular";
+  if (nacionalVal === "2" || nacionalVal === "3") return "simples";
+
+  const abrasf = text(findTag(root, ["OptanteSimplesNacional"]));
+  if (abrasf === "1") return "simples";
+  if (abrasf === "2") return "regular";
+  return null;
 }
