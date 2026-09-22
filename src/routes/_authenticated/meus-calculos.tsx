@@ -12,6 +12,9 @@ import { ParecerPadraoPanel } from "@/components/cases/ParecerPadraoPanel";
 import { DiagnosticoCompleto } from "@/components/cases/DiagnosticoCompleto";
 import { FunnelPanel } from "@/components/cases/FunnelPanel";
 import { StageSelect } from "@/components/cases/StageSelect";
+import { HubTabBar, type HubTabId } from "@/components/hub/HubTabs";
+import { ModuloEmBreve } from "@/components/hub/ModuloEmBreve";
+import { LocacaoHubPanel } from "@/components/hub/LocacaoHubPanel";
 import type { CnpjData } from "@/lib/cnpj/types";
 import {
   deleteCase,
@@ -79,6 +82,7 @@ function MyCalculations() {
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"kanban" | "funnel">("kanban");
+  const [tab, setTab] = useState<HubTabId>("casos");
   const [funnel, setFunnel] = useState<{ stages: StageStat[]; totalCases: number } | null>(null);
   const [openCaseId, setOpenCaseId] = useState<string | null>(null);
   const [busyCaseId, setBusyCaseId] = useState<string | null>(null);
