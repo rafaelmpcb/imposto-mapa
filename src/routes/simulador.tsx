@@ -26,6 +26,7 @@ import { ResultView } from "@/components/simulator/ResultView";
 import { OfficeContactCta } from "@/components/contact/OfficeContactCta";
 import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
 import { HelpButton } from "@/components/help/HelpPanel";
+import { SimuladorTabs } from "@/components/simulator/SimuladorTabs";
 import { lookupCnpj } from "@/lib/cnpj.functions";
 import type { CnpjData } from "@/lib/cnpj/types";
 import { slugifyWords, truncateWords } from "@/lib/text";
@@ -324,6 +325,8 @@ function Simulator() {
           </p>
         </div>
       </header> : null}
+
+      {!(step === 5 && presentationMode) ? <SimuladorTabs active="/simulador" /> : null}
 
       <div
         className={

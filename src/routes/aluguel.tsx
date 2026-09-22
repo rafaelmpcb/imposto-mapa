@@ -14,6 +14,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { SimuladorTabs } from "@/components/simulator/SimuladorTabs";
 import { Button, Field, MoneyInput, NumberInput, Notice, Select, TextInput } from "@/components/simulator/ui";
 import { withAuthRetry } from "@/lib/auth-retry";
 import { listCasosParaAluguel, salvarContratoAluguel } from "@/lib/aluguel.functions";
@@ -453,6 +454,7 @@ function AluguelPage() {
             {aviso ? <Notice>{aviso}</Notice> : null}
           </div>
         </section>
+      </div>
       </div>
     </main>
   );
