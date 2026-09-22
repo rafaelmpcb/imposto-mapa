@@ -141,6 +141,14 @@ export const saveNotasVenda = createServerFn({ method: "POST" })
       }
     }
 
+    if (notaIdsReprocessados.size > 0) {
+      const delItens = await supabaseAdmin
+        .from("nota_fiscal_venda_xml_item")
+        .delete()
+        .in("nota_fiscal_venda_xml_id", [...notaIdsReprocessados]);
+      if (delItens.error) throw new Error(delItens.error.message);
+    }
+
     if (itensPayload.length > 0) {
       const insItens = await supabaseAdmin
         .from("nota_fiscal_venda_xml_item")
