@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/simulator/ui";
 import {
   CaixaChart,
+  ComposicaoDonut,
   FornecedoresChart,
   PrecoChart,
   RegimesChart,
@@ -87,6 +88,15 @@ function Vazio({ children }: { children: React.ReactNode }) {
       {children}
     </p>
   );
+}
+
+function composicao(l: ParecerSnapshot["sec6"]["linhas"][number]) {
+  return [
+    { name: "Custo", valor: l.custo },
+    { name: "Despesas", valor: l.despesas },
+    { name: "IRPJ/CSLL", valor: l.ircs ?? 0 },
+    { name: "Resultado", valor: Math.max(l.resultadoLiquido ?? 0, 0) },
+  ];
 }
 
 export function ParecerDashboard({
