@@ -429,6 +429,10 @@ export function ParecerDashboard({
         </div>
       ) : null}
 
+      {modulo === "clientes" ? (
+        <ParecerClientes clientes={snapshot.sec5.clientes ?? []} />
+      ) : null}
+
       {modulo === "precos" ? (
         <ParecerPrecoVenda
           sec5={snapshot.sec5}
