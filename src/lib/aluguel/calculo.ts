@@ -202,7 +202,9 @@ export function aluguelSugerido(input: ContratoInput, ano: number, atual: Cenari
     return base * (1 + e);
   }
   const divisor = 1 + e * (1 - aprov);
-  return divisor > 0 ? atual.custoEfetivoLocatario / divisor : atual.valorContrato;
+  if (divisor <= 0) return atual.valorContrato;
+  const base = atual.custoEfetivoLocatario / divisor;
+  return base * (1 + e);
 }
 
 /** Cenário de hoje: sem IBS/CBS, com os tributos atuais do regime. */
