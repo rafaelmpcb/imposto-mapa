@@ -49,6 +49,44 @@ export type Database = {
           },
         ]
       }
+      case_documento_duplicado: {
+        Row: {
+          arquivo_original: string
+          case_id: string
+          chave_acesso: string | null
+          created_at: string
+          id: string
+          motivo: string
+          tipo_documento: string
+        }
+        Insert: {
+          arquivo_original: string
+          case_id: string
+          chave_acesso?: string | null
+          created_at?: string
+          id?: string
+          motivo?: string
+          tipo_documento: string
+        }
+        Update: {
+          arquivo_original?: string
+          case_id?: string
+          chave_acesso?: string | null
+          created_at?: string
+          id?: string
+          motivo?: string
+          tipo_documento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_documento_duplicado_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       case_documents: {
         Row: {
           case_id: string
@@ -1320,6 +1358,7 @@ export type Database = {
       vw_concentracao_compras_ncm: {
         Row: {
           case_id: string | null
+          cfop: string | null
           cnpj_contraparte: string | null
           codigo: string | null
           n_itens: number | null
@@ -1355,6 +1394,7 @@ export type Database = {
       vw_concentracao_vendas_ncm: {
         Row: {
           case_id: string | null
+          cfop: string | null
           cnpj_contraparte: string | null
           codigo: string | null
           n_itens: number | null
@@ -1372,6 +1412,19 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      vw_painel_carga: {
+        Row: {
+          case_id: string | null
+          duplicados: number | null
+          ignorados: number | null
+          manuais: number | null
+          nao_sao_notas: number | null
+          tipo_documento: string | null
+          total_recebido: number | null
+          validos: number | null
+        }
+        Relationships: []
       }
     }
     Functions: {
