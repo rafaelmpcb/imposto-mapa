@@ -175,6 +175,14 @@ export const saveNotasServico = createServerFn({ method: "POST" })
       }
     }
 
+    if (notaIdsReprocessados.size > 0) {
+      const delItens = await supabaseAdmin
+        .from(TABELA_ITEM[direcao] as "nota_servico_nfse_item")
+        .delete()
+        .in("nota_servico_id", [...notaIdsReprocessados]);
+      if (delItens.error) throw new Error(delItens.error.message);
+    }
+
     if (itensPayload.length > 0) {
       const ins = await supabaseAdmin
         .from(TABELA_ITEM[direcao] as "nota_servico_nfse_item")
