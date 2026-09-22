@@ -2,6 +2,14 @@ import { useMemo, useState } from "react";
 
 import { Button } from "@/components/simulator/ui";
 import {
+  CaixaChart,
+  FornecedoresChart,
+  PrecoChart,
+  RegimesChart,
+  ResultadoAnoChart,
+  TransicaoChart,
+} from "@/components/cases/ParecerCharts";
+import {
   AREAS_PLANO,
   ESCOPO_LABEL,
   type ParecerEdicoes,
@@ -56,15 +64,6 @@ function Numero({ valor, sub }: { valor: string; sub?: string | undefined }) {
     <div>
       <p className="font-presentation-display text-3xl leading-tight">{valor}</p>
       {sub ? <p className="mt-1 text-xs opacity-80">{sub}</p> : null}
-    </div>
-  );
-}
-
-function Barra({ valor, max }: { valor: number; max: number }) {
-  const w = max > 0 ? Math.max(2, Math.round((valor / max) * 100)) : 0;
-  return (
-    <div className="h-2 w-full rounded-full bg-secondary">
-      <div className="h-2 rounded-full bg-navy" style={{ width: `${w}%` }} />
     </div>
   );
 }
@@ -127,7 +126,6 @@ export function ParecerDashboard({
 
   const precoAno = snapshot.sec5.porAno.find((p) => p.ano === anoSel) ?? null;
   const caixaAno = snapshot.sec7.resumoAnual.find((r) => r.ano === anoSel) ?? null;
-  const maxFornecedor = Math.max(1, ...snapshot.sec4.fornecedores.map((f) => f.valorApurado));
 
   return (
     <section className="space-y-5 rounded-xl border border-border bg-background p-5">
@@ -225,6 +223,20 @@ export function ParecerDashboard({
             </Card>
           )}
 
+          <div className="grid gap-4 lg:grid-cols-2">
+            {dreAno.atual?.resultadoLiquido != null &&
+            dreAno.projetado?.resultadoLiquido != null ? (
+              <ResultadoAnoChart
+                atual={dreAno.atual.resultadoLiquido}
+                projetado={dreAno.projetado.resultadoLiquido}
+                ano={anoSel}
+              />
+            ) : null}
+            {snapshot.sec6.linhas.length > 0 ? (
+              <TransicaoChart linhas={snapshot.sec6.linhas} />
+            ) : null}
+          </div>
+
           <div className="grid gap-4 md:grid-cols-3">
             <Card titulo="Resultado atual">
               <Numero
@@ -291,6 +303,10 @@ export function ParecerDashboard({
 
       {modulo === "regimes" ? (
         <div className="space-y-4">
+          <RegimesChart
+            cenarios={snapshot.sec8.cenarios}
+            melhorLabel={melhorRegime?.label ?? null}
+          />
           {snapshot.sec8.cenarios.length === 0 ? (
             <Vazio>Sem comparação de regimes disponível para este Caso.</Vazio>
           ) : (
@@ -352,25 +368,11 @@ export function ParecerDashboard({
               />
             </Card>
           </div>
-          <Card titulo="Fornecedores por crédito apurado">
-            {snapshot.sec4.fornecedores.length === 0 ? (
-              <Vazio>Sem notas de compra processadas neste Caso.</Vazio>
-            ) : (
-              <ul className="space-y-3">
-                {snapshot.sec4.fornecedores.slice(0, 8).map((f) => (
-                  <li key={f.codigo} className="space-y-1">
-                    <div className="flex justify-between gap-3 text-sm">
-                      <span className="truncate text-foreground">
-                        {f.nome ?? f.cnpj ?? f.codigo}
-                      </span>
-                      <span className="text-muted-foreground">{brl(f.valorApurado)}</span>
-                    </div>
-                    <Barra valor={f.valorApurado} max={maxFornecedor} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+          {snapshot.sec4.fornecedores.length === 0 ? (
+            <Vazio>Sem notas de compra processadas neste Caso.</Vazio>
+          ) : (
+            <FornecedoresChart fornecedores={snapshot.sec4.fornecedores} />
+          )}
         </div>
       ) : null}
 
@@ -410,6 +412,7 @@ export function ParecerDashboard({
                   </ul>
                 )}
               </Card>
+              <PrecoChart porAno={snapshot.sec5.porAno} />
             </>
           )}
         </div>
@@ -438,6 +441,7 @@ export function ParecerDashboard({
                   />
                 </Card>
               </div>
+              <CaixaChart resumo={snapshot.sec7.resumoAnual} />
               <Card titulo={`Resumo anual${caixaAno ? ` · ${caixaAno.ano}` : ""}`}>
                 {snapshot.sec7.resumoAnual.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Sem série anual de caixa.</p>
