@@ -31,49 +31,52 @@ export const saveNotasCompra = createServerFn({ method: "POST" })
     // ON CONFLICT não é aceito: filtramos as chaves já gravadas manualmente.
     const { data: existentes } = await supabaseAdmin
       .from("nota_fiscal_compra_xml")
-      .select("chave_acesso")
+      .select("id,chave_acesso,arquivo_original")
       .eq("case_id", data.caseId);
-    const jaGravadas = new Set(
-      ((existentes ?? []) as { chave_acesso: string | null }[])
-        .map((r) => r.chave_acesso)
-        .filter((c): c is string => Boolean(c)),
-    );
-
-    const vistas = new Set<string>();
-    const payload = data.notas
-      .filter((n) => {
-        if (!n.chave) return true;
-        if (jaGravadas.has(n.chave) || vistas.has(n.chave)) return false;
-        vistas.add(n.chave);
-        return true;
-      })
-      .map((n) => ({
-        case_id: data.caseId,
-        arquivo_original: n.arquivo.slice(0, 200),
-        chave_acesso: n.chave,
-        numero_nota: n.numero,
-        serie: n.serie,
-        cnpj_emitente: n.cnpjEmitente,
-        razao_social_emitente: n.razaoSocialEmitente?.slice(0, 200) ?? null,
-        valor_total: n.valorTotal,
-        data_emissao: n.dataEmissao,
-        regime_emitente: n.regime,
-        status_processamento: n.status,
-      }));
-
-    if (payload.length === 0) return { ok: true as const, inserted: 0, itens: 0 };
-    const { data: inseridas, error } = await supabaseAdmin
-      .from("nota_fiscal_compra_xml")
-      .insert(payload as never)
-      .select("id,chave_acesso,arquivo_original");
-    if (error) throw new Error(error.message);
-
-    // --- itens da nota: crédito de IBS/CBS apurado item a item ---
-    const notasGravadas = (inseridas ?? []) as {
+    const existentesRows = (existentes ?? []) as {
       id: string;
       chave_acesso: string | null;
       arquivo_original: string;
     }[];
+    const jaGravadas = new Set(
+      existentesRows.map((r) => r.chave_acesso).filter((c): c is string => Boolean(c)),
+    );
+
+    const vistas = new Set<string>();
+    const novas = data.notas.filter((n) => {
+      if (!n.chave) return true;
+      if (jaGravadas.has(n.chave) || vistas.has(n.chave)) return false;
+      vistas.add(n.chave);
+      return true;
+    });
+    const payload = novas.map((n) => ({
+      case_id: data.caseId,
+      arquivo_original: n.arquivo.slice(0, 200),
+      chave_acesso: n.chave,
+      numero_nota: n.numero,
+      serie: n.serie,
+      cnpj_emitente: n.cnpjEmitente,
+      razao_social_emitente: n.razaoSocialEmitente?.slice(0, 200) ?? null,
+      valor_total: n.valorTotal,
+      data_emissao: n.dataEmissao,
+      regime_emitente: n.regime,
+      status_processamento: n.status,
+    }));
+
+    let inseridas: unknown[] = [];
+    if (payload.length > 0) {
+      const ins = await supabaseAdmin
+        .from("nota_fiscal_compra_xml")
+        .insert(payload as never)
+        .select("id,chave_acesso,arquivo_original");
+      if (ins.error) throw new Error(ins.error.message);
+      inseridas = ins.data ?? [];
+    }
+
+    // --- itens da nota: crédito de IBS/CBS apurado item a item ---
+    // Notas já gravadas antes (inclusive antes do recurso item a item existir)
+    // também são reprocessadas: os itens antigos são substituídos.
+    const notasGravadas = [...existentesRows, ...(inseridas as typeof existentesRows)];
     const idPorChave = new Map<string, string>();
     const idPorArquivo = new Map<string, string>();
     for (const n of notasGravadas) {
