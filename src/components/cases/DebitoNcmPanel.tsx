@@ -296,7 +296,7 @@ export function DebitoNcmPanel({ caseId }: { caseId: string }) {
       </div>
 
       {error ? <Notice tone="warning">{error}</Notice> : null}
-      {aviso ? <Notice tone="info">{aviso}</Notice> : null}
+      {aviso ? <Notice tone="muted">{aviso}</Notice> : null}
 
       {fila.length > 0 ? (
         <div className="space-y-2">
