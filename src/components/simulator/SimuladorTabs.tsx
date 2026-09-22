@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
 
 const TABS = [
   { to: "/simulador", label: "Empresas e salários (IBS/CBS)" },
