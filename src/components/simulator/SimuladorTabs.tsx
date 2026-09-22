@@ -3,10 +3,15 @@ import { Link } from "@tanstack/react-router";
 const TABS = [
   { to: "/simulador", label: "Empresas e salários (IBS/CBS)" },
   { to: "/aluguel", label: "Locação e contratos" },
+  { to: "/capex", label: "Planejamento de CAPEX" },
 ] as const;
 
 /** Abas de navegação entre as calculadoras públicas. */
-export function SimuladorTabs({ active }: { active: "/simulador" | "/aluguel" }) {
+export function SimuladorTabs({
+  active,
+}: {
+  active: "/simulador" | "/aluguel" | "/capex";
+}) {
   return (
     <nav className="mx-auto max-w-6xl px-5">
       <div className="flex gap-1 overflow-x-auto border-b border-border">
