@@ -582,7 +582,7 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
       doc.chartTitle("Preço atual x preço necessário, por perfil de cliente");
       doc.vBars(
         s.sec5.porPerfil.map((p) => ({ label: p.perfil, a: p.valorAtual, b: p.precoNecessario })),
-        { legendA: "Praticado hoje", legendB: "Necessário na reforma", fmt: (v) => money(v) },
+        { legendA: "Praticado hoje", legendB: "Necessário na reforma" },
       );
     }
     doc.gap(4);
@@ -627,7 +627,7 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
         label: `${l.ano} ${l.cenario}`,
         a: l.resultadoLiquido ?? 0,
       })),
-      { legendA: "Resultado líquido", fmt: (v) => money(v) },
+      { legendA: "Resultado líquido" },
     );
     const ultima = s.sec6.linhas[s.sec6.linhas.length - 1];
     if (ultima) {
@@ -706,7 +706,7 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
       doc.chartTitle("Retenção e efeito líquido ano a ano");
       doc.vBars(
         s.sec7.resumoAnual.map((a) => ({ label: String(a.ano), a: a.retido, b: a.liquido })),
-        { legendA: "Retido na origem", legendB: "Efeito líquido", fmt: (v) => money(v) },
+        { legendA: "Retido na origem", legendB: "Efeito líquido" },
       );
       doc.gap(6);
       const w = [70, 140, 140, 140];
