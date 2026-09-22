@@ -520,11 +520,13 @@ export type Database = {
       }
       nota_servico_nfse: {
         Row: {
+          aplicado_composicao_carteira: boolean
           arquivo_original: string
           case_id: string
           chave_acesso: string | null
           cnpj_prestador: string | null
           cnpj_tomador: string | null
+          codigo_servico: string | null
           created_at: string
           data_emissao: string | null
           direcao: string
@@ -532,17 +534,20 @@ export type Database = {
           numero_nota: string | null
           razao_social_prestador: string | null
           razao_social_tomador: string | null
+          regime_prestador: string | null
           serie: string | null
           status_processamento: string
           updated_at: string
           valor_total: number
         }
         Insert: {
+          aplicado_composicao_carteira?: boolean
           arquivo_original?: string
           case_id: string
           chave_acesso?: string | null
           cnpj_prestador?: string | null
           cnpj_tomador?: string | null
+          codigo_servico?: string | null
           created_at?: string
           data_emissao?: string | null
           direcao?: string
@@ -550,17 +555,20 @@ export type Database = {
           numero_nota?: string | null
           razao_social_prestador?: string | null
           razao_social_tomador?: string | null
+          regime_prestador?: string | null
           serie?: string | null
           status_processamento?: string
           updated_at?: string
           valor_total?: number
         }
         Update: {
+          aplicado_composicao_carteira?: boolean
           arquivo_original?: string
           case_id?: string
           chave_acesso?: string | null
           cnpj_prestador?: string | null
           cnpj_tomador?: string | null
+          codigo_servico?: string | null
           created_at?: string
           data_emissao?: string | null
           direcao?: string
@@ -568,6 +576,7 @@ export type Database = {
           numero_nota?: string | null
           razao_social_prestador?: string | null
           razao_social_tomador?: string | null
+          regime_prestador?: string | null
           serie?: string | null
           status_processamento?: string
           updated_at?: string

@@ -67,6 +67,8 @@ export const saveNotasServico = createServerFn({ method: "POST" })
       razao_social_prestador: n.razaoSocialPrestador?.slice(0, 200) ?? null,
       cnpj_tomador: n.cnpjTomador,
       razao_social_tomador: n.razaoSocialTomador?.slice(0, 200) ?? null,
+      codigo_servico: n.codigoServico,
+      regime_prestador: n.regimePrestador,
       direcao,
       valor_total: n.valorTotal,
       data_emissao: n.dataEmissao,
@@ -363,4 +365,153 @@ export const resolverServicoAmbiguo = createServerFn({ method: "POST" })
       .eq("id", data.itemId);
     if (error) throw new Error(error.message);
     return { ok: true as const, credito: apurado };
+  });
+
+/* ------------------------------------------------------------------ *
+ * Composição de carteira a partir das NFS-e Nacionais
+ * ------------------------------------------------------------------ */
+
+export const FONTE_NFSE_DOCUMENTO = "NFS-e Nacional — regime do prestador (documento)";
+export const FONTE_NFSE_PRESTADOR_BRASILAPI = "NFS-e Nacional (prestador) — BrasilAPI";
+export const FONTE_NFSE_PRESTADOR_CNPJA = "NFS-e Nacional (prestador) — CNPJá (reserva)";
+export const FONTE_NFSE_TOMADOR_BRASILAPI = "NFS-e Nacional (tomador) — BrasilAPI";
+export const FONTE_NFSE_TOMADOR_CNPJA = "NFS-e Nacional (tomador) — CNPJá (reserva)";
+
+/** Classifica o regime das contrapartes de serviço (BrasilAPI, com CNPJá de reserva). */
+export const classifyContrapartesServico = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { cnpjs: string[]; lado: DirecaoServico }) => input)
+  .handler(async ({ data }) => {
+    const { classifyMany, FONTE_BRASILAPI } = await import("@/lib/carteira/classify.server");
+    const results = await classifyMany(data.cnpjs.slice(0, 12), {
+      concurrency: 4,
+      maxFallback: 4,
+    });
+    const viaBrasilApi =
+      data.lado === "tomado" ? FONTE_NFSE_PRESTADOR_BRASILAPI : FONTE_NFSE_TOMADOR_BRASILAPI;
+    const viaCnpja =
+      data.lado === "tomado" ? FONTE_NFSE_PRESTADOR_CNPJA : FONTE_NFSE_TOMADOR_CNPJA;
+    return {
+      ok: true as const,
+      results: results.map((r) => ({
+        cnpj: r.cnpj,
+        regime: r.regime,
+        status: r.status,
+        fonte: r.regime === "erro" ? "" : r.fonte === FONTE_BRASILAPI ? viaBrasilApi : viaCnpja,
+      })),
+    };
+  });
+
+/** CNPJs já existentes na composição, por tipo (para avisar antes de gravar). */
+export const getContrapartesExistentes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { caseId: string; tipo: "cliente" | "fornecedor" }) => input)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows } = await supabaseAdmin
+      .from("composicao_carteira")
+      .select("cnpj")
+      .eq("case_id", data.caseId)
+      .eq("tipo", data.tipo);
+    return { ok: true as const, cnpjs: ((rows ?? []) as { cnpj: string }[]).map((r) => r.cnpj) };
+  });
+
+/** Grava na composição de carteira as contrapartes conferidas vindas de NFS-e. */
+export const applyNotasServico = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      caseId: string;
+      tipo: "cliente" | "fornecedor";
+      rows: {
+        cnpj: string;
+        nome: string;
+        valor: number;
+        regime: "simples" | "regular" | "erro";
+        fonte: string;
+      }[];
+      substituir: boolean;
+    }) => input,
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.rows.length === 0) return { ok: true as const, inserted: 0, ignorados: 0 };
+    const cnpjs = data.rows.map((r) => r.cnpj);
+
+    const existing = await supabaseAdmin
+      .from("composicao_carteira")
+      .select("id,cnpj")
+      .eq("case_id", data.caseId)
+      .eq("tipo", data.tipo)
+      .in("cnpj", cnpjs);
+    const existentes = new Set(((existing.data ?? []) as { cnpj: string }[]).map((r) => r.cnpj));
+
+    if (data.substituir && existentes.size > 0) {
+      await supabaseAdmin
+        .from("composicao_carteira")
+        .delete()
+        .eq("case_id", data.caseId)
+        .eq("tipo", data.tipo)
+        .in("cnpj", [...existentes]);
+    }
+
+    const processadoEm = new Date().toISOString();
+    const payload = data.rows
+      .filter((r) => data.substituir || !existentes.has(r.cnpj))
+      .map((r) => ({
+        case_id: data.caseId,
+        nome: r.nome.slice(0, 200),
+        cnpj: r.cnpj,
+        tipo: data.tipo,
+        valor_movimentado: r.valor,
+        regime: r.regime === "erro" ? ("pendente" as const) : r.regime,
+        status_consulta: r.regime === "erro" ? ("pendente" as const) : ("ok" as const),
+        fonte_classificacao: r.fonte || FONTE_NFSE_DOCUMENTO,
+        data_classificacao: processadoEm,
+      }));
+
+    if (payload.length > 0) {
+      const ins = await supabaseAdmin.from("composicao_carteira").insert(payload as never);
+      if (ins.error) throw new Error(ins.error.message);
+    }
+
+    // recalcula os percentuais por tipo
+    const { data: allRows } = await supabaseAdmin
+      .from("composicao_carteira")
+      .select("id,tipo,valor_movimentado")
+      .eq("case_id", data.caseId);
+    const rows = (allRows ?? []) as { id: string; tipo: string; valor_movimentado: number }[];
+    const totals = new Map<string, number>();
+    for (const r of rows) {
+      totals.set(r.tipo, (totals.get(r.tipo) ?? 0) + Number(r.valor_movimentado));
+    }
+    await Promise.all(
+      rows.map((r) => {
+        const total = totals.get(r.tipo) ?? 0;
+        const pct = total > 0 ? (Number(r.valor_movimentado) / total) * 100 : 0;
+        return supabaseAdmin
+          .from("composicao_carteira")
+          .update({ percentual_carteira: Math.round(pct * 10000) / 10000 } as never)
+          .eq("id", r.id);
+      }),
+    );
+
+    await supabaseAdmin
+      .from("case_diagnostic_docs")
+      .upsert(
+        { case_id: data.caseId, doc_key: "composicao_carteira", status: "processado" } as never,
+        { onConflict: "case_id,doc_key" },
+      );
+
+    await supabaseAdmin
+      .from("nota_servico_nfse")
+      .update({ aplicado_composicao_carteira: true } as never)
+      .eq("case_id", data.caseId)
+      .eq("direcao", data.tipo === "fornecedor" ? "tomado" : "prestado");
+
+    return {
+      ok: true as const,
+      inserted: payload.length,
+      ignorados: data.rows.length - payload.length,
+    };
   });

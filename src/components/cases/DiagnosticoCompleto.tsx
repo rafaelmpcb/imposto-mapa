@@ -6,6 +6,7 @@ import { Button, Notice } from "@/components/simulator/ui";
 import { CarteiraResult } from "@/components/cases/CarteiraResult";
 import { PgdasdPanel } from "@/components/cases/PgdasdPanel";
 import { NfeUnificadoPanel } from "@/components/cases/NfeUnificadoPanel";
+import { NfseCarteiraPanel } from "@/components/cases/NfseCarteiraPanel";
 import { CreditoNcmPanel } from "@/components/cases/CreditoNcmPanel";
 import { NfseServicoPanel } from "@/components/cases/NfseServicoPanel";
 import { CreditoNbsPanel } from "@/components/cases/CreditoNbsPanel";
@@ -592,6 +593,13 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
                         caseId={caseItem.id}
                         caseCnpj={caseItem.cnpj}
                         onApplied={refresh}
+                      />
+                      <NfseCarteiraPanel
+                        caseId={caseItem.id}
+                        onApplied={async () => {
+                          await refresh();
+                          setNbsReload((v) => v + 1);
+                        }}
                       />
                     </>
                   ) : null}
