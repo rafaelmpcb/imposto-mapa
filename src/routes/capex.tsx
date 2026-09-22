@@ -236,12 +236,35 @@ function CapexPage() {
               </Select>
             </Field>
 
-            <Field label="Custo de oportunidade do capital (% ao ano)">
+            <Field
+              label="Custo de oportunidade do capital (% ao ano)"
+              hint="Quanto o dinheiro renderia em outra aplicação — geralmente a Selic/CDI, o custo do financiamento usado na compra ou a taxa interna exigida pelo sócio."
+            >
               <NumberInput
                 value={custoOportunidade}
                 onChange={setCustoOportunidade}
                 suffix="% a.a."
               />
+              <span className="mt-2 flex flex-wrap gap-2">
+                {[
+                  { label: "Selic/CDI (~10,5%)", valor: 10.5 },
+                  { label: "Financiamento (~12%)", valor: 12 },
+                  { label: "Retorno do sócio (~15%)", valor: 15 },
+                ].map((a) => (
+                  <button
+                    key={a.valor}
+                    type="button"
+                    onClick={() => setCustoOportunidade(a.valor)}
+                    className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                      custoOportunidade === a.valor
+                        ? "border-navy bg-navy text-navy-foreground"
+                        : "border-input bg-card text-muted-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    {a.label}
+                  </button>
+                ))}
+              </span>
             </Field>
 
             <button
@@ -262,9 +285,29 @@ function CapexPage() {
                 </Field>
                 <Field
                   label="Fator CIAP — saídas tributadas (%)"
-                  hint="Proporção das saídas que autoriza o crédito mensal do ICMS."
+                  hint="Percentual das vendas tributadas sobre o total das vendas (Lei Kandir, art. 20). Se tudo o que a empresa vende paga ICMS, é 100%; se há isentas/exportação, é a proporção encontrada no livro de apuração ou com a contabilidade."
                 >
                   <NumberInput value={ciap} onChange={setCiap} suffix="%" max={100} />
+                  <span className="mt-2 flex flex-wrap gap-2">
+                    {[
+                      { label: "Integral (100%)", valor: 100 },
+                      { label: "Misto (80%)", valor: 80 },
+                      { label: "Maioria isenta (50%)", valor: 50 },
+                    ].map((a) => (
+                      <button
+                        key={a.valor}
+                        type="button"
+                        onClick={() => setCiap(a.valor)}
+                        className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                          ciap === a.valor
+                            ? "border-navy bg-navy text-navy-foreground"
+                            : "border-input bg-card text-muted-foreground hover:bg-secondary"
+                        }`}
+                      >
+                        {a.label}
+                      </button>
+                    ))}
+                  </span>
                 </Field>
                 <Field label="Alíquota plena de IBS/CBS (%)">
                   <NumberInput value={aliquotaPlena} onChange={setAliquotaPlena} suffix="%" />
