@@ -5,7 +5,6 @@ import {
   CaixaChart,
   ComposicaoDonut,
   FornecedoresChart,
-  FornecedoresChart2Placeholder_REMOVE,
   RegimesChart,
   ResultadoAnoChart,
   TransicaoChart,
