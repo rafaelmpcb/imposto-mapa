@@ -9,6 +9,8 @@ import {
   CartesianGrid,
   Cell,
   Legend,
+  Pie,
+  PieChart,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -278,7 +280,7 @@ export function ComposicaoDonut({
           outerRadius="85%"
           paddingAngle={2}
           stroke="none"
-committed        >
+        >
           {data.map((d, i) => (
             <Cell key={d.name} fill={PALETA[i % PALETA.length]} />
           ))}
