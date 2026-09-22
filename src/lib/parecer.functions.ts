@@ -210,7 +210,18 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
     n.pendentes += num(r["n_itens_pendentes"]);
     porNcm.set(codigo, n);
   }
-  const fornecedores = [...porFornecedor.values()].sort((a, b) => b.valorApurado - a.valorApurado).slice(0, 10);
+  const regimePorCnpj = new Map<string, string>();
+  for (const r of ((carteiraRes.data ?? []) as Record<string, unknown>[])) {
+    const c = String(r["cnpj"] ?? "").replace(/\D/g, "");
+    if (c) regimePorCnpj.set(c, String(r["regime"] ?? "pendente"));
+  }
+  const fornecedores = [...porFornecedor.values()]
+    .map((f) => ({
+      ...f,
+      regime: f.cnpj ? (regimePorCnpj.get(String(f.cnpj).replace(/\D/g, "")) ?? null) : null,
+    }))
+    .sort((a, b) => b.valorBase - a.valorBase)
+    .slice(0, 50);
   const ncms = [...porNcm.values()].sort((a, b) => b.valorApurado - a.valorApurado).slice(0, 10);
   const creditoTotal = comprasRows.reduce((a, r) => a + num(r["valor_apurado_total"]), 0);
   const baseTotal = comprasRows.reduce((a, r) => a + num(r["valor_base_total"]), 0);
