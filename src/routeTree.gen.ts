@@ -17,6 +17,7 @@ import { Route as AuthenticatedConfigAliquotasRouteImport } from './routes/_auth
 import { Route as AuthenticatedMeusCalculosRouteImport } from './routes/_authenticated/meus-calculos'
 import { Route as AuthenticatedParametrosRouteImport } from './routes/_authenticated/parametros'
 import { Route as STokenRouteImport } from './routes/s.$token'
+import { Route as ApiPublicParecerPdfRouteImport } from './routes/api/public/parecer-pdf'
 import { Route as ApiPublicRelatorioPdfRouteImport } from './routes/api/public/relatorio-pdf'
 
 const IndexRoute = IndexRouteImport.update({
@@ -60,6 +61,11 @@ const STokenRoute = STokenRouteImport.update({
   path: '/s/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicParecerPdfRoute = ApiPublicParecerPdfRouteImport.update({
+  id: '/api/public/parecer-pdf',
+  path: '/api/public/parecer-pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicRelatorioPdfRoute = ApiPublicRelatorioPdfRouteImport.update({
   id: '/api/public/relatorio-pdf',
   path: '/api/public/relatorio-pdf',
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/meus-calculos': typeof AuthenticatedMeusCalculosRoute
   '/parametros': typeof AuthenticatedParametrosRoute
   '/s/$token': typeof STokenRoute
+  '/api/public/parecer-pdf': typeof ApiPublicParecerPdfRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
 }
 export interface FileRoutesByTo {
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/meus-calculos': typeof AuthenticatedMeusCalculosRoute
   '/parametros': typeof AuthenticatedParametrosRoute
   '/s/$token': typeof STokenRoute
+  '/api/public/parecer-pdf': typeof ApiPublicParecerPdfRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
 }
 export interface FileRoutesById {
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/_authenticated/meus-calculos': typeof AuthenticatedMeusCalculosRoute
   '/_authenticated/parametros': typeof AuthenticatedParametrosRoute
   '/s/$token': typeof STokenRoute
+  '/api/public/parecer-pdf': typeof ApiPublicParecerPdfRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
 }
 export interface FileRouteTypes {
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/meus-calculos'
     | '/parametros'
     | '/s/$token'
+    | '/api/public/parecer-pdf'
     | '/api/public/relatorio-pdf'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/meus-calculos'
     | '/parametros'
     | '/s/$token'
+    | '/api/public/parecer-pdf'
     | '/api/public/relatorio-pdf'
   id:
     | '__root__'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/_authenticated/meus-calculos'
     | '/_authenticated/parametros'
     | '/s/$token'
+    | '/api/public/parecer-pdf'
     | '/api/public/relatorio-pdf'
   fileRoutesById: FileRoutesById
 }
@@ -138,6 +150,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   SimuladorRoute: typeof SimuladorRoute
   STokenRoute: typeof STokenRoute
+  ApiPublicParecerPdfRoute: typeof ApiPublicParecerPdfRoute
   ApiPublicRelatorioPdfRoute: typeof ApiPublicRelatorioPdfRoute
 }
 
@@ -199,6 +212,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof STokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/parecer-pdf': {
+      id: '/api/public/parecer-pdf'
+      path: '/api/public/parecer-pdf'
+      fullPath: '/api/public/parecer-pdf'
+      preLoaderRoute: typeof ApiPublicParecerPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/relatorio-pdf': {
       id: '/api/public/relatorio-pdf'
       path: '/api/public/relatorio-pdf'
@@ -230,6 +250,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   SimuladorRoute: SimuladorRoute,
   STokenRoute: STokenRoute,
+  ApiPublicParecerPdfRoute: ApiPublicParecerPdfRoute,
   ApiPublicRelatorioPdfRoute: ApiPublicRelatorioPdfRoute,
 }
 export const routeTree = rootRouteImport
