@@ -233,6 +233,20 @@ export function ParecerDashboard({
             </Card>
           )}
 
+          <div className="grid gap-4 lg:grid-cols-2">
+            {dreAno.atual?.resultadoLiquido != null &&
+            dreAno.projetado?.resultadoLiquido != null ? (
+              <ResultadoAnoChart
+                atual={dreAno.atual.resultadoLiquido}
+                projetado={dreAno.projetado.resultadoLiquido}
+                ano={anoSel}
+              />
+            ) : null}
+            {snapshot.sec6.linhas.length > 0 ? (
+              <TransicaoChart linhas={snapshot.sec6.linhas} />
+            ) : null}
+          </div>
+
           <div className="grid gap-4 md:grid-cols-3">
             <Card titulo="Resultado atual">
               <Numero
