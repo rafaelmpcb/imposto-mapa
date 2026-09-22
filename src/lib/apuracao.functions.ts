@@ -65,18 +65,38 @@ export const getApuracaoLiquida = createServerFn({ method: "POST" })
       status: String(i["status_classificacao"] ?? "sem_dado"),
     }));
 
-    // Mercadorias vendidas: o XML de venda é lido só no cabeçalho, então o débito
-    // entra por estimativa (alíquota nominal do ano sobre o valor total da nota).
-    const debitoMercadorias: ItemApurado[] = asRows(vendas)
-      .filter((n) => String(n["status_processamento"] ?? "ok") === "ok")
-      .map((n) => {
-        const valor = Number(n["valor_total"] ?? 0);
-        return {
-          valorBase: valor,
-          valorTributo: debitoEstimadoMercadorias(valor),
-          status: "ok",
-        };
+    // Mercadorias vendidas: quando a nota tem itens apurados (NCM/item), o débito
+    // vem da soma desses itens; notas sem nenhum item processado caem na
+    // estimativa por alíquota nominal sobre o valor total do cabeçalho.
+    const itensPorNota = new Map<string, ItemApurado[]>();
+    for (const i of asRows(vendaItens)) {
+      const notaId = String(i["nota_fiscal_venda_xml_id"] ?? "");
+      const list = itensPorNota.get(notaId) ?? [];
+      list.push({
+        valorBase: Number(i["valor_item"] ?? 0),
+        valorTributo: Number(i["valor_debito_ibs_cbs"] ?? 0),
+        status: String(i["status_classificacao"] ?? "sem_dado"),
       });
+      itensPorNota.set(notaId, list);
+    }
+
+    const debitoMercadorias: ItemApurado[] = [];
+    let algumaEstimativa = false;
+    for (const n of asRows(vendas)) {
+      if (String(n["status_processamento"] ?? "ok") !== "ok") continue;
+      const itens = itensPorNota.get(String(n["id"] ?? ""));
+      if (itens && itens.length > 0) {
+        debitoMercadorias.push(...itens);
+        continue;
+      }
+      const valor = Number(n["valor_total"] ?? 0);
+      algumaEstimativa = true;
+      debitoMercadorias.push({
+        valorBase: valor,
+        valorTributo: debitoEstimadoMercadorias(valor),
+        status: "ok",
+      });
+    }
 
     return {
       ok: true as const,
@@ -86,7 +106,8 @@ export const getApuracaoLiquida = createServerFn({ method: "POST" })
         debitoMercadorias,
         creditoServicos,
         creditoMercadorias,
-        mercadoriasEstimadas: true,
+        mercadoriasEstimadas: algumaEstimativa,
       }),
     };
+
   });
