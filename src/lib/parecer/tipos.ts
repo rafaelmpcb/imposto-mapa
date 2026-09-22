@@ -148,7 +148,7 @@ export interface FornecedorDetalheSnap {
   chave: string;
   cnpj: string | null;
   nome: string | null;
-  regime?: string | null;
+  regime: string | null;
   valorBase: number;
   credito: number;
   itens: number;
