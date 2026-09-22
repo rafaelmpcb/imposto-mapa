@@ -1083,7 +1083,62 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      vw_concentracao_compras_ncm: {
+        Row: {
+          case_id: string | null
+          cnpj_contraparte: string | null
+          codigo: string | null
+          n_itens: number | null
+          n_itens_pendentes: number | null
+          nome_contraparte: string | null
+          valor_apurado_total: number | null
+          valor_base_total: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nota_fiscal_compra_xml_item_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vw_concentracao_servicos_nbs: {
+        Row: {
+          case_id: string | null
+          cnpj_contraparte: string | null
+          codigo: string | null
+          direcao: string | null
+          n_itens: number | null
+          n_itens_pendentes: number | null
+          nome_contraparte: string | null
+          valor_apurado_total: number | null
+          valor_base_total: number | null
+        }
+        Relationships: []
+      }
+      vw_concentracao_vendas_ncm: {
+        Row: {
+          case_id: string | null
+          cnpj_contraparte: string | null
+          codigo: string | null
+          n_itens: number | null
+          n_itens_pendentes: number | null
+          nome_contraparte: string | null
+          valor_apurado_total: number | null
+          valor_base_total: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nota_fiscal_venda_xml_item_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never
