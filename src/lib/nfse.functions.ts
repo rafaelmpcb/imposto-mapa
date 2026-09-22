@@ -40,12 +40,16 @@ export const saveNotasServico = createServerFn({ method: "POST" })
 
     const { data: existentes } = await supabaseAdmin
       .from("nota_servico_nfse")
-      .select("chave_acesso")
+      .select("id,chave_acesso,arquivo_original,direcao")
       .eq("case_id", data.caseId);
+    const existentesRows = (existentes ?? []) as {
+      id: string;
+      chave_acesso: string | null;
+      arquivo_original: string;
+      direcao: string;
+    }[];
     const jaGravadas = new Set(
-      ((existentes ?? []) as { chave_acesso: string | null }[])
-        .map((r) => r.chave_acesso)
-        .filter((c): c is string => Boolean(c)),
+      existentesRows.map((r) => r.chave_acesso).filter((c): c is string => Boolean(c)),
     );
 
     const vistas = new Set<string>();
@@ -55,7 +59,6 @@ export const saveNotasServico = createServerFn({ method: "POST" })
       vistas.add(n.chave);
       return true;
     });
-    if (notas.length === 0) return { ok: true as const, inserted: 0, itens: 0 };
 
     const payload = notas.map((n) => ({
       case_id: data.caseId,
@@ -75,17 +78,21 @@ export const saveNotasServico = createServerFn({ method: "POST" })
       status_processamento: n.status,
     }));
 
-    const { data: inseridas, error } = await supabaseAdmin
-      .from("nota_servico_nfse")
-      .insert(payload as never)
-      .select("id,chave_acesso,arquivo_original");
-    if (error) throw new Error(error.message);
+    let inseridas: unknown[] = [];
+    if (payload.length > 0) {
+      const ins = await supabaseAdmin
+        .from("nota_servico_nfse")
+        .insert(payload as never)
+        .select("id,chave_acesso,arquivo_original");
+      if (ins.error) throw new Error(ins.error.message);
+      inseridas = ins.data ?? [];
+    }
 
-    const gravadas = (inseridas ?? []) as {
-      id: string;
-      chave_acesso: string | null;
-      arquivo_original: string;
-    }[];
+    // Notas já gravadas na mesma direção também são reprocessadas em reenvios.
+    const gravadas = [
+      ...existentesRows.filter((n) => n.direcao === direcao),
+      ...(inseridas as { id: string; chave_acesso: string | null; arquivo_original: string }[]),
+    ];
     const idPorChave = new Map<string, string>();
     const idPorArquivo = new Map<string, string>();
     for (const n of gravadas) {
