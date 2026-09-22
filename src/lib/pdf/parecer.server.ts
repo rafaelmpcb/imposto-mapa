@@ -624,8 +624,28 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
   if (s.sec8.cenarios.length === 0) {
     doc.text("Comparativo de regimes indisponível (lacuna documentada).", { size: 10 });
   } else {
+    const comValor = s.sec8.cenarios.filter((c) => c.total != null);
+    if (comValor.length > 0) {
+      const menor = Math.min(...comValor.map((c) => c.total as number));
+      doc.chartTitle("Carga estimada por regime no ano projetado");
+      doc.hBars(
+        comValor.map((c) => ({
+          label: `${c.label}${c.atual ? " (atual)" : ""}`,
+          value: c.total as number,
+          texto: `${money(c.total as number)}${(c.total as number) === menor ? "  ·  menor carga" : ""}`,
+          color: (c.total as number) === menor ? MINT : c.atual ? NAVY : LAVENDER,
+        })),
+        { labelWidth: 175 },
+      );
+      doc.legend([
+        { label: "Menor carga estimada", color: MINT },
+        { label: "Regime atual", color: NAVY },
+        { label: "Demais cenários", color: LAVENDER },
+      ]);
+    }
     const w = [220, 120, 90, 70];
     doc.row(["Regime", "Carga estimada", "Alíquota", "Atual"], w, { bold: true });
+
     for (const c of s.sec8.cenarios) {
       doc.row(
         [
