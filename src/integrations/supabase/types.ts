@@ -518,6 +518,81 @@ export type Database = {
           },
         ]
       }
+      nota_fiscal_venda_xml_item: {
+        Row: {
+          case_id: string
+          cclasstrib: string | null
+          cfop: string | null
+          created_at: string
+          descricao: string | null
+          fonte: string
+          id: string
+          ncm: string | null
+          nota_fiscal_venda_xml_id: string
+          opcoes_candidatas: Json
+          quantidade: number
+          status_classificacao: string
+          tem_ibscbs: boolean
+          updated_at: string
+          valor_base_calculo: number
+          valor_debito_ibs_cbs: number
+          valor_item: number
+        }
+        Insert: {
+          case_id: string
+          cclasstrib?: string | null
+          cfop?: string | null
+          created_at?: string
+          descricao?: string | null
+          fonte?: string
+          id?: string
+          ncm?: string | null
+          nota_fiscal_venda_xml_id: string
+          opcoes_candidatas?: Json
+          quantidade?: number
+          status_classificacao?: string
+          tem_ibscbs?: boolean
+          updated_at?: string
+          valor_base_calculo?: number
+          valor_debito_ibs_cbs?: number
+          valor_item?: number
+        }
+        Update: {
+          case_id?: string
+          cclasstrib?: string | null
+          cfop?: string | null
+          created_at?: string
+          descricao?: string | null
+          fonte?: string
+          id?: string
+          ncm?: string | null
+          nota_fiscal_venda_xml_id?: string
+          opcoes_candidatas?: Json
+          quantidade?: number
+          status_classificacao?: string
+          tem_ibscbs?: boolean
+          updated_at?: string
+          valor_base_calculo?: number
+          valor_debito_ibs_cbs?: number
+          valor_item?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nota_fiscal_venda_xml_item_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nota_fiscal_venda_xml_item_nota_fiscal_venda_xml_id_fkey"
+            columns: ["nota_fiscal_venda_xml_id"]
+            isOneToOne: false
+            referencedRelation: "nota_fiscal_venda_xml"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nota_servico_nfse: {
         Row: {
           aplicado_composicao_carteira: boolean
