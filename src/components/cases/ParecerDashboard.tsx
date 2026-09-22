@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/simulator/ui";
 import {
   CaixaChart,
+  ComposicaoDonut,
   FornecedoresChart,
   PrecoChart,
   RegimesChart,
@@ -30,19 +31,32 @@ const MODULOS = [
 
 type ModuloId = (typeof MODULOS)[number]["id"];
 
+type Tone = "plain" | "mint" | "lavender" | "magenta" | "sky" | "amber";
+
+const TONE_CARD: Record<Tone, string> = {
+  plain: "border-border bg-card",
+  mint: "border-transparent bg-mint-soft",
+  lavender: "border-transparent bg-lavender-soft",
+  magenta: "border-transparent bg-magenta-soft",
+  sky: "border-transparent bg-sky-soft",
+  amber: "border-transparent bg-amber-tone-soft",
+};
+
 function Card({
   titulo,
   children,
   destaque,
+  tone = "plain",
 }: {
   titulo?: string;
   children: React.ReactNode;
   destaque?: boolean;
+  tone?: Tone;
 }) {
   return (
     <div
-      className={`rounded-xl border p-5 ${
-        destaque ? "border-navy bg-navy text-navy-foreground" : "border-border bg-card"
+      className={`rounded-2xl border p-5 ${
+        destaque ? "border-transparent bg-navy text-navy-foreground" : TONE_CARD[tone]
       }`}
     >
       {titulo ? (
@@ -74,6 +88,15 @@ function Vazio({ children }: { children: React.ReactNode }) {
       {children}
     </p>
   );
+}
+
+function composicao(l: ParecerSnapshot["sec6"]["linhas"][number]) {
+  return [
+    { name: "Custo", valor: l.custo },
+    { name: "Despesas", valor: l.despesas },
+    { name: "IRPJ/CSLL", valor: l.ircs ?? 0 },
+    { name: "Resultado", valor: Math.max(l.resultadoLiquido ?? 0, 0) },
+  ];
 }
 
 export function ParecerDashboard({
@@ -128,43 +151,58 @@ export function ParecerDashboard({
   const caixaAno = snapshot.sec7.resumoAnual.find((r) => r.ano === anoSel) ?? null;
 
   return (
-    <section className="space-y-5 rounded-xl border border-border bg-background p-5">
-      <header className="flex flex-wrap items-start justify-between gap-4">
+    <section className="space-y-6 rounded-3xl bg-report-bg p-5 sm:p-7">
+      <header className="flex flex-wrap items-start justify-between gap-4 rounded-2xl bg-navy p-6 text-navy-foreground">
         <div>
-          <span className="inline-block rounded-full bg-success-soft px-3 py-1 text-xs font-semibold text-success">
+          <span className="inline-block rounded-full bg-mint px-3 py-1 text-xs font-semibold text-navy">
             Diagnóstico com documentos fiscais reais
           </span>
-          <h2 className="mt-2 font-presentation-display text-3xl text-foreground">
+          <h2 className="mt-3 font-presentation-display text-3xl leading-tight">
             {snapshot.sec1.cliente ?? "Cliente não informado"}
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-navy-foreground/75">
             {snapshot.sec1.cnpj ?? "CNPJ não informado"} ·{" "}
             {snapshot.sec1.regimeAtual ?? "regime não informado"} ·{" "}
             {ESCOPO_LABEL[snapshot.sec1.escopo]}
           </p>
           {snapshot.sec1.objetivo ? (
-            <p className="mt-1 max-w-2xl text-sm text-foreground">{snapshot.sec1.objetivo}</p>
+            <p className="mt-2 max-w-2xl text-sm text-navy-foreground/90">
+              {snapshot.sec1.objetivo}
+            </p>
           ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-muted-foreground">Versão {versao}</span>
+          <span className="rounded-full bg-navy-foreground/10 px-3 py-1 text-xs">
+            Versão {versao}
+          </span>
           {onApresentar ? (
-            <Button variant="ghost" onClick={onApresentar}>
+            <button
+              type="button"
+              onClick={onApresentar}
+              className="rounded-full bg-navy-foreground/10 px-4 py-1.5 text-sm font-medium hover:bg-navy-foreground/20"
+            >
               Apresentação guiada
-            </Button>
+            </button>
           ) : null}
           {onPdf ? (
-            <Button variant="ghost" onClick={onPdf}>
+            <button
+              type="button"
+              onClick={onPdf}
+              className="rounded-full bg-mint px-4 py-1.5 text-sm font-semibold text-navy"
+            >
               Baixar PDF
-            </Button>
+            </button>
           ) : null}
           {onSair ? (
-            <Button variant="ghost" onClick={onSair}>
+            <button
+              type="button"
+              onClick={onSair}
+              className="rounded-full border border-navy-foreground/30 px-4 py-1.5 text-sm"
+            >
               Sair do dashboard
-            </Button>
+            </button>
           ) : null}
         </div>
-
       </header>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -175,25 +213,23 @@ export function ParecerDashboard({
             onClick={() => setModulo(m.id)}
             className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
               modulo === m.id
-                ? "bg-navy text-navy-foreground"
-                : "bg-secondary text-muted-foreground hover:text-foreground"
+                ? "bg-navy text-navy-foreground shadow-sm"
+                : "bg-card text-muted-foreground hover:text-foreground"
             }`}
           >
             {m.label}
           </button>
         ))}
         {anos.length > 0 ? (
-          <div className="ml-auto flex flex-wrap items-center gap-1">
-            <span className="mr-1 text-xs text-muted-foreground">Ano</span>
+          <div className="ml-auto flex flex-wrap items-center gap-1 rounded-full bg-card p-1">
+            <span className="px-2 text-xs text-muted-foreground">Ano</span>
             {anos.map((a) => (
               <button
                 key={a}
                 type="button"
                 onClick={() => setAno(a)}
-                className={`rounded-md px-2.5 py-1 text-sm ${
-                  a === anoSel
-                    ? "bg-foreground text-background"
-                    : "bg-secondary text-muted-foreground"
+                className={`rounded-full px-2.5 py-1 text-sm ${
+                  a === anoSel ? "bg-lavender text-navy-foreground" : "text-muted-foreground"
                 }`}
               >
                 {a}
@@ -238,13 +274,13 @@ export function ParecerDashboard({
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
-            <Card titulo="Resultado atual">
+            <Card tone="sky" titulo="Resultado atual">
               <Numero
                 valor={dreAno.atual?.resultadoLiquido == null ? "-" : brl(dreAno.atual.resultadoLiquido)}
                 sub={dreAno.atual ? `Receita ${brl(dreAno.atual.receitaBruta)}` : undefined}
               />
             </Card>
-            <Card titulo="Resultado projetado">
+            <Card tone="mint" titulo="Resultado projetado">
               <Numero
                 valor={
                   dreAno.projetado?.resultadoLiquido == null
@@ -254,7 +290,7 @@ export function ParecerDashboard({
                 sub={dreAno.projetado ? `Custo ${brl(dreAno.projetado.custo)}` : undefined}
               />
             </Card>
-            <Card titulo="Crédito apurado nas compras">
+            <Card tone="lavender" titulo="Crédito apurado nas compras">
               <Numero
                 valor={brl(snapshot.sec4.creditoTotal)}
                 sub={`Sobre ${brl(snapshot.sec4.baseTotal)} de base analisada`}
@@ -262,8 +298,29 @@ export function ParecerDashboard({
             </Card>
           </div>
 
+          <div className="grid gap-4 lg:grid-cols-2">
+            {dreAno.atual ? (
+              <ComposicaoDonut
+                titulo={`Onde a receita vai hoje${anoSel ? ` · ${anoSel}` : ""}`}
+                descricao="Composição da receita bruta no cenário atual."
+                partes={composicao(dreAno.atual)}
+                centroLabel="Receita"
+                centroValor={brl(dreAno.atual.receitaBruta)}
+              />
+            ) : null}
+            {dreAno.projetado ? (
+              <ComposicaoDonut
+                titulo={`Onde a receita vai com a reforma${anoSel ? ` · ${anoSel}` : ""}`}
+                descricao="Mesma composição no cenário pós-reforma."
+                partes={composicao(dreAno.projetado)}
+                centroLabel="Receita"
+                centroValor={brl(dreAno.projetado.receitaBruta)}
+              />
+            ) : null}
+          </div>
+
           <div className="grid gap-4 md:grid-cols-2">
-            <Card titulo="Documentos que sustentam o diagnóstico">
+            <Card tone="amber" titulo="Documentos que sustentam o diagnóstico">
               {snapshot.sec2.carga.length === 0 ? (
                 <Vazio>Nenhum documento processado neste Caso.</Vazio>
               ) : (
@@ -351,13 +408,13 @@ export function ParecerDashboard({
       {modulo === "compras" ? (
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-3">
-            <Card titulo="Base de compras">
+            <Card tone="sky" titulo="Base de compras">
               <Numero valor={brl(snapshot.sec4.baseTotal)} />
             </Card>
-            <Card titulo="Crédito de IBS/CBS">
+            <Card tone="mint" titulo="Crédito de IBS/CBS">
               <Numero valor={brl(snapshot.sec4.creditoTotal)} />
             </Card>
-            <Card titulo="Concentração no maior fornecedor">
+            <Card tone="magenta" titulo="Concentração no maior fornecedor">
               <Numero
                 valor={
                   snapshot.sec4.concentracaoTopPct == null
@@ -371,8 +428,66 @@ export function ParecerDashboard({
           {snapshot.sec4.fornecedores.length === 0 ? (
             <Vazio>Sem notas de compra processadas neste Caso.</Vazio>
           ) : (
-            <FornecedoresChart fornecedores={snapshot.sec4.fornecedores} />
+            <div className="grid gap-4 lg:grid-cols-2">
+              <FornecedoresChart fornecedores={snapshot.sec4.fornecedores} />
+              <ComposicaoDonut
+                titulo="Participação no crédito"
+                descricao="Quanto cada fornecedor representa do crédito apurado."
+                partes={snapshot.sec4.fornecedores.slice(0, 6).map((f) => ({
+                  name: (f.nome ?? f.cnpj ?? f.codigo).slice(0, 22),
+                  valor: f.valorApurado,
+                }))}
+                centroLabel="Crédito"
+                centroValor={brl(snapshot.sec4.creditoTotal)}
+              />
+            </div>
           )}
+          {snapshot.sec4.fornecedores.length > 0 ? (
+            <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+              <table className="w-full text-sm">
+                <thead className="bg-secondary/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-2 font-semibold">Fornecedor</th>
+                    <th className="px-4 py-2 text-right font-semibold">Volume</th>
+                    <th className="px-4 py-2 text-right font-semibold">Crédito</th>
+                    <th className="px-4 py-2 text-right font-semibold">Participação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {snapshot.sec4.fornecedores.slice(0, 12).map((f) => {
+                    const share =
+                      snapshot.sec4.creditoTotal > 0
+                        ? (f.valorApurado / snapshot.sec4.creditoTotal) * 100
+                        : 0;
+                    return (
+                      <tr key={f.codigo} className="border-t border-border/70">
+                        <td className="px-4 py-2 text-foreground">
+                          {f.nome ?? f.cnpj ?? f.codigo}
+                        </td>
+                        <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">
+                          {brl(f.valorBase)}
+                        </td>
+                        <td className="px-4 py-2 text-right tabular-nums text-foreground">
+                          {brl(f.valorApurado)}
+                        </td>
+                        <td className="px-4 py-2 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <span className="h-1.5 w-20 overflow-hidden rounded-full bg-secondary">
+                              <span
+                                className="block h-full rounded-full bg-lavender"
+                                style={{ width: `${Math.min(100, share)}%` }}
+                              />
+                            </span>
+                            <span className="tabular-nums text-muted-foreground">{pct(share)}</span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -383,10 +498,10 @@ export function ParecerDashboard({
           ) : (
             <>
               <div className="grid gap-4 md:grid-cols-3">
-                <Card titulo="Vendas analisadas">
+                <Card tone="sky" titulo="Vendas analisadas">
                   <Numero valor={brl(snapshot.sec5.valorAtual)} />
                 </Card>
-                <Card titulo="Preço necessário">
+                <Card tone="lavender" titulo="Preço necessário">
                   <Numero valor={brl(snapshot.sec5.precoNecessario)} />
                 </Card>
                 <Card destaque titulo={`Variação necessária${precoAno ? ` em ${precoAno.ano}` : ""}`}>
@@ -425,13 +540,13 @@ export function ParecerDashboard({
           ) : (
             <>
               <div className="grid gap-4 md:grid-cols-4">
-                <Card titulo="1. Venda bruta">
+                <Card tone="sky" titulo="1. Venda bruta">
                   <Numero valor={brl(snapshot.sec7.vendasBrutas)} />
                 </Card>
-                <Card titulo="2. Retido na origem">
+                <Card tone="magenta" titulo="2. Retido na origem">
                   <Numero valor={brl(snapshot.sec7.debitoRetido)} />
                 </Card>
-                <Card titulo="3. Crédito disponível">
+                <Card tone="mint" titulo="3. Crédito disponível">
                   <Numero valor={brl(snapshot.sec7.creditoDisponivel)} />
                 </Card>
                 <Card destaque titulo="4. Efeito líquido">
