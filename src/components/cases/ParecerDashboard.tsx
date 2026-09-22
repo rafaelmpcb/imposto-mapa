@@ -320,7 +320,7 @@ export function ParecerDashboard({
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <Card titulo="Documentos que sustentam o diagnóstico">
+            <Card tone="amber" titulo="Documentos que sustentam o diagnóstico">
               {snapshot.sec2.carga.length === 0 ? (
                 <Vazio>Nenhum documento processado neste Caso.</Vazio>
               ) : (
@@ -498,10 +498,10 @@ export function ParecerDashboard({
           ) : (
             <>
               <div className="grid gap-4 md:grid-cols-3">
-                <Card titulo="Vendas analisadas">
+                <Card tone="sky" titulo="Vendas analisadas">
                   <Numero valor={brl(snapshot.sec5.valorAtual)} />
                 </Card>
-                <Card titulo="Preço necessário">
+                <Card tone="lavender" titulo="Preço necessário">
                   <Numero valor={brl(snapshot.sec5.precoNecessario)} />
                 </Card>
                 <Card destaque titulo={`Variação necessária${precoAno ? ` em ${precoAno.ano}` : ""}`}>
@@ -540,13 +540,13 @@ export function ParecerDashboard({
           ) : (
             <>
               <div className="grid gap-4 md:grid-cols-4">
-                <Card titulo="1. Venda bruta">
+                <Card tone="sky" titulo="1. Venda bruta">
                   <Numero valor={brl(snapshot.sec7.vendasBrutas)} />
                 </Card>
-                <Card titulo="2. Retido na origem">
+                <Card tone="magenta" titulo="2. Retido na origem">
                   <Numero valor={brl(snapshot.sec7.debitoRetido)} />
                 </Card>
-                <Card titulo="3. Crédito disponível">
+                <Card tone="mint" titulo="3. Crédito disponível">
                   <Numero valor={brl(snapshot.sec7.creditoDisponivel)} />
                 </Card>
                 <Card destaque titulo="4. Efeito líquido">
