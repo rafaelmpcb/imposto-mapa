@@ -30,6 +30,7 @@ import { salvarEstudoCapex } from "@/lib/capex.functions";
 import {
   ALIQUOTA_PLENA_PADRAO_PCT,
   ANOS_CAPEX,
+  ATIVO_PRESETS,
   AVISO_CAPEX,
   ICMS_PADRAO_PCT,
   REGIME_CAPEX_LABEL,
@@ -95,6 +96,13 @@ function CapexPage() {
   const [tipoAtivo, setTipoAtivo] = useState<TipoAtivo>("maquinas");
   const [regime, setRegime] = useState<RegimeCapex>("real");
   const [icms, setIcms] = useState(ICMS_PADRAO_PCT);
+  const trocarAtivo = (t: TipoAtivo) => {
+    setTipoAtivo(t);
+    const p = ATIVO_PRESETS[t];
+    setIcms(p.icmsPct);
+    setIpi(p.ipiPct);
+    setCiap(p.fatorCiapPct);
+  };
   const [ipi, setIpi] = useState(0);
   const [ciap, setCiap] = useState(100);
   const [custoOportunidade, setCustoOportunidade] = useState(12);
@@ -200,17 +208,21 @@ function CapexPage() {
               <MoneyInput value={valor} onChange={setValor} />
             </Field>
 
-            <Field label="Tipo de ativo">
-              <Select
-                value={tipoAtivo}
-                onChange={(e) => setTipoAtivo(e.target.value as TipoAtivo)}
-              >
+            <Field
+              label="Tipo de ativo"
+              hint="Cada tipo de bem tem premissas próprias de ICMS, IPI e aproveitamento do crédito — você pode ajustá-las depois."
+            >
+              <Select value={tipoAtivo} onChange={(e) => trocarAtivo(e.target.value as TipoAtivo)}>
                 {(Object.keys(TIPO_ATIVO_LABEL) as TipoAtivo[]).map((t) => (
                   <option key={t} value={t}>
                     {TIPO_ATIVO_LABEL[t]}
                   </option>
                 ))}
               </Select>
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                {ATIVO_PRESETS[tipoAtivo].nota} Aproveitamento estimado do ICMS neste tipo de bem:{" "}
+                {ATIVO_PRESETS[tipoAtivo].elegibilidadeIcmsPct}%.
+              </p>
             </Field>
 
             <Field

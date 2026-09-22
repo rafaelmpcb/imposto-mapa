@@ -23,6 +23,54 @@ export const REGIME_CAPEX_LABEL: Record<RegimeCapex, string> = {
   simples: "Simples Nacional",
 };
 
+export interface AtivoPreset {
+  /** ICMS tipicamente destacado na aquisição (%). */
+  icmsPct: number;
+  /** IPI tipicamente destacado na aquisição (%). */
+  ipiPct: number;
+  /** Fator CIAP sugerido (%). */
+  fatorCiapPct: number;
+  /**
+   * Parcela ESTIMADA do ICMS da aquisição efetivamente apropriável via CIAP
+   * para esse tipo de ativo (uso e consumo / bens alheios à atividade têm
+   * restrição). O IBS/CBS, ao contrário, é creditado de forma ampla.
+   */
+  elegibilidadeIcmsPct: number;
+  nota: string;
+}
+
+/** Premissas típicas por tipo de ativo — todas editáveis pelo usuário. */
+export const ATIVO_PRESETS: Record<TipoAtivo, AtivoPreset> = {
+  maquinas: {
+    icmsPct: 18,
+    ipiPct: 5,
+    fatorCiapPct: 100,
+    elegibilidadeIcmsPct: 100,
+    nota: "Bem do ativo imobilizado ligado à produção: crédito de ICMS pelo CIAP em 1/48 avos, com IPI destacado na aquisição.",
+  },
+  veiculos: {
+    icmsPct: 12,
+    ipiPct: 0,
+    fatorCiapPct: 100,
+    elegibilidadeIcmsPct: 50,
+    nota: "Frota costuma sofrer glosa parcial de ICMS quando não está diretamente vinculada à atividade-fim; no IBS/CBS o crédito é amplo.",
+  },
+  ti: {
+    icmsPct: 18,
+    ipiPct: 0,
+    fatorCiapPct: 100,
+    elegibilidadeIcmsPct: 20,
+    nota: "Hardware e software de uso administrativo hoje quase não geram crédito de ICMS — é onde a Reforma traz o maior ganho relativo.",
+  },
+  instalacoes: {
+    icmsPct: 0,
+    ipiPct: 0,
+    fatorCiapPct: 100,
+    elegibilidadeIcmsPct: 0,
+    nota: "Benfeitorias e instalações incorporadas ao imóvel não geram crédito de ICMS; no IBS/CBS passam a ser creditáveis.",
+  },
+};
+
 export const ALIQUOTA_PLENA_PADRAO_PCT = 26.5;
 /** Crédito de PIS/COFINS não cumulativos sobre a aquisição (Lucro Real). */
 export const PIS_COFINS_CREDITO_PCT = 9.25;
@@ -122,7 +170,10 @@ export interface ResultadoCapex {
     ipiPct: number;
     fatorCiapPct: number;
     custoOportunidadeAaPct: number;
+    elegibilidadeIcmsPct: number;
   };
+  /** Observação sobre o tipo de ativo escolhido. */
+  notaAtivo: string;
   anoSelecionado: AnoCapex;
   /** Estudo de todos os anos de aquisição possíveis. */
   anos: AnoCapex[];
@@ -149,8 +200,9 @@ export function fluxoMensal(input: CapexInput, ano: number): MesCapex[] {
   const creditaPisCofins = input.regime === "real";
 
   const ibsCbs = creditaIbsCbs ? valor * plena * (FRACAO_IBSCBS[ano] ?? 1) : 0;
+  const elegibilidade = clampPct(ATIVO_PRESETS[input.tipoAtivo]?.elegibilidadeIcmsPct ?? 100);
   const icmsTotal = creditaIcms
-    ? valor * clampPct(input.icmsPct) * (FRACAO_ICMS[ano] ?? 0) * ciap
+    ? valor * clampPct(input.icmsPct) * (FRACAO_ICMS[ano] ?? 0) * ciap * elegibilidade
     : 0;
   const pisCofins =
     creditaPisCofins && creditoPisCofinsVigente(ano)
@@ -239,7 +291,9 @@ export function calcularCapex(input: CapexInput): ResultadoCapex {
       ipiPct: input.ipiPct,
       fatorCiapPct: input.fatorCiapPct,
       custoOportunidadeAaPct: input.custoOportunidadeAaPct,
+      elegibilidadeIcmsPct: ATIVO_PRESETS[input.tipoAtivo]?.elegibilidadeIcmsPct ?? 100,
     },
+    notaAtivo: ATIVO_PRESETS[input.tipoAtivo]?.nota ?? "",
     anoSelecionado,
     anos,
     fluxo: fluxoMensal(input, input.ano),
