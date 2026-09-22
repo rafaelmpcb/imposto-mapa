@@ -88,7 +88,9 @@ function Kpi({
 }
 
 function MonofasicoPage() {
+  const [aba, setAba] = useState<"estimativa" | "auditoria">("estimativa");
   const [segmento, setSegmento] = useState<SegmentoMonofasico>("outro");
+
   const [regime, setRegime] = useState<RegimeMonofasico>("simples");
   const [faturamento, setFaturamento] = useState(0);
   const [participacao, setParticipacao] = useState(0);
