@@ -63,11 +63,218 @@ function Box({
   );
 }
 
+/** Visão detalhada de um fornecedor: histórico, notas, créditos e participação. */
+function DetalheFornecedor({
+  d,
+  totalBase,
+  onVoltar,
+}: {
+  d: FornecedorDetalheSnap;
+  totalBase: number;
+  onVoltar: () => void;
+}) {
+  const serie = d.meses.map((m) => ({
+    mes: competenciaLabel(m.competencia),
+    compras: m.valorBase,
+    credito: m.credito,
+    participacao: Number(m.participacaoPct.toFixed(2)),
+  }));
+  const share = totalBase > 0 ? (d.valorBase / totalBase) * 100 : 0;
+  const efetiva = d.valorBase > 0 ? (d.credito / d.valorBase) * 100 : 0;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <button
+            type="button"
+            onClick={onVoltar}
+            className="text-xs font-semibold text-muted-foreground hover:text-foreground"
+          >
+            ← Voltar para todos fornecedores
+          </button>
+          <h4 className="mt-1 truncate font-presentation-display text-xl text-foreground">
+            {d.nome ?? d.cnpj ?? "Sem identificação"}
+          </h4>
+          <p className="text-xs text-muted-foreground">
+            {d.cnpj ?? "CNPJ não informado"} · {regimeLabel(d.regime)} · {d.notas.length} nota(s)
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Box titulo="Total comprado">
+          <p className="font-presentation-display text-2xl text-foreground">{brl(d.valorBase)}</p>
+          <p className="text-xs text-muted-foreground">{pct(share)} do total de compras</p>
+        </Box>
+        <Box titulo="Crédito estimado de IBS/CBS">
+          <p className="font-presentation-display text-2xl text-foreground">{brl(d.credito)}</p>
+          <p className="text-xs text-muted-foreground">
+            {pct(efetiva)} sobre a base deste fornecedor
+          </p>
+        </Box>
+        <Box titulo="Itens classificados">
+          <p className="font-presentation-display text-2xl text-foreground">{d.itens}</p>
+          <p className="text-xs text-muted-foreground">{d.pendentes} em revisão</p>
+        </Box>
+        <Box titulo="Período com movimento">
+          <p className="font-presentation-display text-2xl text-foreground">{d.meses.length}</p>
+          <p className="text-xs text-muted-foreground">
+            {d.meses.length > 0
+              ? `${competenciaLabel(d.meses[0]!.competencia)} a ${competenciaLabel(
+                  d.meses[d.meses.length - 1]!.competencia,
+                )}`
+              : "sem datas nas notas"}
+          </p>
+        </Box>
+      </div>
+
+      <Box titulo="Histórico de compras e participação no total">
+        {serie.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Sem datas de emissão nas notas.</p>
+        ) : (
+          <div className="h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={serie} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e6e8ef" vertical={false} />
+                <XAxis dataKey="mes" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis
+                  yAxisId="v"
+                  tick={{ fontSize: 11 }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v: number) => brl(v)}
+                  width={90}
+                />
+                <YAxis
+                  yAxisId="p"
+                  orientation="right"
+                  tick={{ fontSize: 11 }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v: number) => `${v}%`}
+                  width={45}
+                />
+                <Tooltip
+                  formatter={(v: number, n: string) =>
+                    n === "Participação no mês" ? pct(v) : brl(v)
+                  }
+                />
+                <Bar yAxisId="v" dataKey="compras" name="Compras" fill="#12234a" radius={[4, 4, 0, 0]} />
+                <Bar yAxisId="v" dataKey="credito" name="Crédito" fill="#7c6cf5" radius={[4, 4, 0, 0]} />
+                <Line
+                  yAxisId="p"
+                  type="monotone"
+                  dataKey="participacao"
+                  name="Participação no mês"
+                  stroke="#f97316"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </Box>
+
+      {d.topNcms.length > 0 ? (
+        <Box titulo="Principais NCMs comprados deste fornecedor">
+          <div className="space-y-2">
+            {d.topNcms.map((n) => (
+              <div
+                key={n.ncm}
+                className="flex items-center justify-between gap-3 rounded-lg bg-secondary/50 px-3 py-2 text-sm"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-foreground">{n.descricao ?? "Sem descrição"}</p>
+                  <p className="text-[11px] text-muted-foreground">NCM {n.ncm}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="tabular-nums text-foreground">{brl(n.valorBase)}</p>
+                  <p className="text-[11px] tabular-nums text-muted-foreground">
+                    crédito {brl(n.credito)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Box>
+      ) : null}
+
+      <div className="rounded-xl border border-border bg-card">
+        <p className="border-b border-border px-4 py-3 text-sm font-semibold text-foreground">
+          Notas fiscais deste fornecedor
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-secondary/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="px-4 py-2 font-semibold">Nota</th>
+                <th className="px-4 py-2 font-semibold">Emissão</th>
+                <th className="px-4 py-2 text-right font-semibold">Valor da nota</th>
+                <th className="px-4 py-2 text-right font-semibold">Base</th>
+                <th className="px-4 py-2 text-right font-semibold">Crédito</th>
+                <th className="px-4 py-2 text-right font-semibold">Itens</th>
+              </tr>
+            </thead>
+            <tbody>
+              {d.notas.map((n, i) => (
+                <tr key={`${n.chave ?? n.numero ?? "n"}-${i}`} className="border-t border-border/70">
+                  <td className="px-4 py-2">
+                    <p className="text-foreground">
+                      {n.numero ? `Nº ${n.numero}` : "Sem número"}
+                      {n.serie ? ` · série ${n.serie}` : ""}
+                    </p>
+                    <p className="truncate text-[11px] text-muted-foreground">
+                      {n.chave ?? "sem chave de acesso"}
+                    </p>
+                  </td>
+                  <td className="px-4 py-2 text-muted-foreground">{dataLabel(n.data)}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">
+                    {brl(n.valorTotal)}
+                  </td>
+                  <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">
+                    {brl(n.valorBase)}
+                  </td>
+                  <td className="px-4 py-2 text-right tabular-nums text-foreground">
+                    {brl(n.credito)}
+                  </td>
+                  <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">
+                    {n.itens}
+                    {n.pendentes > 0 ? ` (${n.pendentes} em revisão)` : ""}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <p className="text-[11px] text-muted-foreground">
+        Crédito estimado a partir dos itens já classificados; itens em revisão não entram no valor.
+      </p>
+    </div>
+  );
+}
+
 export function ParecerFornecedores({ sec4 }: { sec4: ParecerSnapshot["sec4"] }) {
   const [filtro, setFiltro] = useState<"todos" | "simples" | "regular">("todos");
   const [busca, setBusca] = useState("");
+  const [selecionado, setSelecionado] = useState<string | null>(null);
 
   const lista = sec4.fornecedores;
+  const detalhes = useMemo(() => {
+    const m = new Map<string, FornecedorDetalheSnap>();
+    for (const d of sec4.detalhes ?? []) {
+      if (d.cnpj) m.set(String(d.cnpj).replace(/\D/g, ""), d);
+      if (d.nome) m.set(d.nome.toLowerCase(), d);
+    }
+    return m;
+  }, [sec4.detalhes]);
+
+  const detalheDe = (f: Forn) =>
+    (f.cnpj ? detalhes.get(String(f.cnpj).replace(/\D/g, "")) : undefined) ??
+    (f.nome ? detalhes.get(f.nome.toLowerCase()) : undefined);
 
   /* ---- Regime Normal x Simples Nacional ---- */
   const porRegime = useMemo(() => {
