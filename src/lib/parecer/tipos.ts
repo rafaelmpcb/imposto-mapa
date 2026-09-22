@@ -218,6 +218,8 @@ export interface ParecerSnapshot {
     ncms: ConcentracaoSnap[];
     pendentes: number;
     concentracaoTopPct: number | null;
+    /** Detalhamento por fornecedor: notas, histórico mensal e participação. */
+    detalhes?: FornecedorDetalheSnap[];
   };
   sec5: {
     valorAtual: number;
