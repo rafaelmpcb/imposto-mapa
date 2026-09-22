@@ -286,6 +286,56 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
     }
   }
 
+  /* ---------- Submódulo: Contratos e Aluguéis ---------- */
+  const contratoRows = (contratosRes.data ?? []) as Record<string, unknown>[];
+  const contratos = contratoRows.map((row) => {
+    const res = (row["resultado_json"] ?? {}) as {
+      cenarios?: { valorContrato?: number; liquidoLocador?: number; custoEfetivoLocatario?: number }[];
+      repactuacao?: { aluguelSugerido?: number; variacaoAluguelPct?: number };
+    };
+    const atual = res.cenarios?.[0];
+    const sem = res.cenarios?.[1];
+    return {
+      titulo: String(row["titulo"] ?? "Contrato de locação"),
+      contraparte: (row["contraparte"] as string | null) ?? null,
+      papel: String(row["papel"] ?? "locador"),
+      regime: String(row["regime_locador"] ?? ""),
+      criterio: String(row["criterio"] ?? ""),
+      ano: num(row["ano_referencia"]),
+      aluguelAtual: num(atual?.valorContrato ?? row["aluguel_mensal"]),
+      aluguelSugerido: num(res.repactuacao?.aluguelSugerido),
+      variacaoAluguelPct: num(res.repactuacao?.variacaoAluguelPct),
+      liquidoAtual: num(atual?.liquidoLocador),
+      liquidoSemRepactuacao: num(sem?.liquidoLocador),
+      custoAtualLocatario: num(atual?.custoEfetivoLocatario),
+      custoSemRepactuacao: num(sem?.custoEfetivoLocatario),
+    };
+  });
+  const soma = (pick: (c: (typeof contratos)[number]) => number) =>
+    contratos.reduce((a, c) => a + pick(c), 0);
+  const totalAtual = soma((c) => c.aluguelAtual);
+  const liquidoAtualTotal = soma((c) => c.liquidoAtual);
+  const liquidoSemRepacTotal = soma((c) => c.liquidoSemRepactuacao);
+  const totalSugerido = soma((c) => c.aluguelSugerido);
+  const aluguelSnap =
+    contratos.length > 0
+      ? {
+          contratos,
+          totalAtual,
+          totalSugerido,
+          variacaoAluguelPct:
+            totalAtual > 0 ? ((totalSugerido - totalAtual) / totalAtual) * 100 : 0,
+          liquidoAtual: liquidoAtualTotal,
+          liquidoSemRepactuacao: liquidoSemRepacTotal,
+          variacaoLiquidoPct:
+            liquidoAtualTotal > 0
+              ? ((liquidoSemRepacTotal - liquidoAtualTotal) / liquidoAtualTotal) * 100
+              : 0,
+        }
+      : undefined;
+
+  if (aluguelSnap) limitacoes.push(LIMITACOES.aluguel);
+
   const snap: ParecerSnapshot = {
     geradoEm: new Date().toISOString(),
     sec1: {
