@@ -529,10 +529,22 @@ export function ParecerFornecedores({ sec4 }: { sec4: ParecerSnapshot["sec4"] })
             <tbody>
               {filtrada.map((f, i) => {
                 const share = abc.total > 0 ? (f.valorBase / abc.total) * 100 : 0;
+                const det = detalheDe(f);
                 return (
-                  <tr key={`${f.cnpj ?? f.nome ?? "x"}-${i}`} className="border-t border-border/70">
+                  <tr
+                    key={`${f.cnpj ?? f.nome ?? "x"}-${i}`}
+                    className={`border-t border-border/70 ${det ? "cursor-pointer hover:bg-secondary/40" : ""}`}
+                    onClick={det ? () => setSelecionado(det.chave) : undefined}
+                  >
                     <td className="px-4 py-2">
-                      <p className="text-foreground">{f.nome ?? f.cnpj ?? "Sem identificação"}</p>
+                      <p className="text-foreground">
+                        {f.nome ?? f.cnpj ?? "Sem identificação"}
+                        {det ? (
+                          <span className="ml-2 text-[11px] font-semibold text-lavender">
+                            ver detalhe →
+                          </span>
+                        ) : null}
+                      </p>
                       <p className="text-[11px] text-muted-foreground">
                         {f.cnpj ?? "CNPJ não informado"} · {regimeLabel(f.regime)}
                       </p>
