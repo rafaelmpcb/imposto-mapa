@@ -115,13 +115,26 @@ export function DebitoNcmPanel({ caseId }: { caseId: string }) {
     return map;
   }, [historico]);
 
+  const cfopsDisponiveis = useMemo(
+    () => [...new Set(itens.map((i) => i.cfop).filter((c): c is string => Boolean(c)))].sort(),
+    [itens],
+  );
+
+  const itensFiltrados = useMemo(
+    () =>
+      cfopSelecionados.length === 0
+        ? itens
+        : itens.filter((i) => i.cfop && cfopSelecionados.includes(i.cfop)),
+    [itens, cfopSelecionados],
+  );
+
   const resumo = useMemo(() => {
-    const ok = itens.filter((i) => i.status_classificacao === "ok");
-    const semDado = itens.filter((i) => i.status_classificacao === "sem_dado");
-    const seletivo = itens.filter((i) => i.status_classificacao === "imposto_seletivo");
-    const ambiguos = itens.filter((i) => emRevisao(i.status_classificacao));
-    const excluidos = itens.filter((i) => i.status_classificacao === EXCLUIDO_ANALISTA);
-    const totalItens = itens.reduce((acc, i) => acc + Number(i.valor_item), 0);
+    const ok = itensFiltrados.filter((i) => i.status_classificacao === "ok");
+    const semDado = itensFiltrados.filter((i) => i.status_classificacao === "sem_dado");
+    const seletivo = itensFiltrados.filter((i) => i.status_classificacao === "imposto_seletivo");
+    const ambiguos = itensFiltrados.filter((i) => emRevisao(i.status_classificacao));
+    const excluidos = itensFiltrados.filter((i) => i.status_classificacao === EXCLUIDO_ANALISTA);
+    const totalItens = itensFiltrados.reduce((acc, i) => acc + Number(i.valor_item), 0);
     const valorSemDado = semDado.reduce((acc, i) => acc + Number(i.valor_item), 0);
     const valorSeletivo = seletivo.reduce((acc, i) => acc + Number(i.valor_item), 0);
     const valorAmbiguo = ambiguos.reduce((acc, i) => acc + Number(i.valor_item), 0);
@@ -139,11 +152,11 @@ export function DebitoNcmPanel({ caseId }: { caseId: string }) {
       pctSeletivo: pct(valorSeletivo),
       pctAmbiguo: pct(valorAmbiguo),
     };
-  }, [itens]);
+  }, [itensFiltrados]);
 
   const topClientes = useMemo(() => {
     const map = new Map<string, { nome: string; cnpj: string | null; debito: number }>();
-    for (const i of itens) {
+    for (const i of itensFiltrados) {
       if (i.status_classificacao !== "ok") continue;
       const key = i.cnpj_cliente ?? i.cliente ?? "—";
       const found = map.get(key);
@@ -156,11 +169,11 @@ export function DebitoNcmPanel({ caseId }: { caseId: string }) {
         });
     }
     return [...map.values()].sort((a, b) => b.debito - a.debito).slice(0, 5);
-  }, [itens]);
+  }, [itensFiltrados]);
 
   const topNcms = useMemo(() => {
     const map = new Map<string, { ncm: string; descricao: string | null; debito: number }>();
-    for (const i of itens) {
+    for (const i of itensFiltrados) {
       if (i.status_classificacao !== "ok" || !i.ncm) continue;
       const found = map.get(i.ncm);
       if (found) found.debito += Number(i.valor_debito_ibs_cbs);
@@ -172,7 +185,7 @@ export function DebitoNcmPanel({ caseId }: { caseId: string }) {
         });
     }
     return [...map.values()].sort((a, b) => b.debito - a.debito).slice(0, 5);
-  }, [itens]);
+  }, [itensFiltrados]);
 
   const escolher = async (item: FilaItem, opcao: OpcaoCandidata) => {
     setBusy(true);
