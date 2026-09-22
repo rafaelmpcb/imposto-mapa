@@ -130,7 +130,34 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
     setEdicoes((e) => ({ ...e, sec3: { achados: lista } }));
   };
 
+  const handleLink = async () => {
+    if (!atual) return;
+    setBusy(true);
+    setMsg("");
+    setErro("");
+    try {
+      let token = atual.share_token;
+      if (!atual.share_enabled || !token) {
+        const res = await withAuthRetry(() => partilhar({ data: { id: atual.id, enabled: true } }));
+        token = res.token;
+        await load();
+      }
+      const url = `${window.location.origin}/relatorio/${token}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        setMsg(`Link do relatório copiado: ${url}`);
+      } catch {
+        setMsg(`Link do relatório: ${url}`);
+      }
+    } catch {
+      setErro("Não foi possível gerar o link do relatório.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleGerar = async () => {
+
     setBusy(true);
     setMsg("");
     setErro("");
