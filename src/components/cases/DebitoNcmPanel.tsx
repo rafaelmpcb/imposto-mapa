@@ -144,9 +144,12 @@ export function DebitoNcmPanel({ caseId }: { caseId: string }) {
           reducaoPct: opcao.reducao_pct,
         },
       };
-      await withAuthRetry(() =>
-        item.direcao === "venda" ? resolverVenda(payload) : resolverCompra(payload),
-      );
+      await withAuthRetry(async () => {
+        if (item.direcao === "venda") await resolverVenda(payload);
+        else await resolverCompra(payload);
+        return true;
+      });
+
       await load();
     } catch {
       setError("Não foi possível registrar a decisão para este item.");
