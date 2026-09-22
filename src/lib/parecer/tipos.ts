@@ -234,6 +234,8 @@ export interface ParecerSnapshot {
     variacaoMediaPct: number;
     porPerfil: { perfil: string; valorAtual: number; precoNecessario: number; itens: number }[];
     porAno: { ano: number; precoNecessario: number; variacaoPct: number }[];
+    /** Clientes atendidos: volume vendido e crédito de IBS/CBS transferido. */
+    clientes?: ClienteDetalheSnap[];
   };
   sec6: {
     linhas: {
