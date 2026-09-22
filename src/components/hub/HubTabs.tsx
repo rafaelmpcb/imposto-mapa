@@ -51,7 +51,7 @@ export const HUB_TABS: HubTab[] = [
     id: "contratos",
     label: "Gestão de contratos",
     hint: "Reequilíbrio econômico",
-    ativo: false,
+    ativo: true,
     icon: FileText,
   },
   {

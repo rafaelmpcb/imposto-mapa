@@ -90,6 +90,8 @@ export const LIMITACOES = {
     "O preço necessário é piso técnico de neutralidade tributária, não recomendação comercial de preço.",
   aluguel:
     "Nos contratos de locação, o redutor aplicável, a rampa de transição e a condição do locador (contribuinte ou não) são premissas editáveis; contratos antigos registrados podem seguir regra específica de transição.",
+  contratos:
+    "Nos contratos de prestação continuada, a alíquota plena, a redução setorial, o custo direto e o aproveitamento de crédito do contratante são premissas informadas pelo analista.",
 } as const;
 
 export interface CargaLinhaSnap {
@@ -198,6 +200,34 @@ export interface AluguelSnap {
   variacaoLiquidoPct: number;
 }
 
+export interface ContratoReequilibrioSnap {
+  titulo: string;
+  contraparte: string | null;
+  papel: string;
+  regime: string;
+  perfilContratante: string;
+  cenario: string;
+  status: string;
+  ano: number;
+  precoAtual: number;
+  precoSugerido: number;
+  variacaoPrecoPct: number;
+  margemAtual: number;
+  margemSemReequilibrio: number;
+  custoContratanteAtual: number;
+  custoContratanteSugerido: number;
+}
+
+export interface ReequilibrioSnap {
+  contratos: ContratoReequilibrioSnap[];
+  totalAtual: number;
+  totalSugerido: number;
+  variacaoPrecoPct: number;
+  margemAtual: number;
+  margemSemReequilibrio: number;
+  variacaoMargemPct: number;
+}
+
 export interface ParecerSnapshot {
   geradoEm: string;
   sec1: {
@@ -266,6 +296,8 @@ export interface ParecerSnapshot {
   };
   /** Submódulo Contratos e Aluguéis (opcional: só existe se houver contrato no Caso). */
   secAluguel?: AluguelSnap;
+  /** Submódulo Gestão de Contratos e Reequilíbrio (opcional). */
+  secContratos?: ReequilibrioSnap;
   sec9: { sugestoes: Record<string, string> };
   sec10: { limitacoes: string[] };
 }

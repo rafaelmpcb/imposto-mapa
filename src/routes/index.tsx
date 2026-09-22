@@ -31,7 +31,7 @@ type Modulo = {
   selo: string;
   tone: string;
   chip: string;
-  to?: "/simulador" | "/aluguel" | "/capex" | "/saldos-credores";
+  to?: "/simulador" | "/aluguel" | "/capex" | "/contratos" | "/saldos-credores";
   cta: string;
 };
 
@@ -80,11 +80,12 @@ const MODULOS: Modulo[] = [
       "Simulação de repasse, absorção e reequilíbrio da margem",
       "Minutas de aditivo e roteiro de negociação por contraparte",
     ],
-    status: "consultoria",
-    selo: "Consultoria especializada",
+    status: "aberto",
+    selo: "Disponível online",
     tone: "border-lavender/40 bg-lavender-soft",
     chip: "bg-lavender text-navy",
-    cta: "Solicitar análise contratual",
+    to: "/contratos",
+    cta: "Abrir calculadora de contratos",
   },
   {
     numero: "04",

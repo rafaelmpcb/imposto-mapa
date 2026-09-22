@@ -338,6 +338,83 @@ export type Database = {
           },
         ]
       }
+      contrato_reequilibrio: {
+        Row: {
+          aliquota_plena_pct: number
+          ano_referencia: number
+          case_id: string | null
+          cenario: string
+          contraparte: string | null
+          created_at: string
+          created_by: string | null
+          credito_insumos_pct: number
+          custo_direto_pct: number
+          id: string
+          observacao: string | null
+          papel: string
+          perfil_contratante: string
+          preco_mensal_atual: number
+          reducao_pct: number
+          regime_prestador: string
+          resultado_json: Json
+          status: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          aliquota_plena_pct?: number
+          ano_referencia?: number
+          case_id?: string | null
+          cenario?: string
+          contraparte?: string | null
+          created_at?: string
+          created_by?: string | null
+          credito_insumos_pct?: number
+          custo_direto_pct?: number
+          id?: string
+          observacao?: string | null
+          papel?: string
+          perfil_contratante: string
+          preco_mensal_atual?: number
+          reducao_pct?: number
+          regime_prestador: string
+          resultado_json?: Json
+          status?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          aliquota_plena_pct?: number
+          ano_referencia?: number
+          case_id?: string | null
+          cenario?: string
+          contraparte?: string | null
+          created_at?: string
+          created_by?: string | null
+          credito_insumos_pct?: number
+          custo_direto_pct?: number
+          id?: string
+          observacao?: string | null
+          papel?: string
+          perfil_contratante?: string
+          preco_mensal_atual?: number
+          reducao_pct?: number
+          regime_prestador?: string
+          resultado_json?: Json
+          status?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contrato_reequilibrio_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cronograma_transicao_ibscbs: {
         Row: {
           ano: number
