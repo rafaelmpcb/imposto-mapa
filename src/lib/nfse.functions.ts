@@ -53,12 +53,22 @@ export const saveNotasServico = createServerFn({ method: "POST" })
     );
 
     const vistas = new Set<string>();
+    const repetidas: { chave: string; arquivo: string }[] = [];
     const notas = data.notas.filter((n) => {
       if (!n.chave) return true;
-      if (jaGravadas.has(n.chave) || vistas.has(n.chave)) return false;
+      if (jaGravadas.has(n.chave) || vistas.has(n.chave)) {
+        if (jaGravadas.has(n.chave)) repetidas.push({ chave: n.chave, arquivo: n.arquivo });
+        return false;
+      }
       vistas.add(n.chave);
       return true;
     });
+    const duplicados = await registrarDuplicados(
+      supabaseAdmin,
+      data.caseId,
+      direcao === "prestado" ? "nfse_prestado" : "nfse_tomado",
+      repetidas,
+    );
 
     const payload = notas.map((n) => ({
       case_id: data.caseId,

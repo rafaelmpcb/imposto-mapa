@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { registrarDuplicados } from "@/lib/carga/duplicados";
 import type { NfeVendaNota } from "@/lib/nfe/parse-venda";
 import type { ItemStatus, NcmExcecao, OpcaoCandidata } from "@/lib/nfe/credito";
 import { FONTE_XML_VENDA, debitoComReducao, debitoPorNcm } from "@/lib/nfe/debito";
@@ -30,12 +31,22 @@ export const saveNotasVenda = createServerFn({ method: "POST" })
     );
 
     const vistas = new Set<string>();
+    const repetidas: { chave: string; arquivo: string }[] = [];
     const novas = data.notas.filter((n) => {
       if (!n.chave) return true;
-      if (jaGravadas.has(n.chave) || vistas.has(n.chave)) return false;
+      if (jaGravadas.has(n.chave) || vistas.has(n.chave)) {
+        if (jaGravadas.has(n.chave)) repetidas.push({ chave: n.chave, arquivo: n.arquivo });
+        return false;
+      }
       vistas.add(n.chave);
       return true;
     });
+    const duplicados = await registrarDuplicados(
+      supabaseAdmin,
+      data.caseId,
+      "nfe_venda",
+      repetidas,
+    );
     const payload = novas.map((n) => ({
       case_id: data.caseId,
       arquivo_original: n.arquivo.slice(0, 200),
