@@ -494,3 +494,39 @@ export const finalizarParecer = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
+
+/** Liga ou desliga o link dedicado de apresentação do parecer. */
+export const setParecerShare = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string; enabled: boolean }) => input)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const atual = await supabaseAdmin
+      .from("parecer_padrao")
+      .select("share_token")
+      .eq("id", data.id)
+      .maybeSingle();
+    const existente = (atual.data?.["share_token"] as string | null) ?? null;
+    const token = data.enabled ? (existente ?? crypto.randomUUID().replace(/-/g, "")) : null;
+    const { error } = await supabaseAdmin
+      .from("parecer_padrao")
+      .update({ share_enabled: data.enabled, share_token: token } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const, token };
+  });
+
+/** Leitura pública do relatório dedicado, apenas quando o link está ativo. */
+export const getParecerCompartilhado = createServerFn({ method: "GET" })
+  .inputValidator((input: { token: string }) => input)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const res = await supabaseAdmin
+      .from("parecer_padrao")
+      .select("*")
+      .eq("share_token", data.token)
+      .eq("share_enabled", true)
+      .maybeSingle();
+    if (res.error || !res.data) return { found: false as const };
+    return { found: true as const, versao: toVersao(res.data as Record<string, unknown>) };
+  });
