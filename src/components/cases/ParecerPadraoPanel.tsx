@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 
 import { Button, Notice, TextInput } from "@/components/simulator/ui";
 import { ParecerApresentacao } from "@/components/cases/ParecerApresentacao";
+import { ParecerDashboard } from "@/components/cases/ParecerDashboard";
 import { withAuthRetry } from "@/lib/auth-retry";
 import { supabase } from "@/integrations/supabase/client";
 import { avaliarChecklist } from "@/lib/parecer/compilar";
@@ -81,6 +82,7 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
   const [erro, setErro] = useState("");
   const [busy, setBusy] = useState(false);
   const [apresentando, setApresentando] = useState(false);
+  const [dashboard, setDashboard] = useState(false);
 
   const load = useCallback(async () => {
     setErro("");
@@ -254,6 +256,7 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
               <Button variant="ghost" onClick={() => void handlePdf()} disabled={busy}>
                 Baixar PDF
               </Button>
+              <Button onClick={() => setDashboard(true)}>Dashboard executivo</Button>
               <Button variant="ghost" onClick={() => setApresentando(true)}>
                 Apresentação guiada
               </Button>
