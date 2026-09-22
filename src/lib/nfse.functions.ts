@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { registrarDuplicados } from "@/lib/carga/duplicados";
 import type { NfseNota } from "@/lib/nfse/parse";
 import {
   FONTE_DOCUMENTO,
@@ -201,7 +202,12 @@ export const saveNotasServico = createServerFn({ method: "POST" })
       if (ins.error) throw new Error(ins.error.message);
     }
 
-    return { ok: true as const, inserted: payload.length, itens: itensPayload.length };
+    return {
+      ok: true as const,
+      inserted: payload.length,
+      itens: itensPayload.length,
+      duplicados,
+    };
   });
 
 export interface CreditoServicoItem {

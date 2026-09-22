@@ -171,7 +171,12 @@ export const saveNotasVenda = createServerFn({ method: "POST" })
       if (insItens.error) throw new Error(insItens.error.message);
     }
 
-    return { ok: true as const, inserted: payload.length, itens: itensPayload.length };
+    return {
+      ok: true as const,
+      inserted: payload.length,
+      itens: itensPayload.length,
+      duplicados,
+    };
   });
 
 export interface DebitoItem {
