@@ -180,30 +180,21 @@ export function DebitoNcmPanel({ caseId }: { caseId: string }) {
     setBusy(true);
     setError("");
     try {
-      const payload = {
-        data: {
-          itemId: item.id,
-          anexo: opcao.anexo,
-          cclasstrib: opcao.cclasstrib,
-          reducaoPct: opcao.reducao_pct,
-        },
-      };
-      await withAuthRetry(async () => {
-        if (item.direcao === "venda") await resolverVenda(payload);
-        else await resolverCompra(payload);
-        return true;
-      });
       await withAuthRetry(() =>
         aplicarLote({
           data: {
             caseId,
-            itens: [],
+            itens: [{ id: item.id, origem: item.direcao }],
             acao: "classificar",
+            anexo: opcao.anexo,
+            cclasstrib: opcao.cclasstrib,
             reducaoPct: opcao.reducao_pct,
+            observacao: null,
           },
         }),
-      ).catch(() => undefined);
+      );
       await load();
+
     } catch {
       setError("Não foi possível registrar a decisão para este item.");
     } finally {
