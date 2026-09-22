@@ -593,6 +593,13 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
                         caseCnpj={caseItem.cnpj}
                         onApplied={refresh}
                       />
+                      <NfseCarteiraPanel
+                        caseId={caseItem.id}
+                        onApplied={async () => {
+                          await refresh();
+                          setNbsReload((v) => v + 1);
+                        }}
+                      />
                     </>
                   ) : null}
                 </>
