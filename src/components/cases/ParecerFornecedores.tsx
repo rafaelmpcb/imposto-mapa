@@ -725,6 +725,17 @@ export function ParecerFornecedores({ sec4 }: { sec4: ParecerSnapshot["sec4"] })
                     className={`border-t border-border/70 ${det ? "cursor-pointer hover:bg-secondary/40" : ""}`}
                     onClick={det ? () => setSelecionado(det.chave) : undefined}
                   >
+                    <td className="px-4 py-2" onClick={(e) => e.stopPropagation()}>
+                      {det ? (
+                        <input
+                          type="checkbox"
+                          aria-label="Selecionar para comparar"
+                          checked={comparar.includes(det.chave)}
+                          onChange={() => alternar(det.chave)}
+                          className="h-4 w-4 cursor-pointer accent-[#7c6cf5]"
+                        />
+                      ) : null}
+                    </td>
                     <td className="px-4 py-2">
                       <p className="text-foreground">
                         {f.nome ?? f.cnpj ?? "Sem identificação"}
