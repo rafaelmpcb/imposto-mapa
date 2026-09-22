@@ -145,12 +145,8 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
         await load();
       }
       const url = `${window.location.origin}/relatorio/${token}`;
-      try {
-        await navigator.clipboard.writeText(url);
-        setMsg(`Link do relatório copiado: ${url}`);
-      } catch {
-        setMsg(`Link do relatório: ${url}`);
-      }
+      window.open(url, "_blank", "noopener");
+      setMsg("Relatório aberto em nova aba.");
     } catch {
       setErro("Não foi possível gerar o link do relatório.");
     } finally {
