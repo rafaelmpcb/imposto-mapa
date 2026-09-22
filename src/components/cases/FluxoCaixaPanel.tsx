@@ -91,7 +91,10 @@ export function FluxoCaixaPanel({ caseId, reloadKey = 0 }: { caseId: string; rel
   if (!dados) return null;
 
   return (
-    <div className="space-y-4 rounded-xl border border-border bg-card p-4">
+    <div
+      id="fluxo-caixa-completo"
+      className="scroll-mt-6 space-y-4 rounded-xl border border-border bg-card p-4"
+    >
       <div>
         <p className="text-sm font-semibold text-foreground">Fluxo de caixa projetado, mês a mês</p>
         <p className="mt-1 text-xs text-muted-foreground">

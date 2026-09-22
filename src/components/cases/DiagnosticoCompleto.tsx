@@ -20,6 +20,7 @@ import { ApuracaoLiquidaPanel } from "@/components/cases/ApuracaoLiquidaPanel";
 import { ConcentracaoPanel } from "@/components/cases/ConcentracaoPanel";
 import { DrePanel } from "@/components/cases/DrePanel";
 import { FluxoCaixaPanel } from "@/components/cases/FluxoCaixaPanel";
+import { SplitPaymentPanel } from "@/components/cases/SplitPaymentPanel";
 import { withAuthRetry } from "@/lib/auth-retry";
 import {
   deleteCarteiraRow,
@@ -665,6 +666,8 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
       <PrecoNecessarioPanel caseId={caseItem.id} reloadKey={nbsReload} />
 
       <DrePanel caseId={caseItem.id} reloadKey={nbsReload} />
+
+      <SplitPaymentPanel caseId={caseItem.id} reloadKey={nbsReload} />
 
       <FluxoCaixaPanel caseId={caseItem.id} reloadKey={nbsReload} />
 
