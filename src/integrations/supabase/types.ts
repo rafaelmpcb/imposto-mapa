@@ -538,6 +538,68 @@ export type Database = {
           },
         ]
       }
+      estudo_saldos_credores: {
+        Row: {
+          case_id: string | null
+          created_at: string
+          created_by: string | null
+          custo_oportunidade_aa_pct: number
+          desagio_cessao_pct: number
+          id: string
+          ipca_aa_pct: number
+          meses_compensacao_cbs: number
+          observacao: string | null
+          resultado_json: Json
+          saldo_icms: number
+          saldo_pis_cofins: number
+          titulo: string
+          uf: string
+          updated_at: string
+        }
+        Insert: {
+          case_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          custo_oportunidade_aa_pct?: number
+          desagio_cessao_pct?: number
+          id?: string
+          ipca_aa_pct?: number
+          meses_compensacao_cbs?: number
+          observacao?: string | null
+          resultado_json?: Json
+          saldo_icms?: number
+          saldo_pis_cofins?: number
+          titulo?: string
+          uf?: string
+          updated_at?: string
+        }
+        Update: {
+          case_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          custo_oportunidade_aa_pct?: number
+          desagio_cessao_pct?: number
+          id?: string
+          ipca_aa_pct?: number
+          meses_compensacao_cbs?: number
+          observacao?: string | null
+          resultado_json?: Json
+          saldo_icms?: number
+          saldo_pis_cofins?: number
+          titulo?: string
+          uf?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estudo_saldos_credores_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fluxo_caixa_projecao_mensal: {
         Row: {
           ano: number
