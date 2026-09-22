@@ -112,6 +112,12 @@ function AluguelPage() {
   useEffect(() => {
     void (async () => {
       try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) {
+          setCasos([]);
+          return;
+        }
         const res = await withAuthRetry(() => carregarCasos({}));
         setCasos(res.items);
       } catch {
