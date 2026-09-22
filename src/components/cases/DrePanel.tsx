@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 
 import { Button, Notice } from "@/components/simulator/ui";
@@ -139,14 +139,14 @@ export function DrePanel({ caseId, reloadKey = 0 }: { caseId: string; reloadKey?
             <tr>
               <th className="px-3 py-1" />
               {dados.anos.map((a) => (
-                <>
-                  <th key={`${a.ano}-a`} className="px-3 py-1 text-right text-[11px] font-normal">
+                <Fragment key={`h-${a.ano}`}>
+                  <th className="px-3 py-1 text-right text-[11px] font-normal">
                     Atual
                   </th>
-                  <th key={`${a.ano}-p`} className="px-3 py-1 text-right text-[11px] font-normal">
+                  <th className="px-3 py-1 text-right text-[11px] font-normal">
                     Projetado
                   </th>
-                </>
+                </Fragment>
               ))}
             </tr>
           </thead>
@@ -162,20 +162,18 @@ export function DrePanel({ caseId, reloadKey = 0 }: { caseId: string; reloadKey?
                     (l) => l.ano === a.ano && l.cenario === "projetado",
                   );
                   return (
-                    <>
+                    <Fragment key={`${a.ano}-${linha.chave}`}>
                       <td
-                        key={`${a.ano}-${linha.chave}-a`}
                         className="px-3 py-2 text-right tabular-nums"
                       >
                         {brl(atual?.[linha.chave] ?? 0)}
                       </td>
                       <td
-                        key={`${a.ano}-${linha.chave}-p`}
                         className="px-3 py-2 text-right tabular-nums"
                       >
                         {brl(proj?.[linha.chave] ?? 0)}
                       </td>
-                    </>
+                    </Fragment>
                   );
                 })}
               </tr>
@@ -187,8 +185,8 @@ export function DrePanel({ caseId, reloadKey = 0 }: { caseId: string; reloadKey?
                 const atual = dados.linhas.find((l) => l.ano === a.ano && l.cenario === "atual");
                 const proj = dados.linhas.find((l) => l.ano === a.ano && l.cenario === "projetado");
                 return (
-                  <>
-                    <td key={`${a.ano}-ircs-a`} className="px-3 py-2 text-right tabular-nums">
+                  <Fragment key={`ircs-${a.ano}`}>
+                    <td className="px-3 py-2 text-right tabular-nums">
                       {atual?.ircs === null || atual?.ircs === undefined ? "—" : brl(atual.ircs)}
                       {atual?.ircsOrigem === "marco_anterior" ? (
                         <span className="block text-[10px] text-muted-foreground">
@@ -196,10 +194,10 @@ export function DrePanel({ caseId, reloadKey = 0 }: { caseId: string; reloadKey?
                         </span>
                       ) : null}
                     </td>
-                    <td key={`${a.ano}-ircs-p`} className="px-3 py-2 text-right tabular-nums">
+                    <td className="px-3 py-2 text-right tabular-nums">
                       {proj?.ircs === null || proj?.ircs === undefined ? "—" : brl(proj.ircs)}
                     </td>
-                  </>
+                  </Fragment>
                 );
               })}
             </tr>
@@ -210,20 +208,18 @@ export function DrePanel({ caseId, reloadKey = 0 }: { caseId: string; reloadKey?
                 const atual = dados.linhas.find((l) => l.ano === a.ano && l.cenario === "atual");
                 const proj = dados.linhas.find((l) => l.ano === a.ano && l.cenario === "projetado");
                 return (
-                  <>
+                  <Fragment key={`res-${a.ano}`}>
                     <td
-                      key={`${a.ano}-res-a`}
                       className="px-3 py-2 text-right font-semibold tabular-nums"
                     >
                       {atual?.resultadoLiquido == null ? "—" : brl(atual.resultadoLiquido)}
                     </td>
                     <td
-                      key={`${a.ano}-res-p`}
                       className="px-3 py-2 text-right font-semibold tabular-nums"
                     >
                       {proj?.resultadoLiquido == null ? "—" : brl(proj.resultadoLiquido)}
                     </td>
-                  </>
+                  </Fragment>
                 );
               })}
             </tr>
