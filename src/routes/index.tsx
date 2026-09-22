@@ -31,7 +31,13 @@ type Modulo = {
   selo: string;
   tone: string;
   chip: string;
-  to?: "/simulador" | "/aluguel" | "/capex" | "/contratos" | "/saldos-credores";
+  to?:
+    | "/simulador"
+    | "/aluguel"
+    | "/capex"
+    | "/contratos"
+    | "/saldos-credores"
+    | "/monofasico";
   cta: string;
 };
 
@@ -121,6 +127,24 @@ const MODULOS: Modulo[] = [
     chip: "bg-magenta text-white",
     to: "/capex",
     cta: "Abrir calculadora de CAPEX",
+  },
+
+  {
+    numero: "06",
+    titulo: "Recuperação de PIS/COFINS Monofásico",
+    resumo:
+      "Quem revende produtos com tributo já pago pela indústria pode ter recolhido PIS/COFINS a maior nos últimos cinco anos.",
+    itens: [
+      "Estimativa do valor pago a maior por segmento e regime tributário",
+      "Correção pela Selic e projeção da economia recorrente",
+      "Plano em três fases: levantamento, habilitação e compensação",
+    ],
+    status: "aberto",
+    selo: "Disponível online",
+    tone: "border-sky/40 bg-sky-soft",
+    chip: "bg-sky text-white",
+    to: "/monofasico",
+    cta: "Abrir calculadora monofásica",
   },
 ];
 
