@@ -131,6 +131,17 @@ export function CreditoNcmPanel({ caseId }: { caseId: string }) {
         </p>
       </div>
 
+      <CfopFilter
+        cfops={cfopsDisponiveis}
+        selecionados={cfopSelecionados}
+        onToggle={(c) =>
+          setCfopSelecionados((prev) =>
+            prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c],
+          )
+        }
+        onLimpar={() => setCfopSelecionados([])}
+      />
+
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-lg border border-border p-3">
           <p className="text-xs text-muted-foreground">Crédito apurado</p>
