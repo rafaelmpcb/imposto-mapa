@@ -30,19 +30,32 @@ const MODULOS = [
 
 type ModuloId = (typeof MODULOS)[number]["id"];
 
+type Tone = "plain" | "mint" | "lavender" | "magenta" | "sky" | "amber";
+
+const TONE_CARD: Record<Tone, string> = {
+  plain: "border-border bg-card",
+  mint: "border-transparent bg-mint-soft",
+  lavender: "border-transparent bg-lavender-soft",
+  magenta: "border-transparent bg-magenta-soft",
+  sky: "border-transparent bg-sky-soft",
+  amber: "border-transparent bg-amber-tone-soft",
+};
+
 function Card({
   titulo,
   children,
   destaque,
+  tone = "plain",
 }: {
   titulo?: string;
   children: React.ReactNode;
   destaque?: boolean;
+  tone?: Tone;
 }) {
   return (
     <div
-      className={`rounded-xl border p-5 ${
-        destaque ? "border-navy bg-navy text-navy-foreground" : "border-border bg-card"
+      className={`rounded-2xl border p-5 ${
+        destaque ? "border-transparent bg-navy text-navy-foreground" : TONE_CARD[tone]
       }`}
     >
       {titulo ? (
