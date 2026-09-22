@@ -299,6 +299,10 @@ export function ParecerDashboard({
 
       {modulo === "regimes" ? (
         <div className="space-y-4">
+          <RegimesChart
+            cenarios={snapshot.sec8.cenarios}
+            melhorLabel={melhorRegime?.label ?? null}
+          />
           {snapshot.sec8.cenarios.length === 0 ? (
             <Vazio>Sem comparação de regimes disponível para este Caso.</Vazio>
           ) : (
