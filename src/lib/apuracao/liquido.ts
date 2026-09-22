@@ -65,8 +65,9 @@ export function somar(itens: ItemApurado[], estimado = false): BlocoApuracao {
     estimado,
   };
   for (const i of itens) {
-    if (i.status === PENDENTE_REVISAO) {
+    if (estaPendente(i.status)) {
       bloco.pendentes += 1;
+
       bloco.basePendente = round2(bloco.basePendente + i.valorBase);
       continue;
     }
