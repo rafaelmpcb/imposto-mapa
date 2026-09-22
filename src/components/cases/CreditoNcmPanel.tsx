@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 
-import { Button, Notice } from "@/components/simulator/ui";
+import { Notice } from "@/components/simulator/ui";
+import { CfopFilter } from "@/components/cases/CfopFilter";
 import { withAuthRetry } from "@/lib/auth-retry";
 import { getCreditoItens, resolverItemAmbiguo, type CreditoItem } from "@/lib/nfe.functions";
 import { FONTE_TABELA, type OpcaoCandidata } from "@/lib/nfe/credito";
@@ -18,6 +19,7 @@ export function CreditoNcmPanel({ caseId }: { caseId: string }) {
   const [itens, setItens] = useState<CreditoItem[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [cfopSelecionados, setCfopSelecionados] = useState<string[]>([]);
 
   const load = useCallback(async () => {
     try {
