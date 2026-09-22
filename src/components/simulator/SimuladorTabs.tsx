@@ -5,6 +5,7 @@ const TABS = [
   { to: "/simulador", label: "Empresas e salários (IBS/CBS)" },
   { to: "/aluguel", label: "Locação e contratos" },
   { to: "/capex", label: "Planejamento de CAPEX" },
+  { to: "/contratos", label: "Contratos e reequilíbrio" },
   { to: "/saldos-credores", label: "Saldos credores" },
 ] as const;
 
@@ -12,7 +13,7 @@ const TABS = [
 export function SimuladorTabs({
   active,
 }: {
-  active: "/simulador" | "/aluguel" | "/capex" | "/saldos-credores";
+  active: "/simulador" | "/aluguel" | "/capex" | "/contratos" | "/saldos-credores";
 }) {
 
   return (

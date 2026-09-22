@@ -13,7 +13,7 @@ import { DiagnosticoCompleto } from "@/components/cases/DiagnosticoCompleto";
 import { FunnelPanel } from "@/components/cases/FunnelPanel";
 import { StageSelect } from "@/components/cases/StageSelect";
 import { HubTabBar, type HubTabId } from "@/components/hub/HubTabs";
-import { ModuloEmBreve } from "@/components/hub/ModuloEmBreve";
+import { ContratosHubPanel } from "@/components/hub/ContratosHubPanel";
 import { LocacaoHubPanel } from "@/components/hub/LocacaoHubPanel";
 import { CapexHubPanel } from "@/components/hub/CapexHubPanel";
 import { SaldosHubPanel } from "@/components/hub/SaldosHubPanel";
@@ -454,19 +454,7 @@ function MyCalculations() {
       );
     }
     if (tab === "locacao") return <LocacaoHubPanel caseNames={caseNames} />;
-    if (tab === "contratos") {
-      return (
-        <ModuloEmBreve
-          titulo="Gestão de contratos e reequilíbrio econômico"
-          descricao="Revisão da carteira de contratos diante da mudança de carga, com geração de aditivos e cláusulas de reequilíbrio."
-          itens={[
-            "Cadastro dos contratos vigentes e das cláusulas tributárias",
-            "Cálculo do desequilíbrio por contrato ano a ano",
-            "Minuta de aditivo com a fundamentação da revisão",
-          ]}
-        />
-      );
-    }
+    if (tab === "contratos") return <ContratosHubPanel caseNames={caseNames} />;
     if (tab === "creditos") return <SaldosHubPanel caseNames={caseNames} />;
 
     return <CapexHubPanel caseNames={caseNames} />;
