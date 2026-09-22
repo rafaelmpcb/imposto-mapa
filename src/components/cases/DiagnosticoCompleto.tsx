@@ -12,6 +12,7 @@ import { NfseServicoPanel } from "@/components/cases/NfseServicoPanel";
 import { CreditoNbsPanel } from "@/components/cases/CreditoNbsPanel";
 import { DebitoNbsPanel } from "@/components/cases/DebitoNbsPanel";
 import { RevisaoNbsPanel } from "@/components/cases/RevisaoNbsPanel";
+import { ApuracaoLiquidaPanel } from "@/components/cases/ApuracaoLiquidaPanel";
 import { withAuthRetry } from "@/lib/auth-retry";
 import {
   deleteCarteiraRow,
@@ -650,6 +651,8 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
       <DebitoNbsPanel caseId={caseItem.id} reloadKey={nbsReload} />
 
       <RevisaoNbsPanel caseId={caseItem.id} onResolved={() => setNbsReload((v) => v + 1)} />
+
+      <ApuracaoLiquidaPanel caseId={caseItem.id} reloadKey={nbsReload} />
 
       {fornecedores.classificadas > 0 ? (
         <div className="rounded-xl border border-navy/30 bg-navy/5 p-4">
