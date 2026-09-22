@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 
-import { Button, Notice } from "@/components/simulator/ui";
+import { Notice } from "@/components/simulator/ui";
+import { CfopFilter } from "@/components/cases/CfopFilter";
 import { withAuthRetry } from "@/lib/auth-retry";
 import { getCreditoItens, resolverItemAmbiguo, type CreditoItem } from "@/lib/nfe.functions";
 import { FONTE_TABELA, type OpcaoCandidata } from "@/lib/nfe/credito";
@@ -18,6 +19,7 @@ export function CreditoNcmPanel({ caseId }: { caseId: string }) {
   const [itens, setItens] = useState<CreditoItem[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [cfopSelecionados, setCfopSelecionados] = useState<string[]>([]);
 
   const load = useCallback(async () => {
     try {
@@ -32,13 +34,28 @@ export function CreditoNcmPanel({ caseId }: { caseId: string }) {
     void load();
   }, [load]);
 
+  const cfopsDisponiveis = useMemo(
+    () => [...new Set(itens.map((i) => i.cfop).filter((c): c is string => Boolean(c)))].sort(),
+    [itens],
+  );
+
+  const itensFiltrados = useMemo(
+    () =>
+      cfopSelecionados.length === 0
+        ? itens
+        : itens.filter((i) => i.cfop && cfopSelecionados.includes(i.cfop)),
+    [itens, cfopSelecionados],
+  );
+
   const resumo = useMemo(() => {
-    const ok = itens.filter((i) => i.status_classificacao === "ok");
-    const semDado = itens.filter(
+    const ok = itensFiltrados.filter((i) => i.status_classificacao === "ok");
+    const semDado = itensFiltrados.filter(
       (i) => i.status_classificacao === "sem_dado" || i.status_classificacao === "imposto_seletivo",
     );
-    const ambiguos = itens.filter((i) => i.status_classificacao === "ambiguo_revisao_pendente");
-    const totalItens = itens.reduce((acc, i) => acc + Number(i.valor_item), 0);
+    const ambiguos = itensFiltrados.filter(
+      (i) => i.status_classificacao === "ambiguo_revisao_pendente",
+    );
+    const totalItens = itensFiltrados.reduce((acc, i) => acc + Number(i.valor_item), 0);
     const valorSemDado = semDado.reduce((acc, i) => acc + Number(i.valor_item), 0);
     return {
       credito: ok.reduce((acc, i) => acc + Number(i.valor_credito_ibs_cbs), 0),
@@ -48,11 +65,11 @@ export function CreditoNcmPanel({ caseId }: { caseId: string }) {
       valorSemDado,
       pctSemDado: totalItens > 0 ? (valorSemDado / totalItens) * 100 : 0,
     };
-  }, [itens]);
+  }, [itensFiltrados]);
 
   const topFornecedores = useMemo(() => {
     const map = new Map<string, { nome: string; cnpj: string | null; credito: number }>();
-    for (const i of itens) {
+    for (const i of itensFiltrados) {
       if (i.status_classificacao !== "ok") continue;
       const key = i.cnpj_fornecedor ?? i.fornecedor ?? "—";
       const found = map.get(key);
@@ -65,18 +82,18 @@ export function CreditoNcmPanel({ caseId }: { caseId: string }) {
         });
     }
     return [...map.values()].sort((a, b) => b.credito - a.credito).slice(0, 5);
-  }, [itens]);
+  }, [itensFiltrados]);
 
   const topNcms = useMemo(() => {
     const map = new Map<string, { ncm: string; descricao: string | null; credito: number }>();
-    for (const i of itens) {
+    for (const i of itensFiltrados) {
       if (i.status_classificacao !== "ok" || !i.ncm) continue;
       const found = map.get(i.ncm);
       if (found) found.credito += Number(i.valor_credito_ibs_cbs);
       else map.set(i.ncm, { ncm: i.ncm, descricao: i.descricao, credito: Number(i.valor_credito_ibs_cbs) });
     }
     return [...map.values()].sort((a, b) => b.credito - a.credito).slice(0, 5);
-  }, [itens]);
+  }, [itensFiltrados]);
 
   const escolher = async (item: CreditoItem, opcao: OpcaoCandidata) => {
     setBusy(true);
@@ -113,6 +130,17 @@ export function CreditoNcmPanel({ caseId }: { caseId: string }) {
           à classificação de regime por CRT — uma não substitui a outra.
         </p>
       </div>
+
+      <CfopFilter
+        cfops={cfopsDisponiveis}
+        selecionados={cfopSelecionados}
+        onToggle={(c) =>
+          setCfopSelecionados((prev) =>
+            prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c],
+          )
+        }
+        onLimpar={() => setCfopSelecionados([])}
+      />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-lg border border-border p-3">

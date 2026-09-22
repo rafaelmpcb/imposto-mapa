@@ -7,6 +7,8 @@ export const LIMITE_CONCENTRACAO_CRITICA = 60;
 
 export type ConcentracaoLinha = {
   codigo: string;
+  /** CFOP da linha (só mercadorias; serviços não têm CFOP). */
+  cfop: string | null;
   cnpj: string | null;
   nome: string | null;
   valorBase: number;
@@ -35,6 +37,7 @@ const asRows = (r: { data: unknown }) => (r.data ?? []) as Record<string, unknow
 const toLinhas = (rows: Record<string, unknown>[]): ConcentracaoLinha[] =>
   rows.map((r) => ({
     codigo: String(r["codigo"] ?? "—"),
+    cfop: (r["cfop"] as string | null) ?? null,
     cnpj: (r["cnpj_contraparte"] as string | null) ?? null,
     nome: (r["nome_contraparte"] as string | null) ?? null,
     valorBase: Number(r["valor_base_total"] ?? 0),
@@ -77,10 +80,11 @@ export const getConcentracao = createServerFn({ method: "POST" })
     };
 
     const cols = "codigo,cnpj_contraparte,nome_contraparte,valor_base_total,valor_apurado_total,n_itens,n_itens_pendentes";
+    const colsMercadoria = `${cols},cfop`;
 
     const [compras, vendas, tomados, prestados, notasVenda, itensVenda] = await Promise.all([
-      db.from("vw_concentracao_compras_ncm").select(cols).eq("case_id", caseId),
-      db.from("vw_concentracao_vendas_ncm").select(cols).eq("case_id", caseId),
+      db.from("vw_concentracao_compras_ncm").select(colsMercadoria).eq("case_id", caseId),
+      db.from("vw_concentracao_vendas_ncm").select(colsMercadoria).eq("case_id", caseId),
       db
         .from("vw_concentracao_servicos_nbs")
         .select(cols)

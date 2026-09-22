@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { registrarDuplicados } from "@/lib/carga/duplicados";
 import type { NfseNota } from "@/lib/nfse/parse";
 import {
   FONTE_DOCUMENTO,
@@ -53,12 +54,22 @@ export const saveNotasServico = createServerFn({ method: "POST" })
     );
 
     const vistas = new Set<string>();
+    const repetidas: { chave: string; arquivo: string }[] = [];
     const notas = data.notas.filter((n) => {
       if (!n.chave) return true;
-      if (jaGravadas.has(n.chave) || vistas.has(n.chave)) return false;
+      if (jaGravadas.has(n.chave) || vistas.has(n.chave)) {
+        if (jaGravadas.has(n.chave)) repetidas.push({ chave: n.chave, arquivo: n.arquivo });
+        return false;
+      }
       vistas.add(n.chave);
       return true;
     });
+    const duplicados = await registrarDuplicados(
+      supabaseAdmin,
+      data.caseId,
+      direcao === "prestado" ? "nfse_prestado" : "nfse_tomado",
+      repetidas,
+    );
 
     const payload = notas.map((n) => ({
       case_id: data.caseId,
@@ -191,7 +202,12 @@ export const saveNotasServico = createServerFn({ method: "POST" })
       if (ins.error) throw new Error(ins.error.message);
     }
 
-    return { ok: true as const, inserted: payload.length, itens: itensPayload.length };
+    return {
+      ok: true as const,
+      inserted: payload.length,
+      itens: itensPayload.length,
+      duplicados,
+    };
   });
 
 export interface CreditoServicoItem {

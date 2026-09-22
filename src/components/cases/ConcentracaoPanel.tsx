@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 
 import { Notice } from "@/components/simulator/ui";
+import { CfopFilter } from "@/components/cases/CfopFilter";
 import { withAuthRetry } from "@/lib/auth-retry";
 import {
   getConcentracao,
@@ -84,6 +85,7 @@ export function ConcentracaoPanel({ caseId, reloadKey = 0 }: { caseId: string; r
   const [drillCodigo, setDrillCodigo] = useState<string | null>(null);
   const [drillContraparte, setDrillContraparte] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [cfopSelecionados, setCfopSelecionados] = useState<string[]>([]);
 
   const load = useCallback(async () => {
     try {
@@ -98,13 +100,38 @@ export function ConcentracaoPanel({ caseId, reloadKey = 0 }: { caseId: string; r
     void load();
   }, [load, reloadKey]);
 
-  const atual: ConcentracaoDataset | null = useMemo(() => {
+  const base: ConcentracaoDataset | null = useMemo(() => {
     if (!dados) return null;
     if (visao === "compras") return dados.compras;
     if (visao === "vendas") return dados.vendas;
     if (visao === "tomado") return dados.servicosTomados;
     return dados.servicosPrestados;
   }, [dados, visao]);
+
+  const mercadoria = visao === "compras" || visao === "vendas";
+
+  const cfopsDisponiveis = useMemo(
+    () =>
+      mercadoria
+        ? [
+            ...new Set(
+              (base?.linhas ?? []).map((l) => l.cfop).filter((c): c is string => Boolean(c) && c !== "—"),
+            ),
+          ].sort()
+        : [],
+    [base, mercadoria],
+  );
+
+  const atual: ConcentracaoDataset | null = useMemo(() => {
+    if (!base) return null;
+    if (!mercadoria || cfopSelecionados.length === 0) return base;
+    const linhas = base.linhas.filter((l) => l.cfop && cfopSelecionados.includes(l.cfop));
+    return {
+      ...base,
+      linhas,
+      total: linhas.reduce((acc, l) => acc + l.valorApurado, 0),
+    };
+  }, [base, mercadoria, cfopSelecionados]);
 
   const porCodigo = useMemo(() => (atual ? agrupar(atual.linhas, "codigo") : []), [atual]);
   const porContraparte = useMemo(
@@ -116,6 +143,7 @@ export function ConcentracaoPanel({ caseId, reloadKey = 0 }: { caseId: string; r
     setVisao(v);
     setDrillCodigo(null);
     setDrillContraparte(null);
+    setCfopSelecionados([]);
   };
 
   if (!dados) return null;
@@ -168,6 +196,19 @@ export function ConcentracaoPanel({ caseId, reloadKey = 0 }: { caseId: string; r
       </div>
 
       {error ? <Notice tone="warning">{error}</Notice> : null}
+
+      <CfopFilter
+        cfops={cfopsDisponiveis}
+        selecionados={cfopSelecionados}
+        onToggle={(c) => {
+          setDrillCodigo(null);
+          setDrillContraparte(null);
+          setCfopSelecionados((prev) =>
+            prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c],
+          );
+        }}
+        onLimpar={() => setCfopSelecionados([])}
+      />
 
       {visao === "vendas" && atual && atual.notasVendaSemItens > 0 ? (
         <Notice tone="warning">

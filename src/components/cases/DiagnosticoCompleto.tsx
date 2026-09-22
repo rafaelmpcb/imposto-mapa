@@ -7,6 +7,7 @@ import { CarteiraResult } from "@/components/cases/CarteiraResult";
 import { PgdasdPanel } from "@/components/cases/PgdasdPanel";
 import { NfeUnificadoPanel } from "@/components/cases/NfeUnificadoPanel";
 import { NfseCarteiraPanel } from "@/components/cases/NfseCarteiraPanel";
+import { PainelCargaPanel } from "@/components/cases/PainelCargaPanel";
 import { CreditoNcmPanel } from "@/components/cases/CreditoNcmPanel";
 import { DebitoNcmPanel } from "@/components/cases/DebitoNcmPanel";
 
@@ -647,6 +648,8 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
         onRefreshRows={(ids) => void handleRefreshRows(ids)}
         onDeleteRow={(id) => void handleDeleteRow(id)}
       />
+
+      <PainelCargaPanel caseId={caseItem.id} reloadKey={nbsReload} />
 
       <CreditoNcmPanel caseId={caseItem.id} />
 
