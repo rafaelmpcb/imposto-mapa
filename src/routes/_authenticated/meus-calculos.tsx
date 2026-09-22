@@ -12,6 +12,9 @@ import { ParecerPadraoPanel } from "@/components/cases/ParecerPadraoPanel";
 import { DiagnosticoCompleto } from "@/components/cases/DiagnosticoCompleto";
 import { FunnelPanel } from "@/components/cases/FunnelPanel";
 import { StageSelect } from "@/components/cases/StageSelect";
+import { HubTabBar, type HubTabId } from "@/components/hub/HubTabs";
+import { ModuloEmBreve } from "@/components/hub/ModuloEmBreve";
+import { LocacaoHubPanel } from "@/components/hub/LocacaoHubPanel";
 import type { CnpjData } from "@/lib/cnpj/types";
 import {
   deleteCase,
@@ -79,6 +82,7 @@ function MyCalculations() {
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"kanban" | "funnel">("kanban");
+  const [tab, setTab] = useState<HubTabId>("casos");
   const [funnel, setFunnel] = useState<{ stages: StageStat[]; totalCases: number } | null>(null);
   const [openCaseId, setOpenCaseId] = useState<string | null>(null);
   const [busyCaseId, setBusyCaseId] = useState<string | null>(null);
@@ -294,6 +298,24 @@ function MyCalculations() {
     );
   }, [cases, query]);
 
+  const caseNames = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of cases ?? []) map.set(c.id, c.client_name || "Sem identificação");
+    return map;
+  }, [cases]);
+
+  const allSimulations = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    const items = (cases ?? []).flatMap((c) => c.simulations);
+    const sorted = [...items].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+    if (!term) return sorted;
+    return sorted.filter((s) => (s.client_name ?? "").toLowerCase().includes(term));
+  }, [cases, query]);
+
+
+
   const renderSimulation = (item: SavedSimulation) => {
     const diff = Number(item.reform_total) - Number(item.current_total);
     const worse = diff > 0.004;
@@ -394,6 +416,81 @@ function MyCalculations() {
     );
   };
 
+  const renderOtherTab = () => {
+    if (tab === "simulacoes") {
+      return (
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="min-w-64 flex-1">
+              <Field label="Buscar por nome do cliente ou empresa">
+                <TextInput
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Digite parte do nome"
+                  autoComplete="off"
+                />
+              </Field>
+            </div>
+            <Link
+              to="/simulador"
+              className="rounded-md bg-navy px-3 py-2 text-sm font-semibold text-navy-foreground"
+            >
+              Nova simulação
+            </Link>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {allSimulations.length} cálculo{allSimulations.length === 1 ? "" : "s"} no histórico
+          </p>
+          {allSimulations.length === 0 ? (
+            <Notice>Nenhum cálculo salvo ainda.</Notice>
+          ) : (
+            <ul className="space-y-3">{allSimulations.map(renderSimulation)}</ul>
+          )}
+        </section>
+      );
+    }
+    if (tab === "locacao") return <LocacaoHubPanel caseNames={caseNames} />;
+    if (tab === "contratos") {
+      return (
+        <ModuloEmBreve
+          titulo="Gestão de contratos e reequilíbrio econômico"
+          descricao="Revisão da carteira de contratos diante da mudança de carga, com geração de aditivos e cláusulas de reequilíbrio."
+          itens={[
+            "Cadastro dos contratos vigentes e das cláusulas tributárias",
+            "Cálculo do desequilíbrio por contrato ano a ano",
+            "Minuta de aditivo com a fundamentação da revisão",
+          ]}
+        />
+      );
+    }
+    if (tab === "creditos") {
+      return (
+        <ModuloEmBreve
+          titulo="Monetização e transição de saldos credores"
+          descricao="Planejamento do aproveitamento dos saldos acumulados de PIS/COFINS e ICMS durante a transição."
+          itens={[
+            "Levantamento dos saldos por tributo e por período",
+            "Cronograma de aproveitamento e de ressarcimento",
+            "Riscos e alternativas de monetização",
+          ]}
+        />
+      );
+    }
+    return (
+      <ModuloEmBreve
+        titulo="Planejamento de CAPEX e ativo imobilizado"
+        descricao="Comparação entre antecipar o investimento e postergá-lo, confrontando o crédito imediato com a apropriação em 1/48."
+        itens={[
+          "Simulação do momento ideal da aquisição",
+          "Valor presente do crédito em cada cenário",
+          "Efeito no caixa e na depreciação",
+        ]}
+      />
+    );
+  };
+
+
   return (
     <main className="min-h-screen bg-background">
       <header className="bg-navy text-navy-foreground">
@@ -401,9 +498,10 @@ function MyCalculations() {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-navy-foreground/70">
             Área restrita do escritório
           </p>
-          <h1 className="mt-3 text-3xl leading-tight sm:text-4xl">Meus Cálculos</h1>
+          <h1 className="mt-3 text-3xl leading-tight sm:text-4xl">Painel de gestão</h1>
           <p className="mt-3 max-w-2xl text-sm text-navy-foreground/80">
-            Casos de clientes, com o histórico de simulações de cada um e o funil comercial.
+            Todas as ferramentas do escritório em um só lugar: casos e funil, simulações de impacto
+            fiscal, locação e os módulos em preparação.
           </p>
           <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-navy-foreground/80">
             {userEmail ? <span>Conectado como {userEmail}</span> : null}
@@ -419,8 +517,20 @@ function MyCalculations() {
         </div>
       </header>
 
+      <HubTabBar
+        active={tab}
+        onChange={(id) => {
+          setTab(id);
+          setOpenCaseId(null);
+          setDiagCaseId(null);
+          setParecerCaseId(null);
+        }}
+      />
+
       <div className="mx-auto max-w-6xl px-5 py-8">
-        {cases === null ? (
+        {tab !== "casos" ? (
+          renderOtherTab()
+        ) : cases === null ? (
           <section className="rounded-xl border border-border bg-card p-5 sm:p-7">
             {error ? (
               <div className="space-y-4">

@@ -177,3 +177,20 @@ export const listCasosParaAluguel = createServerFn({ method: "POST" })
       })),
     };
   });
+
+/** Todos os contratos de locação salvos, com ou sem Caso vinculado. */
+export const listTodosContratosAluguel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin
+      .from("contrato_aluguel")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(300);
+    if (error) throw new Error(error.message);
+    return {
+      ok: true as const,
+      items: (rows ?? []).map((r) => toRow(r as Record<string, unknown>)),
+    };
+  });
