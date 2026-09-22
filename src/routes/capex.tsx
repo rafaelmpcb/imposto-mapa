@@ -95,6 +95,13 @@ function CapexPage() {
   const [tipoAtivo, setTipoAtivo] = useState<TipoAtivo>("maquinas");
   const [regime, setRegime] = useState<RegimeCapex>("real");
   const [icms, setIcms] = useState(ICMS_PADRAO_PCT);
+  const trocarAtivo = (t: TipoAtivo) => {
+    setTipoAtivo(t);
+    const p = ATIVO_PRESETS[t];
+    setIcms(p.icmsPct);
+    setIpi(p.ipiPct);
+    setCiap(p.fatorCiapPct);
+  };
   const [ipi, setIpi] = useState(0);
   const [ciap, setCiap] = useState(100);
   const [custoOportunidade, setCustoOportunidade] = useState(12);
