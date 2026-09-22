@@ -4,6 +4,7 @@ import {
   Calculator,
   FileText,
   Factory,
+  PiggyBank,
   Wallet,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -15,6 +16,7 @@ export type HubTabId =
   | "locacao"
   | "contratos"
   | "creditos"
+  | "monofasico"
   | "capex";
 
 export interface HubTab {
@@ -60,6 +62,14 @@ export const HUB_TABS: HubTab[] = [
     hint: "PIS/COFINS e ICMS",
     ativo: true,
     icon: Wallet,
+  },
+
+  {
+    id: "monofasico",
+    label: "Monofásico",
+    hint: "Recuperação de PIS/COFINS",
+    ativo: true,
+    icon: PiggyBank,
   },
 
   {

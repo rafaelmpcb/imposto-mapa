@@ -7,13 +7,20 @@ const TABS = [
   { to: "/capex", label: "Planejamento de CAPEX" },
   { to: "/contratos", label: "Contratos e reequilíbrio" },
   { to: "/saldos-credores", label: "Saldos credores" },
+  { to: "/monofasico", label: "Recuperação monofásica" },
 ] as const;
 
 /** Abas de navegação entre as calculadoras públicas. */
 export function SimuladorTabs({
   active,
 }: {
-  active: "/simulador" | "/aluguel" | "/capex" | "/contratos" | "/saldos-credores";
+  active:
+    | "/simulador"
+    | "/aluguel"
+    | "/capex"
+    | "/contratos"
+    | "/saldos-credores"
+    | "/monofasico";
 }) {
 
   return (
