@@ -226,6 +226,9 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
   const creditoTotal = comprasRows.reduce((a, r) => a + num(r["valor_apurado_total"]), 0);
   const baseTotal = comprasRows.reduce((a, r) => a + num(r["valor_base_total"]), 0);
 
+  /* ---------- Seção 4b: detalhe por fornecedor (notas, meses, NCM) ---------- */
+  const detalhes = await compilarDetalheFornecedores(admin, caseId, regimePorCnpj);
+
   /* ---------- Seção 5: preço necessário ---------- */
   const precoRows = [
     ...((precoMercRes.data ?? []) as Record<string, unknown>[]),
