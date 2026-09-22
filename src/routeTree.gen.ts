@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AluguelRouteImport } from './routes/aluguel'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as SimuladorRouteImport } from './routes/simulador'
 import { Route as AuthenticatedConfigAliquotasRouteImport } from './routes/_authenticated/config-aliquotas'
@@ -28,6 +29,11 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AluguelRoute = AluguelRouteImport.update({
+  id: '/aluguel',
+  path: '/aluguel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -80,6 +86,7 @@ const ApiPublicRelatorioPdfRoute = ApiPublicRelatorioPdfRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/aluguel': typeof AluguelRoute
   '/auth': typeof AuthRoute
   '/simulador': typeof SimuladorRoute
   '/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
@@ -92,6 +99,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/aluguel': typeof AluguelRoute
   '/auth': typeof AuthRoute
   '/simulador': typeof SimuladorRoute
   '/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/aluguel': typeof AluguelRoute
   '/auth': typeof AuthRoute
   '/simulador': typeof SimuladorRoute
   '/_authenticated/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/aluguel'
     | '/auth'
     | '/simulador'
     | '/config-aliquotas'
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/aluguel'
     | '/auth'
     | '/simulador'
     | '/config-aliquotas'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/aluguel'
     | '/auth'
     | '/simulador'
     | '/_authenticated/config-aliquotas'
@@ -159,6 +171,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AluguelRoute: typeof AluguelRoute
   AuthRoute: typeof AuthRoute
   SimuladorRoute: typeof SimuladorRoute
   RelatorioTokenRoute: typeof RelatorioTokenRoute
@@ -181,6 +194,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/aluguel': {
+      id: '/aluguel'
+      path: '/aluguel'
+      fullPath: '/aluguel'
+      preLoaderRoute: typeof AluguelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -267,6 +287,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AluguelRoute: AluguelRoute,
   AuthRoute: AuthRoute,
   SimuladorRoute: SimuladorRoute,
   RelatorioTokenRoute: RelatorioTokenRoute,
