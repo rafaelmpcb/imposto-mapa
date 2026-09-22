@@ -58,9 +58,10 @@ export const HUB_TABS: HubTab[] = [
     id: "creditos",
     label: "Saldos credores",
     hint: "PIS/COFINS e ICMS",
-    ativo: false,
+    ativo: true,
     icon: Wallet,
   },
+
   {
     id: "capex",
     label: "CAPEX",

@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AluguelRouteImport } from './routes/aluguel'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CapexRouteImport } from './routes/capex'
+import { Route as SaldosCredoresRouteImport } from './routes/saldos-credores'
 import { Route as SimuladorRouteImport } from './routes/simulador'
 import { Route as AuthenticatedConfigAliquotasRouteImport } from './routes/_authenticated/config-aliquotas'
 import { Route as AuthenticatedMeusCalculosRouteImport } from './routes/_authenticated/meus-calculos'
@@ -45,6 +46,11 @@ const AuthRoute = AuthRouteImport.update({
 const CapexRoute = CapexRouteImport.update({
   id: '/capex',
   path: '/capex',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SaldosCredoresRoute = SaldosCredoresRouteImport.update({
+  id: '/saldos-credores',
+  path: '/saldos-credores',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SimuladorRoute = SimuladorRouteImport.update({
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/aluguel': typeof AluguelRoute
   '/auth': typeof AuthRoute
   '/capex': typeof CapexRoute
+  '/saldos-credores': typeof SaldosCredoresRoute
   '/simulador': typeof SimuladorRoute
   '/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
   '/meus-calculos': typeof AuthenticatedMeusCalculosRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/aluguel': typeof AluguelRoute
   '/auth': typeof AuthRoute
   '/capex': typeof CapexRoute
+  '/saldos-credores': typeof SaldosCredoresRoute
   '/simulador': typeof SimuladorRoute
   '/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
   '/meus-calculos': typeof AuthenticatedMeusCalculosRoute
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/aluguel': typeof AluguelRoute
   '/auth': typeof AuthRoute
   '/capex': typeof CapexRoute
+  '/saldos-credores': typeof SaldosCredoresRoute
   '/simulador': typeof SimuladorRoute
   '/_authenticated/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
   '/_authenticated/meus-calculos': typeof AuthenticatedMeusCalculosRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/aluguel'
     | '/auth'
     | '/capex'
+    | '/saldos-credores'
     | '/simulador'
     | '/config-aliquotas'
     | '/meus-calculos'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/aluguel'
     | '/auth'
     | '/capex'
+    | '/saldos-credores'
     | '/simulador'
     | '/config-aliquotas'
     | '/meus-calculos'
@@ -170,6 +181,7 @@ export interface FileRouteTypes {
     | '/aluguel'
     | '/auth'
     | '/capex'
+    | '/saldos-credores'
     | '/simulador'
     | '/_authenticated/config-aliquotas'
     | '/_authenticated/meus-calculos'
@@ -186,6 +198,7 @@ export interface RootRouteChildren {
   AluguelRoute: typeof AluguelRoute
   AuthRoute: typeof AuthRoute
   CapexRoute: typeof CapexRoute
+  SaldosCredoresRoute: typeof SaldosCredoresRoute
   SimuladorRoute: typeof SimuladorRoute
   RelatorioTokenRoute: typeof RelatorioTokenRoute
   STokenRoute: typeof STokenRoute
@@ -228,6 +241,13 @@ declare module '@tanstack/react-router' {
       path: '/capex'
       fullPath: '/capex'
       preLoaderRoute: typeof CapexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/saldos-credores': {
+      id: '/saldos-credores'
+      path: '/saldos-credores'
+      fullPath: '/saldos-credores'
+      preLoaderRoute: typeof SaldosCredoresRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/simulador': {
@@ -310,6 +330,7 @@ const rootRouteChildren: RootRouteChildren = {
   AluguelRoute: AluguelRoute,
   AuthRoute: AuthRoute,
   CapexRoute: CapexRoute,
+  SaldosCredoresRoute: SaldosCredoresRoute,
   SimuladorRoute: SimuladorRoute,
   RelatorioTokenRoute: RelatorioTokenRoute,
   STokenRoute: STokenRoute,

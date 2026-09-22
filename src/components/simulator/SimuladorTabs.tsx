@@ -4,14 +4,16 @@ const TABS = [
   { to: "/simulador", label: "Empresas e salários (IBS/CBS)" },
   { to: "/aluguel", label: "Locação e contratos" },
   { to: "/capex", label: "Planejamento de CAPEX" },
+  { to: "/saldos-credores", label: "Saldos credores" },
 ] as const;
 
 /** Abas de navegação entre as calculadoras públicas. */
 export function SimuladorTabs({
   active,
 }: {
-  active: "/simulador" | "/aluguel" | "/capex";
+  active: "/simulador" | "/aluguel" | "/capex" | "/saldos-credores";
 }) {
+
   return (
     <nav className="mx-auto max-w-6xl px-5">
       <div className="flex gap-1 overflow-x-auto border-b border-border">
