@@ -12,7 +12,9 @@ import {
   YAxis,
 } from "recharts";
 
+import { AuditoriaXmlPanel } from "@/components/monofasico/AuditoriaXmlPanel";
 import { SimuladorTabs } from "@/components/simulator/SimuladorTabs";
+
 import {
   Button,
   Field,
