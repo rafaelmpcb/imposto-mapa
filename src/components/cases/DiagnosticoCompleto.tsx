@@ -660,6 +660,8 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
 
       <ApuracaoLiquidaPanel caseId={caseItem.id} reloadKey={nbsReload} />
 
+      <ConcentracaoPanel caseId={caseItem.id} reloadKey={nbsReload} />
+
       {fornecedores.classificadas > 0 ? (
         <div className="rounded-xl border border-navy/30 bg-navy/5 p-4">
           <p className="text-sm font-semibold text-foreground">
