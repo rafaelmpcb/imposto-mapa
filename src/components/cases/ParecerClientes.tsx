@@ -20,6 +20,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { FichaNegociacaoDialog } from "@/components/cases/FichaNegociacaoDialog";
 import { brl } from "@/lib/tax/calc";
 import type { ClienteDetalheSnap } from "@/lib/parecer/tipos";
 
