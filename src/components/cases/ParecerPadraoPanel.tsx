@@ -215,6 +215,22 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
     );
   }
 
+  if (dashboard && snap && atual) {
+    return (
+      <ParecerDashboard
+        snapshot={snap}
+        edicoes={edicoes}
+        versao={atual.versao}
+        onSair={() => setDashboard(false)}
+        onPdf={() => void handlePdf()}
+        onApresentar={() => {
+          setDashboard(false);
+          setApresentando(true);
+        }}
+      />
+    );
+  }
+
   return (
     <section className="space-y-4 rounded-xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
