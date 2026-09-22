@@ -646,6 +646,9 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
 
       <CreditoNcmPanel caseId={caseItem.id} />
 
+      <DebitoNcmPanel caseId={caseItem.id} />
+
+
       <CreditoNbsPanel caseId={caseItem.id} reloadKey={nbsReload} />
 
       <DebitoNbsPanel caseId={caseItem.id} reloadKey={nbsReload} />
