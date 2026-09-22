@@ -298,6 +298,8 @@ function AluguelPage() {
         </section>
 
         <section className="space-y-6">
+          {pronto ? (
+            <>
           <div className="grid gap-3 sm:grid-cols-3">
             <Kpi
               label={`Alíquota efetiva em ${ano}`}
@@ -407,6 +409,18 @@ function AluguelPage() {
               Rascunho de apoio — a minuta final depende da análise jurídica do contrato.
             </p>
           </div>
+            </>
+          ) : (
+            <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center">
+              <p className="text-sm font-semibold text-foreground">
+                Informe o aluguel mensal de hoje para ver o resultado
+              </p>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+                Preencha o valor do aluguel no formulário ao lado. O impacto do IBS/CBS, os gráficos,
+                os três cenários e o valor de repactuação aparecem aqui.
+              </p>
+            </div>
+          )}
 
           <div className="space-y-3 rounded-xl border border-border bg-card p-4">
             <p className="text-sm font-semibold text-foreground">Vincular a um Caso</p>
