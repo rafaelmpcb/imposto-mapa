@@ -31,7 +31,7 @@ type Modulo = {
   selo: string;
   tone: string;
   chip: string;
-  to?: "/simulador" | "/aluguel" | "/capex" | "/saldos-credores";
+  to?: "/simulador" | "/aluguel" | "/capex" | "/contratos" | "/saldos-credores";
   cta: string;
 };
 
