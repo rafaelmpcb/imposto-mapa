@@ -256,10 +256,16 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
               <Button variant="ghost" onClick={() => void handlePdf()} disabled={busy}>
                 Baixar PDF
               </Button>
-              <Button onClick={() => setDashboard(true)}>Dashboard executivo</Button>
+              <Button onClick={() => void handleLink()} disabled={busy}>
+                {atual.share_enabled ? "Copiar link do relatório" : "Gerar link do relatório"}
+              </Button>
+              <Button variant="ghost" onClick={() => setDashboard(true)}>
+                Dashboard executivo
+              </Button>
               <Button variant="ghost" onClick={() => setApresentando(true)}>
                 Apresentação guiada
               </Button>
+
             </>
           ) : null}
         </div>
