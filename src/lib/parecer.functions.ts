@@ -377,7 +377,10 @@ function toVersao(row: Record<string, unknown>): ParecerVersao {
     edicoes: (row["edicoes_analista_json"] ?? {}) as ParecerEdicoes,
     gerado_em: row["gerado_em"] as string,
     finalizado_em: (row["finalizado_em"] as string | null) ?? null,
+    share_enabled: Boolean(row["share_enabled"]),
+    share_token: (row["share_token"] as string | null) ?? null,
   };
+
 }
 
 /** Lista as versões do parecer de um Caso (mais recente primeiro). */
