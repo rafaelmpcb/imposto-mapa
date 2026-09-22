@@ -15,6 +15,7 @@ import { StageSelect } from "@/components/cases/StageSelect";
 import { HubTabBar, type HubTabId } from "@/components/hub/HubTabs";
 import { ModuloEmBreve } from "@/components/hub/ModuloEmBreve";
 import { LocacaoHubPanel } from "@/components/hub/LocacaoHubPanel";
+import { CapexHubPanel } from "@/components/hub/CapexHubPanel";
 import type { CnpjData } from "@/lib/cnpj/types";
 import {
   deleteCase,
@@ -477,17 +478,7 @@ function MyCalculations() {
         />
       );
     }
-    return (
-      <ModuloEmBreve
-        titulo="Planejamento de CAPEX e ativo imobilizado"
-        descricao="Comparação entre antecipar o investimento e postergá-lo, confrontando o crédito imediato com a apropriação em 1/48."
-        itens={[
-          "Simulação do momento ideal da aquisição",
-          "Valor presente do crédito em cada cenário",
-          "Efeito no caixa e na depreciação",
-        ]}
-      />
-    );
+    return <CapexHubPanel caseNames={caseNames} />;
   };
 
 
