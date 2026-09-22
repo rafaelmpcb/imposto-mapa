@@ -371,6 +371,21 @@ export function ParecerFornecedores({ sec4 }: { sec4: ParecerSnapshot["sec4"] })
     );
   }
 
+  const aberto = selecionado
+    ? (sec4.detalhes ?? []).find((d) => d.chave === selecionado)
+    : undefined;
+  if (aberto) {
+    return (
+      <DetalheFornecedor
+        d={aberto}
+        totalBase={abc.total}
+        onVoltar={() => setSelecionado(null)}
+      />
+    );
+  }
+
+
+
   return (
     <div className="space-y-4">
       {/* topo: três blocos analíticos */}
