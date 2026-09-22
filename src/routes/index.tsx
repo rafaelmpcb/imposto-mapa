@@ -114,11 +114,12 @@ const MODULOS: Modulo[] = [
       "Efeito em caixa, margem e retorno do investimento",
       "Recomendação de janela de compra por tipo de ativo",
     ],
-    status: "consultoria",
-    selo: "Consultoria especializada",
+    status: "aberto",
+    selo: "Disponível online",
     tone: "border-magenta/40 bg-magenta-soft",
     chip: "bg-magenta text-white",
-    cta: "Solicitar estudo de CAPEX",
+    to: "/capex",
+    cta: "Abrir calculadora de CAPEX",
   },
 ];
 
