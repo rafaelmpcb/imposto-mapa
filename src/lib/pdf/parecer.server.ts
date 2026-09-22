@@ -278,17 +278,17 @@ class Doc {
    */
   vBars(
     categorias: { label: string; a: number; b?: number | undefined }[],
-    opts: { legendA: string; legendB?: string; fmt: (v: number) => string },
+    opts: { legendA: string; legendB?: string },
   ): void {
     if (categorias.length === 0) return;
     const plotH = 96;
-    const blockH = plotH + 46;
+    const blockH = plotH + 56;
     this.ensure(blockH);
     this.gap(6);
-    const baseY = this.y - plotH - 16;
+    const baseY = this.y - plotH - 24;
     const slot = CONTENT_WIDTH / categorias.length;
     const hasB = opts.legendB != null;
-    const barW = Math.min(hasB ? 22 : 34, (slot - 14) / (hasB ? 2 : 1));
+    const barW = Math.min(hasB ? 26 : 40, (slot - 16) / (hasB ? 2 : 1));
     const values = categorias.flatMap((c) => [c.a, c.b ?? 0]);
     const max = Math.max(...values.map(Math.abs), 1);
 
@@ -301,23 +301,32 @@ class Doc {
 
     categorias.forEach((c, i) => {
       const center = MARGIN + slot * i + slot / 2;
-      const draw = (value: number, offset: number, color: ReturnType<typeof rgb>) => {
+      const draw = (
+        value: number,
+        offset: number,
+        color: ReturnType<typeof rgb>,
+        lift: number,
+      ) => {
         const h = Math.max((Math.abs(value) / max) * plotH, value === 0 ? 0 : 2);
         const x = center + offset - barW / 2;
         this.page.drawRectangle({ x, y: baseY, width: barW, height: h, color });
-        const txt = safe(opts.fmt(value));
+        const txt = safe(compact(value));
         const size = 7;
         this.page.drawText(txt, {
           x: x + barW / 2 - this.regular.widthOfTextAtSize(txt, size) / 2,
-          y: baseY + h + 3,
+          y: baseY + h + 4 + lift,
           size,
           font: this.regular,
           color: MUTED,
         });
       };
       if (hasB) {
-        draw(c.a, -(barW / 2 + 2), NAVY);
-        draw(c.b ?? 0, barW / 2 + 2, MINT);
+        draw(c.a, -(barW / 2 + 3), NAVY, 9);
+        draw(c.b ?? 0, barW / 2 + 3, MINT, 0);
+      } else {
+        draw(c.a, 0, NAVY, 0);
+      }
+
       } else {
         draw(c.a, 0, NAVY);
       }
