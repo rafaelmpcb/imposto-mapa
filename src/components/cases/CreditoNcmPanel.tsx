@@ -47,11 +47,13 @@ export function CreditoNcmPanel({ caseId }: { caseId: string }) {
 
   const resumo = useMemo(() => {
     const ok = itensFiltrados.filter((i) => i.status_classificacao === "ok");
-    const semDado = itens.filter(
+    const semDado = itensFiltrados.filter(
       (i) => i.status_classificacao === "sem_dado" || i.status_classificacao === "imposto_seletivo",
     );
-    const ambiguos = itens.filter((i) => i.status_classificacao === "ambiguo_revisao_pendente");
-    const totalItens = itens.reduce((acc, i) => acc + Number(i.valor_item), 0);
+    const ambiguos = itensFiltrados.filter(
+      (i) => i.status_classificacao === "ambiguo_revisao_pendente",
+    );
+    const totalItens = itensFiltrados.reduce((acc, i) => acc + Number(i.valor_item), 0);
     const valorSemDado = semDado.reduce((acc, i) => acc + Number(i.valor_item), 0);
     return {
       credito: ok.reduce((acc, i) => acc + Number(i.valor_credito_ibs_cbs), 0),
@@ -61,11 +63,11 @@ export function CreditoNcmPanel({ caseId }: { caseId: string }) {
       valorSemDado,
       pctSemDado: totalItens > 0 ? (valorSemDado / totalItens) * 100 : 0,
     };
-  }, [itens]);
+  }, [itensFiltrados]);
 
   const topFornecedores = useMemo(() => {
     const map = new Map<string, { nome: string; cnpj: string | null; credito: number }>();
-    for (const i of itens) {
+    for (const i of itensFiltrados) {
       if (i.status_classificacao !== "ok") continue;
       const key = i.cnpj_fornecedor ?? i.fornecedor ?? "—";
       const found = map.get(key);
@@ -78,18 +80,18 @@ export function CreditoNcmPanel({ caseId }: { caseId: string }) {
         });
     }
     return [...map.values()].sort((a, b) => b.credito - a.credito).slice(0, 5);
-  }, [itens]);
+  }, [itensFiltrados]);
 
   const topNcms = useMemo(() => {
     const map = new Map<string, { ncm: string; descricao: string | null; credito: number }>();
-    for (const i of itens) {
+    for (const i of itensFiltrados) {
       if (i.status_classificacao !== "ok" || !i.ncm) continue;
       const found = map.get(i.ncm);
       if (found) found.credito += Number(i.valor_credito_ibs_cbs);
       else map.set(i.ncm, { ncm: i.ncm, descricao: i.descricao, credito: Number(i.valor_credito_ibs_cbs) });
     }
     return [...map.values()].sort((a, b) => b.credito - a.credito).slice(0, 5);
-  }, [itens]);
+  }, [itensFiltrados]);
 
   const escolher = async (item: CreditoItem, opcao: OpcaoCandidata) => {
     setBusy(true);
