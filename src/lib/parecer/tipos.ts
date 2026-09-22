@@ -266,6 +266,8 @@ export interface ParecerSnapshot {
   };
   /** Submódulo Contratos e Aluguéis (opcional: só existe se houver contrato no Caso). */
   secAluguel?: AluguelSnap;
+  /** Submódulo Gestão de Contratos e Reequilíbrio (opcional). */
+  secContratos?: ReequilibrioSnap;
   sec9: { sugestoes: Record<string, string> };
   sec10: { limitacoes: string[] };
 }
