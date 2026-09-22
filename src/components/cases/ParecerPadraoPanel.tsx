@@ -23,6 +23,7 @@ import {
   listPareceres,
   salvarEdicoesParecer,
   salvarEscopoCaso,
+  setParecerShare,
 } from "@/lib/parecer.functions";
 import type { CaseRecord } from "@/lib/cases.functions";
 import { brl } from "@/lib/tax/calc";
@@ -71,6 +72,7 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
   const salvar = useServerFn(salvarEdicoesParecer);
   const finalizar = useServerFn(finalizarParecer);
   const salvarEscopo = useServerFn(salvarEscopoCaso);
+  const partilhar = useServerFn(setParecerShare);
 
   const [versoes, setVersoes] = useState<ParecerVersao[]>([]);
   const [atualId, setAtualId] = useState<string | null>(null);
