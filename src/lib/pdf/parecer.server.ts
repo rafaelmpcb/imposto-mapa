@@ -793,6 +793,28 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
     }
     doc.gap(4);
   }
+  if (s.secContratos) {
+    doc.text("Contratos de prestação continuada (reequilíbrio)", { size: 10, bold: true, color: NAVY });
+    doc.text(
+      `${s.secContratos.contratos.length} contrato(s) analisados. Preço contratado hoje: ${money(
+        s.secContratos.totalAtual,
+      )} · preço de equilíbrio em ${money(s.secContratos.totalSugerido)} (${
+        s.secContratos.variacaoPrecoPct >= 0 ? "+" : ""
+      }${s.secContratos.variacaoPrecoPct.toFixed(1)}%). Sem reequilíbrio, a margem do prestador varia ${s.secContratos.variacaoMargemPct.toFixed(
+        1,
+      )}%.`,
+      { size: 10 },
+    );
+    for (const c of s.secContratos.contratos) {
+      doc.text(
+        `• ${c.titulo}${c.contraparte ? ` (${c.contraparte})` : ""} — ${c.ano}: ${money(
+          c.precoAtual,
+        )} → ${money(c.precoSugerido)} (${c.variacaoPrecoPct >= 0 ? "+" : ""}${c.variacaoPrecoPct.toFixed(1)}%)`,
+        { size: 9, color: MUTED },
+      );
+    }
+    doc.gap(4);
+  }
   for (const area of AREAS_PLANO) {
     const edit = e.sec9?.[area.id];
     doc.gap(4);

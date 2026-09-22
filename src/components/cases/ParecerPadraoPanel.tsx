@@ -665,6 +665,48 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
               </div>
             ) : null}
 
+            {snap.secContratos ? (
+              <div className="space-y-2 rounded-md border border-navy/30 bg-navy/5 p-3">
+                <p className="text-sm font-semibold text-foreground">
+                  Contratos de prestação continuada (reequilíbrio)
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {snap.secContratos.contratos.length} contrato(s) analisados. Preço contratado hoje:{" "}
+                  <strong className="tabular-nums">
+                    {snap.secContratos.totalAtual.toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                  </strong>{" "}
+                  · preço de equilíbrio:{" "}
+                  <strong className="tabular-nums">
+                    {snap.secContratos.totalSugerido.toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                  </strong>{" "}
+                  ({snap.secContratos.variacaoPrecoPct >= 0 ? "+" : ""}
+                  {snap.secContratos.variacaoPrecoPct.toFixed(1)}%). Sem reequilíbrio, a margem do
+                  prestador varia {snap.secContratos.variacaoMargemPct.toFixed(1)}%.
+                </p>
+                <ul className="space-y-1 text-xs text-muted-foreground">
+                  {snap.secContratos.contratos.map((c, i) => (
+                    <li key={`${c.titulo}-req-${i}`}>
+                      <strong className="text-foreground">{c.titulo}</strong>
+                      {c.contraparte ? ` · ${c.contraparte}` : ""} — {c.ano}:{" "}
+                      {c.precoAtual.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} →{" "}
+                      {c.precoSugerido.toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      })}{" "}
+                      ({c.variacaoPrecoPct >= 0 ? "+" : ""}
+                      {c.variacaoPrecoPct.toFixed(1)}%)
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
             {AREAS_PLANO.map((area) => {
               const edit = edicoes.sec9?.[area.id] ?? {};
               const setArea = (patch: Record<string, string>) =>
