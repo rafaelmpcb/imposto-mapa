@@ -561,8 +561,27 @@ export async function buildParecerPdf(payload: ParecerPdfPayload): Promise<Uint8
   if (s.sec6.linhas.length === 0) {
     doc.text("DRE ainda não gerada para este Caso (lacuna documentada).", { size: 10 });
   } else {
+    doc.chartTitle("Resultado líquido projetado por cenário");
+    doc.vBars(
+      s.sec6.linhas.slice(0, 8).map((l) => ({
+        label: `${l.ano} ${l.cenario}`,
+        a: l.resultadoLiquido ?? 0,
+      })),
+      { legendA: "Resultado líquido", fmt: (v) => money(v) },
+    );
+    const ultima = s.sec6.linhas[s.sec6.linhas.length - 1];
+    if (ultima) {
+      doc.chartTitle(`Para onde vai a receita — ${ultima.ano} (${ultima.cenario})`);
+      doc.stacked([
+        { label: "Custo de aquisição", value: ultima.custo, color: LAVENDER },
+        { label: "Despesas operacionais", value: ultima.despesas, color: SKY },
+        { label: "IRPJ/CSLL", value: ultima.ircs ?? 0, color: MAGENTA },
+        { label: "Resultado líquido", value: Math.max(ultima.resultadoLiquido ?? 0, 0), color: MINT },
+      ]);
+    }
     const w = [55, 80, 90, 90, 80, 100];
     doc.row(["Ano", "Cenário", "Receita", "Custo", "IR/CS", "Resultado"], w, { bold: true });
+
     for (const l of s.sec6.linhas) {
       doc.row(
         [
