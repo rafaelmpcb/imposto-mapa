@@ -264,13 +264,13 @@ export function ParecerDashboard({
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
-            <Card titulo="Resultado atual">
+            <Card tone="sky" titulo="Resultado atual">
               <Numero
                 valor={dreAno.atual?.resultadoLiquido == null ? "-" : brl(dreAno.atual.resultadoLiquido)}
                 sub={dreAno.atual ? `Receita ${brl(dreAno.atual.receitaBruta)}` : undefined}
               />
             </Card>
-            <Card titulo="Resultado projetado">
+            <Card tone="mint" titulo="Resultado projetado">
               <Numero
                 valor={
                   dreAno.projetado?.resultadoLiquido == null
@@ -280,12 +280,33 @@ export function ParecerDashboard({
                 sub={dreAno.projetado ? `Custo ${brl(dreAno.projetado.custo)}` : undefined}
               />
             </Card>
-            <Card titulo="Crédito apurado nas compras">
+            <Card tone="lavender" titulo="Crédito apurado nas compras">
               <Numero
                 valor={brl(snapshot.sec4.creditoTotal)}
                 sub={`Sobre ${brl(snapshot.sec4.baseTotal)} de base analisada`}
               />
             </Card>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            {dreAno.atual ? (
+              <ComposicaoDonut
+                titulo={`Onde a receita vai hoje${anoSel ? ` · ${anoSel}` : ""}`}
+                descricao="Composição da receita bruta no cenário atual."
+                partes={composicao(dreAno.atual)}
+                centroLabel="Receita"
+                centroValor={brl(dreAno.atual.receitaBruta)}
+              />
+            ) : null}
+            {dreAno.projetado ? (
+              <ComposicaoDonut
+                titulo={`Onde a receita vai com a reforma${anoSel ? ` · ${anoSel}` : ""}`}
+                descricao="Mesma composição no cenário pós-reforma."
+                partes={composicao(dreAno.projetado)}
+                centroLabel="Receita"
+                centroValor={brl(dreAno.projetado.receitaBruta)}
+              />
+            ) : null}
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
