@@ -12,6 +12,9 @@ import { ParecerPadraoPanel } from "@/components/cases/ParecerPadraoPanel";
 import { DiagnosticoCompleto } from "@/components/cases/DiagnosticoCompleto";
 import { FunnelPanel } from "@/components/cases/FunnelPanel";
 import { StageSelect } from "@/components/cases/StageSelect";
+import { CasoCrmPanel } from "@/components/cases/CasoCrmPanel";
+import { pipelineStats } from "@/lib/crm/alerts";
+
 import { HubTabBar, type HubTabId } from "@/components/hub/HubTabs";
 import { ContratosHubPanel } from "@/components/hub/ContratosHubPanel";
 import { LocacaoHubPanel } from "@/components/hub/LocacaoHubPanel";
