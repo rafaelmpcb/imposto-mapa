@@ -167,7 +167,7 @@ export const processCarteiraBatch = createServerFn({ method: "POST" })
     const { viaBrasilApi, viaCnpja, FONTE_BRASILAPI } = await import(
       "@/lib/carteira/classify.server"
     );
-    const BATCH = 6;
+    const BATCH = 5;
 
     let query = supabaseAdmin
       .from("composicao_carteira")
@@ -176,29 +176,38 @@ export const processCarteiraBatch = createServerFn({ method: "POST" })
       .eq("status_consulta", "pendente");
     if (data.ids?.length) query = query.in("id", data.ids);
 
+    // Prioriza quem está mais perto de esgotar as tentativas (e, portanto,
+    // precisa passar pela reserva CNPJá antes de virar erro definitivo).
     const { data: rows, error } = await query
-      .order("tentativas_consulta", { ascending: true })
+      .order("tentativas_consulta", { ascending: false })
       .order("id", { ascending: true })
       .limit(BATCH);
     if (error) throw new Error(error.message);
     const batch = (rows ?? []) as unknown as { id: string; cnpj: string; tentativas_consulta: number }[];
 
-    // BrasilAPI com concorrência 3.
+    // BrasilAPI sequencial, com espaçamento, para não estourar o limite dela.
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
     const attempts = new Map<string, Awaited<ReturnType<typeof viaBrasilApi>>>();
-    for (let i = 0; i < batch.length; i += 3) {
-      const slice = batch.slice(i, i + 3);
-      const res = await Promise.all(slice.map((r) => viaBrasilApi(r.cnpj)));
-      slice.forEach((r, j) => attempts.set(r.id, res[j]!));
+    for (let i = 0; i < batch.length; i += 1) {
+      const r = batch[i]!;
+      if (i > 0) await sleep(600);
+      attempts.set(r.id, await viaBrasilApi(r.cnpj));
     }
 
-    // Reserva CNPJá: no máximo 1 chamada por lote.
+    // Reserva CNPJá: 1 chamada por rodada, para a linha transitória com mais tentativas.
     let usedFallback = false;
+    let fallbackId: string | null = null;
+    let fallbackMotivo = "";
     if (data.allowFallback !== false) {
-      const first = batch.find((r) => attempts.get(r.id)?.kind === "transient");
-      if (first) {
+      const target = batch
+        .filter((r) => attempts.get(r.id)?.kind === "transient")
+        .sort((a, b) => (b.tentativas_consulta ?? 0) - (a.tentativas_consulta ?? 0))[0];
+      if (target) {
         usedFallback = true;
-        const fb = await viaCnpja(first.cnpj);
-        if (fb.kind === "final") attempts.set(first.id, fb);
+        fallbackId = target.id;
+        const fb = await viaCnpja(target.cnpj);
+        if (fb.kind === "final") attempts.set(target.id, fb);
+        else fallbackMotivo = fb.motivo;
       }
     }
 
@@ -221,16 +230,17 @@ export const processCarteiraBatch = createServerFn({ method: "POST" })
             } as never)
             .eq("id", row.id);
         }
-        const tentativas = (row.tentativas_consulta ?? 0) + 1;
-        if (tentativas >= MAX_TENTATIVAS) {
+        const tentativas = Math.min((row.tentativas_consulta ?? 0) + 1, MAX_TENTATIVAS);
+        // Só desiste depois de esgotar a primária E ter tentado a reserva CNPJá.
+        if (tentativas >= MAX_TENTATIVAS && fallbackId === row.id) {
           finalized += 1;
           return supabaseAdmin
             .from("composicao_carteira")
             .update({
               regime: "erro",
               status_consulta: "erro",
-              fonte_classificacao: FONTE_BRASILAPI,
-              motivo_erro: `${a.motivo} (após ${tentativas} tentativas)`,
+              fonte_classificacao: `${FONTE_BRASILAPI} + CNPJá`,
+              motivo_erro: `${fallbackMotivo || a.motivo} (após ${tentativas} tentativas e consulta à reserva)`,
               tentativas_consulta: tentativas,
             } as never)
             .eq("id", row.id);
