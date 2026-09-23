@@ -83,6 +83,7 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
   const [savedMapping, setSavedMapping] = useState<SavedMapping | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [step, setStep] = useState<"docs" | "mapping" | "review">("docs");
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [drafts, setDrafts] = useState<CarteiraDraftRow[]>([]);
@@ -232,28 +233,48 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
 
   /* ---------------- processamento ---------------- */
 
-  const runDiagnostic = async (ids?: string[]) => {
+  const runDiagnostic = async (ids?: string[], knownTotal?: number) => {
     setRunning(true);
     stopRef.current = false;
     setError("");
-    const total = ids?.length ?? rows.filter((r) => r.status_consulta !== "ok").length;
-    let done = 0;
+    setInfo("");
+    const total =
+      knownTotal ?? ids?.length ?? rows.filter((r) => r.status_consulta === "pendente").length;
     setProgress({ done: 0, total });
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    let lastFallback = 0;
+    let idleRounds = 0;
+    let remaining = total;
     try {
       let guard = 0;
-      // eslint-disable-next-line no-constant-condition
-      while (!stopRef.current && guard < 500) {
+      while (!stopRef.current && guard < 600) {
         guard += 1;
+        // Reserva CNPJá: no máximo 1 chamada a cada 13 s (5/min com margem).
+        const allowFallback = Date.now() - lastFallback >= 13_000;
         const res = await withAuthRetry(() =>
-          process({ data: { caseId: caseItem.id, ...(ids ? { ids } : {}) } }),
+          process({ data: { caseId: caseItem.id, allowFallback, ...(ids ? { ids } : {}) } }),
         );
-        done += res.processed;
-        setProgress({ done, total: Math.max(total, done) });
-        if (res.processed === 0 || ids) break;
-        if (res.remaining === 0) break;
+        if (res.usedFallback) lastFallback = Date.now();
+        remaining = res.remaining;
+        setProgress({ done: Math.max(0, total - remaining), total });
+        if (remaining === 0) break;
+        if (res.finalized === 0 && res.transient > 0) {
+          // Só erros transitórios: espera com backoff antes da próxima rodada.
+          idleRounds += 1;
+          await sleep(Math.min(5_000 * 2 ** (idleRounds - 1), 30_000));
+        } else {
+          idleRounds = 0;
+          if (!allowFallback) await sleep(1_000);
+        }
       }
       await refresh();
+      if (remaining > 0) {
+        setInfo(
+          `Processamento pausado: ${remaining} CNPJ(s) ainda aguardam consulta. Clique em "Rodar Diagnóstico" para continuar.`,
+        );
+      }
     } catch {
+      await refresh();
       setError("O processamento foi interrompido. Você pode retomar a qualquer momento.");
     } finally {
       setRunning(false);
@@ -264,6 +285,14 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
   const handleRefreshRows = async (ids: string[]) => {
     await withAuthRetry(() => resetRows({ data: { caseId: caseItem.id, ids } }));
     await runDiagnostic(ids);
+  };
+
+  const handleRetryErrors = async () => {
+    const ids = rows.filter((r) => r.status_consulta === "erro").map((r) => r.id);
+    if (ids.length === 0) return;
+    await withAuthRetry(() => resetRows({ data: { caseId: caseItem.id, ids } }));
+    const pendentes = rows.filter((r) => r.status_consulta === "pendente").length;
+    await runDiagnostic(undefined, pendentes + ids.length);
   };
 
   const handleDeleteRow = async (id: string) => {

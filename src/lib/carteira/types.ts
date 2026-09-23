@@ -19,6 +19,8 @@ export interface CarteiraRow {
   fonte_classificacao: string;
   data_classificacao: string | null;
   status_consulta: CarteiraStatus;
+  motivo_erro?: string | null;
+  tentativas_consulta?: number;
   created_at: string;
   updated_at: string;
 }

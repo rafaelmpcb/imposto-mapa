@@ -78,11 +78,13 @@ export function CarteiraResult({
   rows,
   busy,
   onRefreshRows,
+  onRetryErrors,
   onDeleteRow,
 }: {
   rows: CarteiraRow[];
   busy: boolean;
   onRefreshRows: (ids: string[]) => void;
+  onRetryErrors?: () => void;
   onDeleteRow: (id: string) => void;
 }) {
   const [tipoFilter, setTipoFilter] = useState<"todos" | CarteiraTipo>("todos");
@@ -103,6 +105,7 @@ export function CarteiraResult({
   }, [rows, tipoFilter, regimeFilter, sort]);
 
   const stale = rows.filter(isStale);
+  const erros = rows.filter((r) => r.status_consulta === "erro").length;
 
   if (rows.length === 0) return null;
 
@@ -143,6 +146,11 @@ export function CarteiraResult({
           <option value="percentual">Ordenar por % da carteira</option>
           <option value="nome">Ordenar por nome</option>
         </select>
+        {erros > 0 && onRetryErrors ? (
+          <Button disabled={busy} onClick={onRetryErrors}>
+            Tentar novamente todos com erro ({erros})
+          </Button>
+        ) : null}
         {stale.length > 0 ? (
           <Button
             variant="ghost"
@@ -196,6 +204,9 @@ export function CarteiraResult({
                 </td>
                 <td className="px-3 py-2 text-xs text-muted-foreground">
                   {STATUS_LABELS[row.status_consulta]}
+                  {row.motivo_erro && row.status_consulta !== "ok" ? (
+                    <span className="block text-destructive">{row.motivo_erro}</span>
+                  ) : null}
                 </td>
                 <td className="px-3 py-2 text-xs text-muted-foreground">
                   {row.data_classificacao
