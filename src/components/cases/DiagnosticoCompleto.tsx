@@ -679,6 +679,7 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
         rows={rows}
         busy={running}
         onRefreshRows={(ids) => void handleRefreshRows(ids)}
+        onRetryErrors={() => void handleRetryErrors()}
         onDeleteRow={(id) => void handleDeleteRow(id)}
       />
 
