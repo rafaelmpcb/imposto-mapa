@@ -298,9 +298,10 @@ export default function Landing() {
             Uma suíte de ferramentas para atravessar a Reforma Tributária com números na mão
           </h1>
           <p className="mt-5 max-w-2xl text-sm leading-relaxed text-navy-foreground/80 sm:text-base">
-            Calculadoras abertas para uma primeira leitura do impacto e módulos de consultoria
-            conduzidos pelo escritório para contratos, créditos acumulados e investimentos. As
-            simulações online são estimativas e não substituem um diagnóstico fiscal completo.
+            Uma plataforma completa com 6 ferramentas de cálculo para antecipar cenários de
+            IBS/CBS, contratos, CAPEX e créditos tributários. Tenha uma primeira estimativa online e
+            conte com o escritório para auditoria documental e parecer sob medida. As simulações
+            online são estimativas e não substituem um diagnóstico fiscal completo.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a
