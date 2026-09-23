@@ -259,9 +259,11 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
         setProgress({ done: Math.max(0, total - remaining), total });
         if (remaining === 0) break;
         if (res.finalized === 0 && res.transient > 0) {
-          // Só erros transitórios: espera com backoff antes da próxima rodada.
+          // Só erros transitórios: espera até a próxima janela da reserva CNPJá
+          // (com backoff leve), para que a próxima rodada possa usá-la.
           idleRounds += 1;
-          await sleep(Math.min(5_000 * 2 ** (idleRounds - 1), 30_000));
+          const untilFallback = Math.max(0, 13_000 - (Date.now() - lastFallback));
+          await sleep(Math.max(untilFallback, Math.min(2_000 * idleRounds, 13_000)));
         } else {
           idleRounds = 0;
           if (!allowFallback) await sleep(1_000);
