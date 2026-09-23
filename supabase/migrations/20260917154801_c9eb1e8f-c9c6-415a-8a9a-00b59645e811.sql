@@ -1,1 +1,0 @@
-ALTER TABLE public.simulations ADD COLUMN IF NOT EXISTS created_by uuid;
