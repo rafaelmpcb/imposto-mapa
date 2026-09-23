@@ -3,6 +3,7 @@ import { useState } from "react";
 import { StageSelect } from "@/components/cases/StageSelect";
 import type { CaseRecord } from "@/lib/cases.functions";
 import { STAGE_BLOCKS, STAGE_LABELS, formatCnpj, type CaseStage } from "@/lib/cases/stages";
+import { ALERT_CLASSES, caseAlert } from "@/lib/crm/alerts";
 import { brl } from "@/lib/tax/calc";
 
 function LatestSummary({ item }: { item: CaseRecord }) {
@@ -22,6 +23,35 @@ function LatestSummary({ item }: { item: CaseRecord }) {
     </p>
   );
 }
+
+function CrmSummary({ item }: { item: CaseRecord }) {
+  const alerta = caseAlert(item);
+  const valor = Number(item.deal_value || 0);
+  return (
+    <div className="mt-2 space-y-1.5">
+      {valor > 0 ? (
+        <p className="text-xs font-semibold tabular-nums text-foreground">
+          Honorários {brl(valor)}
+          {item.win_probability > 0 ? (
+            <span className="font-normal text-muted-foreground"> · {item.win_probability}%</span>
+          ) : null}
+        </p>
+      ) : null}
+      {item.primary_contact_name ? (
+        <p className="truncate text-xs text-muted-foreground">
+          {item.primary_contact_name}
+          {item.primary_contact_phone ? ` · ${item.primary_contact_phone}` : ""}
+        </p>
+      ) : null}
+      <span
+        className={`inline-block rounded-full border px-2 py-0.5 text-[11px] font-semibold ${ALERT_CLASSES[alerta.tone]}`}
+      >
+        {alerta.label}
+      </span>
+    </div>
+  );
+}
+
 
 export function CaseKanban({
   items,
