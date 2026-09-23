@@ -99,7 +99,7 @@ export function HubTabBar({
               onClick={() => onChange(tab.id)}
               aria-current={isActive ? "page" : undefined}
               title={tab.hint}
-              className={`flex basis-[calc(50%-0.625rem)] items-center gap-2.5 rounded-xl border px-3.5 py-3 text-sm font-bold transition-all duration-200 sm:basis-[calc(33.333%-0.834rem)] xl:basis-0 xl:flex-1 xl:justify-center xl:whitespace-nowrap ${
+              className={`flex basis-[calc(50%-0.625rem)] items-center gap-2.5 rounded-xl border px-3.5 py-3 text-sm font-bold transition-all duration-200 sm:basis-[calc(33.333%-0.834rem)] xl:basis-0 xl:flex-1 ${
                 isActive
                   ? "border-navy bg-navy text-navy-foreground shadow-md"
                   : "border-border bg-card text-foreground hover:border-navy/40 hover:shadow-sm"
@@ -114,7 +114,7 @@ export function HubTabBar({
               >
                 <Icon size={16} strokeWidth={2} aria-hidden />
               </span>
-              <span className="min-w-0 truncate">{tab.label}</span>
+              <span className="min-w-0 text-left leading-tight">{tab.label}</span>
               {!tab.ativo ? (
                 <span
                   className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
