@@ -567,6 +567,48 @@ function MyCalculations() {
                   </button>
                 ))}
               </div>
+              <div className="inline-flex rounded-md border border-border bg-card p-1">
+                {(["todos", "ativo", "ganho", "perdido"] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setStatusFilter(s)}
+                    className={`rounded px-3 py-1.5 text-sm font-semibold capitalize transition-colors ${
+                      statusFilter === s
+                        ? "bg-navy text-navy-foreground"
+                        : "text-muted-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    {s === "todos"
+                      ? "Todos"
+                      : s === "ativo"
+                        ? "Em negociação"
+                        : s === "ganho"
+                          ? "Ganhos"
+                          : "Perdidos"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {[
+                { label: "Em negociação", value: String(pipeline.ativos) },
+                { label: "Honorários em carteira", value: brl(pipeline.total) },
+                { label: "Valor ponderado", value: brl(pipeline.ponderado) },
+                {
+                  label: "Taxa de conversão",
+                  value: pipeline.conversao === null ? "—" : `${pipeline.conversao.toFixed(0)}%`,
+                },
+                { label: "Casos com alerta", value: String(pipeline.alertas) },
+              ].map((kpi) => (
+                <div key={kpi.label} className="rounded-xl border border-border bg-card p-3">
+                  <p className="text-xs text-muted-foreground">{kpi.label}</p>
+                  <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
+                    {kpi.value}
+                  </p>
+                </div>
+              ))}
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -577,6 +619,7 @@ function MyCalculations() {
                 Atualizar
               </Button>
             </div>
+
 
             {error ? <Notice tone="warning">{error}</Notice> : null}
 
