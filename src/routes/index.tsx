@@ -324,8 +324,9 @@ export default function Landing() {
         <section id="solucoes" className="scroll-mt-16">
           <h2 className="text-2xl">Soluções da plataforma</h2>
           <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-            Cada módulo trata de um problema distinto da transição. Dois estão abertos para uso
-            imediato; os demais são conduzidos pela equipe a partir dos seus documentos.
+            Ferramentas dedicadas para cada desafio da transição tributária. Faça simulações
+            imediatas em cada frente ou solicite uma análise aprofundada a partir dos documentos
+            fiscais da sua empresa.
           </p>
           <div className="mt-7 grid gap-5 lg:grid-cols-2">
             {MODULOS.map((modulo) => (
