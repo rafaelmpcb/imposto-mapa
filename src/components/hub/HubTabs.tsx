@@ -44,8 +44,8 @@ export const HUB_TABS: HubTab[] = [
   },
   {
     id: "locacao",
-    label: "Locação e Contratos Imobiliários",
-    hint: "Simulador de aluguéis e repactuação",
+    label: "Simulador de Impacto na Locação",
+    hint: "Aluguéis, repactuação e repasse IBS/CBS",
     ativo: true,
     icon: Building2,
   },
@@ -58,14 +58,14 @@ export const HUB_TABS: HubTab[] = [
   },
   {
     id: "creditos",
-    label: "Monetização de Saldos Credores",
-    hint: "Saldos acumulados de PIS/COFINS e ICMS",
+    label: "Simulador Saldo Acumulado PIS/COFINS e ICMS",
+    hint: "Monetização e transição de saldos credores",
     ativo: true,
     icon: Wallet,
   },
   {
     id: "monofasico",
-    label: "PIS/COFINS Monofásico",
+    label: "Simulador PIS/COFINS Monofásico",
     hint: "Recuperação de crédito monofásico",
     ativo: true,
     icon: PiggyBank,
