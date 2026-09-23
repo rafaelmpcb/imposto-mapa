@@ -173,6 +173,8 @@ export function CaseKanban({
                                 <p className="mt-0.5 text-xs text-muted-foreground">CNPJ {cnpj}</p>
                               ) : null}
                               <LatestSummary item={item} />
+                              <CrmSummary item={item} />
+
                               <p className="mt-1 text-xs text-muted-foreground">
                                 {item.simulations.length} cálculo
                                 {item.simulations.length === 1 ? "" : "s"} no histórico
