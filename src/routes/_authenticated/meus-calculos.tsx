@@ -764,6 +764,15 @@ function MyCalculations() {
                         </div>
                       </div>
 
+                      <div className="mt-4 border-t border-border pt-4">
+                        <CasoCrmPanel
+                          caseItem={item}
+                          onUpdated={(patch) => patchCase(item.id, patch)}
+                        />
+                      </div>
+
+
+
                       {parecerCaseId === item.id ? (
                         <div className="mt-4 border-t border-border pt-4">
                           <ParecerPadraoPanel caseItem={item} />
