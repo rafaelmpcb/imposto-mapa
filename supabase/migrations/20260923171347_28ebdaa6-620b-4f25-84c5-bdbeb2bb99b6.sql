@@ -1,0 +1,1 @@
+ALTER TABLE public.composicao_carteira ADD COLUMN IF NOT EXISTS tentativas_consulta integer NOT NULL DEFAULT 0, ADD COLUMN IF NOT EXISTS motivo_erro text;

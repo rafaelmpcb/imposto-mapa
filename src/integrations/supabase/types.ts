@@ -411,10 +411,12 @@ export type Database = {
           data_classificacao: string | null
           fonte_classificacao: string
           id: string
+          motivo_erro: string | null
           nome: string
           percentual_carteira: number
           regime: Database["public"]["Enums"]["carteira_regime"]
           status_consulta: Database["public"]["Enums"]["carteira_status"]
+          tentativas_consulta: number
           tipo: Database["public"]["Enums"]["carteira_tipo"]
           updated_at: string
           valor_movimentado: number
@@ -426,10 +428,12 @@ export type Database = {
           data_classificacao?: string | null
           fonte_classificacao?: string
           id?: string
+          motivo_erro?: string | null
           nome?: string
           percentual_carteira?: number
           regime?: Database["public"]["Enums"]["carteira_regime"]
           status_consulta?: Database["public"]["Enums"]["carteira_status"]
+          tentativas_consulta?: number
           tipo: Database["public"]["Enums"]["carteira_tipo"]
           updated_at?: string
           valor_movimentado?: number
@@ -441,10 +445,12 @@ export type Database = {
           data_classificacao?: string | null
           fonte_classificacao?: string
           id?: string
+          motivo_erro?: string | null
           nome?: string
           percentual_carteira?: number
           regime?: Database["public"]["Enums"]["carteira_regime"]
           status_consulta?: Database["public"]["Enums"]["carteira_status"]
+          tentativas_consulta?: number
           tipo?: Database["public"]["Enums"]["carteira_tipo"]
           updated_at?: string
           valor_movimentado?: number
