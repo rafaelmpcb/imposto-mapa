@@ -294,13 +294,25 @@ function MyCalculations() {
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!cases) return [];
-    if (!term) return cases;
-    return cases.filter(
+    let list = cases;
+    if (statusFilter !== "todos") {
+      list = list.filter((c) => (c.commercial_status || "ativo") === statusFilter);
+    }
+    if (!term) return list;
+    return list.filter(
       (c) =>
         (c.client_name ?? "").toLowerCase().includes(term) ||
+        (c.primary_contact_name ?? "").toLowerCase().includes(term) ||
         (c.cnpj ?? "").includes(term.replace(/\D/g, "")),
     );
-  }, [cases, query]);
+  }, [cases, query, statusFilter]);
+
+  const pipeline = useMemo(() => pipelineStats(cases ?? []), [cases]);
+
+  const patchCase = (id: string, patch: Partial<CaseRecord>) => {
+    setCases((prev) => (prev ?? []).map((c) => (c.id === id ? { ...c, ...patch } : c)));
+  };
+
 
   const caseNames = useMemo(() => {
     const map = new Map<string, string>();
