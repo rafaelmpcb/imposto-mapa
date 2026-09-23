@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      case_contacts: {
+        Row: {
+          case_id: string
+          created_at: string
+          email: string | null
+          id: string
+          is_primary: boolean
+          name: string
+          notes: string | null
+          phone: string | null
+          role: string | null
+          updated_at: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean
+          name: string
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          updated_at?: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_contacts_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       case_diagnostic_docs: {
         Row: {
           case_id: string
@@ -131,6 +178,53 @@ export type Database = {
           },
         ]
       }
+      case_interactions: {
+        Row: {
+          author_id: string | null
+          author_name: string | null
+          body: string | null
+          case_id: string
+          created_at: string
+          happened_at: string
+          id: string
+          kind: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          author_name?: string | null
+          body?: string | null
+          case_id: string
+          created_at?: string
+          happened_at?: string
+          id?: string
+          kind?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          author_name?: string | null
+          body?: string | null
+          case_id?: string
+          created_at?: string
+          happened_at?: string
+          id?: string
+          kind?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_interactions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       case_stage_events: {
         Row: {
           case_id: string
@@ -169,42 +263,63 @@ export type Database = {
           carteira_uploaded_at: string | null
           client_name: string | null
           cnpj: string | null
+          commercial_status: string
           created_at: string
+          deal_value: number
           escopo: string
+          fee_model: string
           id: string
+          lost_reason: string | null
+          next_action_date: string | null
+          next_action_title: string | null
           objetivo: string | null
           owner_id: string | null
           owner_name: string | null
           stage: Database["public"]["Enums"]["case_stage"]
           updated_at: string
+          win_probability: number
         }
         Insert: {
           carteira_column_mapping?: Json | null
           carteira_uploaded_at?: string | null
           client_name?: string | null
           cnpj?: string | null
+          commercial_status?: string
           created_at?: string
+          deal_value?: number
           escopo?: string
+          fee_model?: string
           id?: string
+          lost_reason?: string | null
+          next_action_date?: string | null
+          next_action_title?: string | null
           objetivo?: string | null
           owner_id?: string | null
           owner_name?: string | null
           stage?: Database["public"]["Enums"]["case_stage"]
           updated_at?: string
+          win_probability?: number
         }
         Update: {
           carteira_column_mapping?: Json | null
           carteira_uploaded_at?: string | null
           client_name?: string | null
           cnpj?: string | null
+          commercial_status?: string
           created_at?: string
+          deal_value?: number
           escopo?: string
+          fee_model?: string
           id?: string
+          lost_reason?: string | null
+          next_action_date?: string | null
+          next_action_title?: string | null
           objetivo?: string | null
           owner_id?: string | null
           owner_name?: string | null
           stage?: Database["public"]["Enums"]["case_stage"]
           updated_at?: string
+          win_probability?: number
         }
         Relationships: []
       }

@@ -13,7 +13,21 @@ export interface CaseRecord {
   created_at: string;
   updated_at: string;
   simulations: SavedSimulation[];
+  /** Dados comerciais do CRM. */
+  deal_value: number;
+  fee_model: string;
+  win_probability: number;
+  commercial_status: string;
+  lost_reason: string | null;
+  next_action_title: string | null;
+  next_action_date: string | null;
+  /** Resumo de relacionamento, para os cards do funil. */
+  primary_contact_name: string | null;
+  primary_contact_phone: string | null;
+  contacts_count: number;
+  last_interaction_at: string | null;
 }
+
 
 /** Lista os Casos com o histórico de cálculos vinculado a cada um. */
 export const listCases = createServerFn({ method: "POST" })
@@ -21,7 +35,7 @@ export const listCases = createServerFn({ method: "POST" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const [casesRes, simsRes] = await Promise.all([
+    const [casesRes, simsRes, contactsRes, interactionsRes] = await Promise.all([
       supabaseAdmin
         .from("cases")
         .select("*")
@@ -32,6 +46,15 @@ export const listCases = createServerFn({ method: "POST" })
         .select("*")
         .order("created_at", { ascending: false })
         .limit(1000),
+      supabaseAdmin
+        .from("case_contacts")
+        .select("case_id,name,phone,is_primary,created_at")
+        .limit(2000),
+      supabaseAdmin
+        .from("case_interactions")
+        .select("case_id,happened_at")
+        .order("happened_at", { ascending: false })
+        .limit(3000),
     ]);
 
     if (casesRes.error) throw new Error(casesRes.error.message);
@@ -49,19 +72,61 @@ export const listCases = createServerFn({ method: "POST" })
       byCase.set(sim.case_id, list);
     }
 
-    const items: CaseRecord[] = (casesRes.data ?? []).map((row) => ({
-      id: row.id as string,
-      client_name: (row.client_name as string | null) ?? null,
-      cnpj: (row.cnpj as string | null) ?? null,
-      stage: row.stage as CaseStage,
-      owner_name: (row.owner_name as string | null) ?? null,
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-      simulations: byCase.get(row.id as string) ?? [],
-    }));
+    const contactsByCase = new Map<
+      string,
+      { name: string; phone: string | null; is_primary: boolean }[]
+    >();
+    for (const row of contactsRes.data ?? []) {
+      const key = row.case_id as string;
+      const list = contactsByCase.get(key) ?? [];
+      list.push({
+        name: row.name as string,
+        phone: (row.phone as string | null) ?? null,
+        is_primary: Boolean(row.is_primary),
+      });
+      contactsByCase.set(key, list);
+    }
+
+    const lastInteraction = new Map<string, string>();
+    for (const row of interactionsRes.data ?? []) {
+      const key = row.case_id as string;
+      if (!lastInteraction.has(key)) lastInteraction.set(key, row.happened_at as string);
+    }
+
+    const items: CaseRecord[] = (casesRes.data ?? []).map((row) => {
+      const id = row.id as string;
+      const contacts = contactsByCase.get(id) ?? [];
+      const primary = contacts.find((c) => c.is_primary) ?? contacts[0] ?? null;
+      return {
+        id,
+        client_name: (row.client_name as string | null) ?? null,
+        cnpj: (row.cnpj as string | null) ?? null,
+        stage: row.stage as CaseStage,
+        owner_name: (row.owner_name as string | null) ?? null,
+        created_at: row.created_at as string,
+        updated_at: row.updated_at as string,
+        simulations: byCase.get(id) ?? [],
+        deal_value: Number((row as Record<string, unknown>)["deal_value"] ?? 0),
+        fee_model: String((row as Record<string, unknown>)["fee_model"] ?? "fixo"),
+        win_probability: Number((row as Record<string, unknown>)["win_probability"] ?? 0),
+        commercial_status: String(
+          (row as Record<string, unknown>)["commercial_status"] ?? "ativo",
+        ),
+        lost_reason: ((row as Record<string, unknown>)["lost_reason"] as string | null) ?? null,
+        next_action_title:
+          ((row as Record<string, unknown>)["next_action_title"] as string | null) ?? null,
+        next_action_date:
+          ((row as Record<string, unknown>)["next_action_date"] as string | null) ?? null,
+        primary_contact_name: primary?.name ?? null,
+        primary_contact_phone: primary?.phone ?? null,
+        contacts_count: contacts.length,
+        last_interaction_at: lastInteraction.get(id) ?? null,
+      };
+    });
 
     return { ok: true as const, items };
   });
+
 
 /** Move um Caso para outra etapa do funil. */
 export const updateCaseStage = createServerFn({ method: "POST" })
