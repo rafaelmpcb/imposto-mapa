@@ -13,7 +13,21 @@ export interface CaseRecord {
   created_at: string;
   updated_at: string;
   simulations: SavedSimulation[];
+  /** Dados comerciais do CRM. */
+  deal_value: number;
+  fee_model: string;
+  win_probability: number;
+  commercial_status: string;
+  lost_reason: string | null;
+  next_action_title: string | null;
+  next_action_date: string | null;
+  /** Resumo de relacionamento, para os cards do funil. */
+  primary_contact_name: string | null;
+  primary_contact_phone: string | null;
+  contacts_count: number;
+  last_interaction_at: string | null;
 }
+
 
 /** Lista os Casos com o histórico de cálculos vinculado a cada um. */
 export const listCases = createServerFn({ method: "POST" })
