@@ -83,6 +83,7 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
   const [savedMapping, setSavedMapping] = useState<SavedMapping | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [step, setStep] = useState<"docs" | "mapping" | "review">("docs");
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [drafts, setDrafts] = useState<CarteiraDraftRow[]>([]);
