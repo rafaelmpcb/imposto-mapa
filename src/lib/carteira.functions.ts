@@ -151,61 +151,119 @@ export const saveCarteira = createServerFn({ method: "POST" })
   });
 
 /**
- * Processa um lote de CNPJs usando a BrasilAPI (fila com concorrência
- * moderada) e a CNPJá como reserva. O progresso fica gravado no banco: o
- * usuário pode sair da tela e retomar depois.
+ * Processa um lote de CNPJs pendentes. BrasilAPI é a fonte principal; a CNPJá
+ * (5/min) é usada no máximo uma vez por lote — o cliente espera 13 s antes do
+ * próximo lote quando ela foi usada. Erros transitórios (429, rede, timeout)
+ * mantêm o CNPJ pendente e somam uma tentativa; após 3, vira erro com motivo.
+ * Só 404 (CNPJ não encontrado) é definitivo na hora.
  */
+const MAX_TENTATIVAS = 3;
+
 export const processCarteiraBatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { caseId: string; ids?: string[] }) => input)
+  .inputValidator((input: { caseId: string; ids?: string[]; allowFallback?: boolean }) => input)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { classifyMany } = await import("@/lib/carteira/classify.server");
-    const BATCH = 8;
+    const { viaBrasilApi, viaCnpja, FONTE_BRASILAPI } = await import(
+      "@/lib/carteira/classify.server"
+    );
+    const BATCH = 6;
 
     let query = supabaseAdmin
       .from("composicao_carteira")
-      .select("id,cnpj")
-      .eq("case_id", data.caseId);
-    query = data.ids?.length
-      ? query.in("id", data.ids)
-      : query.in("status_consulta", ["pendente", "erro"]);
+      .select("id,cnpj,tentativas_consulta")
+      .eq("case_id", data.caseId)
+      .eq("status_consulta", "pendente");
+    if (data.ids?.length) query = query.in("id", data.ids);
 
-    const { data: rows, error } = await query.limit(BATCH);
+    const { data: rows, error } = await query
+      .order("tentativas_consulta", { ascending: true })
+      .order("id", { ascending: true })
+      .limit(BATCH);
     if (error) throw new Error(error.message);
-    const batch = (rows ?? []) as { id: string; cnpj: string }[];
+    const batch = (rows ?? []) as unknown as { id: string; cnpj: string; tentativas_consulta: number }[];
 
-    const results = await classifyMany(batch.map((r) => r.cnpj));
-    const byCnpj = new Map(results.map((r) => [r.cnpj, r]));
+    // BrasilAPI com concorrência 3.
+    const attempts = new Map<string, Awaited<ReturnType<typeof viaBrasilApi>>>();
+    for (let i = 0; i < batch.length; i += 3) {
+      const slice = batch.slice(i, i + 3);
+      const res = await Promise.all(slice.map((r) => viaBrasilApi(r.cnpj)));
+      slice.forEach((r, j) => attempts.set(r.id, res[j]!));
+    }
 
+    // Reserva CNPJá: no máximo 1 chamada por lote.
+    let usedFallback = false;
+    if (data.allowFallback !== false) {
+      const first = batch.find((r) => attempts.get(r.id)?.kind === "transient");
+      if (first) {
+        usedFallback = true;
+        const fb = await viaCnpja(first.cnpj);
+        if (fb.kind === "final") attempts.set(first.id, fb);
+      }
+    }
+
+    let finalized = 0;
+    let transient = 0;
     await Promise.all(
       batch.map((row) => {
-        const result = byCnpj.get(row.cnpj);
-        if (!result) return Promise.resolve();
+        const a = attempts.get(row.id)!;
+        if (a.kind === "final") {
+          finalized += 1;
+          return supabaseAdmin
+            .from("composicao_carteira")
+            .update({
+              regime: a.result.regime,
+              status_consulta: a.result.status,
+              fonte_classificacao: a.result.fonte,
+              data_classificacao: a.result.updated ?? new Date().toISOString(),
+              motivo_erro: a.result.motivo ?? null,
+              tentativas_consulta: 0,
+            } as never)
+            .eq("id", row.id);
+        }
+        const tentativas = (row.tentativas_consulta ?? 0) + 1;
+        if (tentativas >= MAX_TENTATIVAS) {
+          finalized += 1;
+          return supabaseAdmin
+            .from("composicao_carteira")
+            .update({
+              regime: "erro",
+              status_consulta: "erro",
+              fonte_classificacao: FONTE_BRASILAPI,
+              motivo_erro: `${a.motivo} (após ${tentativas} tentativas)`,
+              tentativas_consulta: tentativas,
+            } as never)
+            .eq("id", row.id);
+        }
+        transient += 1;
         return supabaseAdmin
           .from("composicao_carteira")
-          .update({
-            regime: result.regime,
-            status_consulta: result.status,
-            fonte_classificacao: result.fonte,
-            data_classificacao: result.updated ?? new Date().toISOString(),
-          } as never)
+          .update({ tentativas_consulta: tentativas, motivo_erro: a.motivo } as never)
           .eq("id", row.id);
       }),
     );
 
-    const { count } = await supabaseAdmin
+    let countQ = supabaseAdmin
       .from("composicao_carteira")
       .select("id", { count: "exact", head: true })
       .eq("case_id", data.caseId)
       .eq("status_consulta", "pendente");
-
+    if (data.ids?.length) countQ = countQ.in("id", data.ids);
+    const { count } = await countQ;
     const remaining = count ?? 0;
-    if (remaining === 0 && !data.ids?.length) {
-      await setDocStatus(supabaseAdmin as never, data.caseId, "composicao_carteira", "processado");
+
+    if (!data.ids?.length) {
+      const { count: allPending } = await supabaseAdmin
+        .from("composicao_carteira")
+        .select("id", { count: "exact", head: true })
+        .eq("case_id", data.caseId)
+        .eq("status_consulta", "pendente");
+      if ((allPending ?? 0) === 0) {
+        await setDocStatus(supabaseAdmin as never, data.caseId, "composicao_carteira", "processado");
+      }
     }
 
-    return { ok: true as const, processed: batch.length, remaining };
+    return { ok: true as const, finalized, transient, usedFallback, remaining };
   });
 
 /** Remove uma contraparte da composição e recalcula os percentuais. */
