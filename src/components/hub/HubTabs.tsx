@@ -30,52 +30,50 @@ export interface HubTab {
 export const HUB_TABS: HubTab[] = [
   {
     id: "casos",
-    label: "Casos e funil",
-    hint: "Clientes, etapas e diagnóstico",
+    label: "Casos e Funil Comercial",
+    hint: "CRM: clientes, etapas, contatos e diagnóstico",
     ativo: true,
     icon: Briefcase,
   },
   {
     id: "simulacoes",
-    label: "Impacto fiscal",
+    label: "Simulador de Impacto Fiscal",
     hint: "Histórico de simulações IBS/CBS",
     ativo: true,
     icon: Calculator,
   },
   {
     id: "locacao",
-    label: "Locação",
-    hint: "Contratos de aluguel simulados",
+    label: "Locação e Contratos Imobiliários",
+    hint: "Simulador de aluguéis e repactuação",
     ativo: true,
     icon: Building2,
   },
   {
     id: "contratos",
-    label: "Gestão de contratos",
-    hint: "Reequilíbrio econômico",
+    label: "Gestão de Contratos e Reequilíbrio",
+    hint: "Reequilíbrio econômico de contratos",
     ativo: true,
     icon: FileText,
   },
   {
     id: "creditos",
-    label: "Saldos credores",
-    hint: "PIS/COFINS e ICMS",
+    label: "Monetização de Saldos Credores",
+    hint: "Saldos acumulados de PIS/COFINS e ICMS",
     ativo: true,
     icon: Wallet,
   },
-
   {
     id: "monofasico",
-    label: "Monofásico",
-    hint: "Recuperação de PIS/COFINS",
+    label: "PIS/COFINS Monofásico",
+    hint: "Recuperação de crédito monofásico",
     ativo: true,
     icon: PiggyBank,
   },
-
   {
     id: "capex",
-    label: "CAPEX",
-    hint: "Crédito imediato x 1/48",
+    label: "Planejamento de CAPEX",
+    hint: "Crédito imediato x 1/48 avos",
     ativo: true,
     icon: Factory,
   },
@@ -101,7 +99,7 @@ export function HubTabBar({
               onClick={() => onChange(tab.id)}
               aria-current={isActive ? "page" : undefined}
               title={tab.hint}
-              className={`flex basis-[calc(50%-0.625rem)] items-center gap-2.5 rounded-xl border px-3.5 py-3 text-sm font-bold transition-all duration-200 sm:basis-[calc(33.333%-0.834rem)] xl:basis-0 xl:flex-1 xl:justify-center xl:whitespace-nowrap ${
+              className={`flex basis-[calc(50%-0.625rem)] items-center gap-2.5 rounded-xl border px-3.5 py-3 text-sm font-bold transition-all duration-200 sm:basis-[calc(33.333%-0.834rem)] xl:basis-0 xl:flex-1 ${
                 isActive
                   ? "border-navy bg-navy text-navy-foreground shadow-md"
                   : "border-border bg-card text-foreground hover:border-navy/40 hover:shadow-sm"
@@ -116,7 +114,7 @@ export function HubTabBar({
               >
                 <Icon size={16} strokeWidth={2} aria-hidden />
               </span>
-              <span className="min-w-0 truncate">{tab.label}</span>
+              <span className="min-w-0 text-left leading-tight">{tab.label}</span>
               {!tab.ativo ? (
                 <span
                   className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
