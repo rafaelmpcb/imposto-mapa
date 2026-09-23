@@ -291,7 +291,12 @@ export const resetCarteiraRows = createServerFn({ method: "POST" })
     if (data.ids.length === 0) return { ok: true as const };
     const { error } = await supabaseAdmin
       .from("composicao_carteira")
-      .update({ status_consulta: "pendente", regime: "pendente" } as never)
+      .update({
+        status_consulta: "pendente",
+        regime: "pendente",
+        tentativas_consulta: 0,
+        motivo_erro: null,
+      } as never)
       .eq("case_id", data.caseId)
       .in("id", data.ids);
     if (error) throw new Error(error.message);
