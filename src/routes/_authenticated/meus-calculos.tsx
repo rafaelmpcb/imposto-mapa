@@ -89,6 +89,10 @@ function MyCalculations() {
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"kanban" | "funnel">("kanban");
+  const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "ganho" | "perdido">(
+    "todos",
+  );
+
   const [tab, setTab] = useState<HubTabId>("casos");
   const [funnel, setFunnel] = useState<{ stages: StageStat[]; totalCases: number } | null>(null);
   const [openCaseId, setOpenCaseId] = useState<string | null>(null);
