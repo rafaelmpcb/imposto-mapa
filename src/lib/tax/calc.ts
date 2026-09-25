@@ -723,8 +723,14 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
       value: Math.max(0, newBase * newRate * share - credits * share),
     });
   }
-  if (t.keepIcmsIss) {
-    reformLines.push({ label: consumptionOldLabel, value: revenue * consumptionOldRate });
+  if (t.icmsIssFactor > 0) {
+    const partial = t.icmsIssFactor < 1;
+    reformLines.push({
+      label: partial
+        ? `${consumptionOldLabel} — ${pct(t.icmsIssFactor)} da alíquota (rampa da transição)`
+        : consumptionOldLabel,
+      value: revenue * consumptionOldRate * t.icmsIssFactor,
+    });
   }
   if (t.testRate > 0) {
     reformLines.push({
@@ -739,9 +745,18 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
       "Em 2026 vigoram apenas as alíquotas de teste (CBS 0,9% compensável com PIS/COFINS e IBS 0,1%): o impacto financeiro é baixo, mas há obrigações acessórias novas.",
     );
   }
-  if (year === 2027) {
+  if (year === 2027 || year === 2028) {
     notes.push(
-      "Em 2027 PIS e COFINS são extintos e substituídos pela CBS; ICMS e ISS seguem vigentes até a transição estadual/municipal.",
+      "PIS e COFINS estão extintos e substituídos pela CBS; ICMS e ISS seguem integralmente vigentes, com o IBS ainda em alíquota de teste (2028 é o ano de calibragem das alíquotas de referência).",
+    );
+  }
+  if (t.ibsRamp > 0 && year !== 2033) {
+    notes.push(
+      `Ano intermediário da transição estadual/municipal: o IBS entra com ${pct(
+        t.ibsRamp,
+      )} da sua alíquota e o ${consumptionOldLabel.split(" ")[0]} é reduzido a ${pct(
+        t.icmsIssFactor,
+      )} do valor atual (redução de 1/10 por ano entre 2029 e 2032).`,
     );
   }
 
