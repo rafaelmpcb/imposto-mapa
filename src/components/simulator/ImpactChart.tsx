@@ -42,12 +42,12 @@ export function ImpactChart({
     { name: "Hoje", valor: Math.round(result.current.total), tone: "atual" },
     { name: projectedLabel, valor: Math.round(result.reform.total), tone: "reforma" },
   ];
-  const evolution = YEARS.map((y) => {
+  const evolution = TRANSITION_YEARS.map((y) => {
     const r = simulate(input, y.id);
     return {
-      name: String(y.id),
+      name: y.short,
       Atual: Math.round(r.current.total),
-       Projetado: Math.round(r.reform.total),
+      Projetado: Math.round(r.reform.total),
     };
   });
 
