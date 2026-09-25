@@ -232,17 +232,50 @@ function transition(year: YearId) {
 export type BusinessRegime = "simples" | "simples_hibrido" | "presumido" | "real";
 
 /**
- * Partilha aproximada do DAS (LC 123/2006, Anexos I–V, faixas intermediárias).
- * federal = IRPJ + CSLL + CPP (permanece no DAS no Simples Híbrido).
- * pisCofins = parcela de PIS/COFINS (sai do DAS a partir de 2027 no híbrido).
+ * Partilha oficial do DAS por faixa (LC 123/2006, Anexos I–V, redação da LC 155/2016).
+ * Percentuais por faixa: [IRPJ, CSLL, COFINS, PIS, CPP].
+ * O restante (ICMS / IPI / ISS) é a parcela subnacional ou IPI.
  */
-export const SIMPLES_PARTILHA: Record<string, { federal: number; pisCofins: number }> = {
-  I: { federal: 0.505, pisCofins: 0.155 },
-  II: { federal: 0.465, pisCofins: 0.14 },
-  III: { federal: 0.509, pisCofins: 0.156 },
-  IV: { federal: 0.34, pisCofins: 0.215 },
-  V: { federal: 0.6885, pisCofins: 0.1715 },
+const PARTILHA_OFICIAL: Record<string, [number, number, number, number, number][]> = {
+  I: [
+    [5.5, 3.5, 12.74, 2.76, 41.5], [5.5, 3.5, 12.74, 2.76, 41.5], [5.5, 3.5, 12.74, 2.76, 42],
+    [5.5, 3.5, 12.74, 2.76, 42], [5.5, 3.5, 12.74, 2.76, 42], [13.5, 10, 28.27, 6.13, 42.1],
+  ],
+  II: [
+    [5.5, 3.5, 11.51, 2.49, 37.5], [5.5, 3.5, 11.51, 2.49, 37.5], [5.5, 3.5, 11.51, 2.49, 37.5],
+    [5.5, 3.5, 11.51, 2.49, 37.5], [5.5, 3.5, 11.51, 2.49, 37.5], [8.5, 7.5, 20.96, 4.54, 23.5],
+  ],
+  III: [
+    [4, 3.5, 12.82, 2.78, 43.4], [4, 3.5, 14.05, 3.05, 43.4], [4, 3.5, 13.64, 2.96, 43.4],
+    [4, 3.5, 13.64, 2.96, 43.4], [4, 3.5, 12.82, 2.78, 43.4], [35, 15, 16.03, 3.47, 30.5],
+  ],
+  IV: [
+    [18.8, 15.2, 17.67, 3.83, 0], [19.8, 15.2, 20.55, 4.45, 0], [20.8, 15.2, 19.73, 4.27, 0],
+    [17.8, 19.2, 18.9, 4.1, 0], [18.8, 19.2, 18.08, 3.92, 0], [53.5, 21.5, 20.55, 4.45, 0],
+  ],
+  V: [
+    [25, 15, 14.1, 3.05, 28.85], [23, 15, 14.1, 3.05, 27.85], [24, 15, 14.92, 3.23, 23.85],
+    [21, 15, 15.74, 3.41, 23.85], [23, 12.5, 14.1, 3.05, 23.85], [35, 15.5, 16.44, 3.56, 29.5],
+  ],
 };
+
+/** Faixa (1–6) do Simples conforme o RBT12. */
+export function simplesFaixa(anexo: string, rbt12: number): number {
+  const table = SIMPLES_TABLES[anexo] ?? SIMPLES_TABLES["III"]!;
+  const idx = table.findIndex((b) => rbt12 <= b.rbt12);
+  return (idx === -1 ? table.length - 1 : idx) + 1;
+}
+
+/**
+ * Partilha oficial da faixa: federal = IRPJ + CSLL + CPP (fica no DAS no híbrido);
+ * pisCofins = parcela de PIS/COFINS (sai do DAS a partir de 2027).
+ */
+export function simplesPartilha(anexo: string, rbt12: number): { federal: number; pisCofins: number; faixa: number } {
+  const faixa = simplesFaixa(anexo, rbt12);
+  const row = (PARTILHA_OFICIAL[anexo] ?? PARTILHA_OFICIAL["III"]!)[faixa - 1]!;
+  const [irpj, csll, cofins, pis, cpp] = row;
+  return { federal: (irpj + csll + cpp) / 100, pisCofins: (cofins + pis) / 100, faixa };
+}
 
 export const SIMPLES_LIMITE_ANUAL = 4_800_000;
 
@@ -270,7 +303,7 @@ function simplesHibrido(input: SimulationInput, year: YearId, isCurrent: boolean
   }
   const activity = getActivity(input.activityId);
   const { rate: newRate } = effectiveRate(input);
-  const partilha = SIMPLES_PARTILHA[anexo] ?? SIMPLES_PARTILHA["III"]!;
+  const partilha = simplesPartilha(anexo, rbt12);
   const dasRate = simplesEffectiveRate(anexo, input.revenue, input.rbt12);
   const residualShare = year === 2033 ? partilha.federal : 1 - partilha.pisCofins;
   const dasResidual = input.revenue * dasRate * residualShare;
@@ -292,7 +325,7 @@ function simplesHibrido(input: SimulationInput, year: YearId, isCurrent: boolean
   if (cppFora) lines.push({ label: `CPP patronal via GPS (${pct(CPP_RATE)} da folha)`, value: Math.max(0, input.payroll) * CPP_RATE });
   const total = lines.reduce((a, l) => a + l.value, 0);
   const notes = [
-    `Anexo ${anexo}${isCurrent ? "" : " estimado pela atividade"}; partilha do DAS aproximada.`,
+    `Anexo ${anexo}${isCurrent ? "" : " estimado pela atividade"}; ${partilha.faixa}ª faixa; partilha oficial do DAS (LC 123/2006, redação LC 155/2016).`,
     "Clientes PJ aproveitam crédito integral do IBS/CBS destacado.",
   ];
   if (activity.sector === "servico" && year !== 2033) notes.push("ISS segue dentro do DAS até 2032.");
