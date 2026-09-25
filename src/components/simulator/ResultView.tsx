@@ -163,7 +163,7 @@ function RegimeComparison({
         Comparação entre regimes
       </h3>
       <p className="mt-1 text-sm text-muted-foreground">
-        Carga tributária mensal estimada nos três regimes. Escolha o ano do cenário — 2033 é o
+        Carga tributária mensal estimada nos regimes empresariais — inclui o Simples Nacional Híbrido (DAS residual + IBS/CBS por fora), quando elegível. Escolha o ano do cenário — 2033 é o
         regime pleno da reforma, quando a mudança de fato acontece. Clique em um regime alternativo
         para ver a comparação detalhada com o seu regime atual.
       </p>
@@ -190,7 +190,7 @@ function RegimeComparison({
         </div>
       ) : null}
 
-      <div className="mt-4 grid gap-4 md:grid-cols-3">
+      <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {items.map((item) => {
           const expandable =
             !item.isCurrent && item.isAvailable && Boolean(currentItem?.isAvailable);

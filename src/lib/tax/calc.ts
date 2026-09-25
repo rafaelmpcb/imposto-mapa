@@ -229,7 +229,82 @@ function transition(year: YearId) {
   }
 }
 
-export type BusinessRegime = "simples" | "presumido" | "real";
+export type BusinessRegime = "simples" | "simples_hibrido" | "presumido" | "real";
+
+/**
+ * Partilha aproximada do DAS (LC 123/2006, Anexos I–V, faixas intermediárias).
+ * federal = IRPJ + CSLL + CPP (permanece no DAS no Simples Híbrido).
+ * pisCofins = parcela de PIS/COFINS (sai do DAS a partir de 2027 no híbrido).
+ */
+export const SIMPLES_PARTILHA: Record<string, { federal: number; pisCofins: number }> = {
+  I: { federal: 0.505, pisCofins: 0.155 },
+  II: { federal: 0.465, pisCofins: 0.14 },
+  III: { federal: 0.509, pisCofins: 0.156 },
+  IV: { federal: 0.34, pisCofins: 0.215 },
+  V: { federal: 0.6885, pisCofins: 0.1715 },
+};
+
+export const SIMPLES_LIMITE_ANUAL = 4_800_000;
+
+/** Simples Nacional Híbrido: DAS residual + IBS/CBS apurados por fora (regime regular). */
+function simplesHibrido(input: SimulationInput, year: YearId, isCurrent: boolean): RegimeComparisonItem {
+  const base = {
+    regime: "simples_hibrido" as const,
+    label: "Simples Nacional Híbrido",
+    isCurrent: false,
+    isBest: false,
+  };
+  const anexo = isCurrent ? input.simplesAnexo : inferSimplesAnexo(input.activityId);
+  if (year === 2026) {
+    return {
+      ...base, total: null, rate: null, lines: [], isAvailable: false,
+      estimateNote: "A opção de recolher IBS/CBS por fora do DAS passa a valer a partir de 2027 (LC 214/2025).",
+    };
+  }
+  const rbt12 = input.rbt12 && input.rbt12 > 0 ? input.rbt12 : input.revenue * 12;
+  if (rbt12 > SIMPLES_LIMITE_ANUAL) {
+    return {
+      ...base, total: null, rate: null, lines: [], isAvailable: false,
+      estimateNote: "Faturamento acima de R$ 4,8 milhões/ano — fora do limite do Simples Nacional.",
+    };
+  }
+  const activity = getActivity(input.activityId);
+  const { rate: newRate } = effectiveRate(input);
+  const partilha = SIMPLES_PARTILHA[anexo] ?? SIMPLES_PARTILHA["III"]!;
+  const dasRate = simplesEffectiveRate(anexo, input.revenue, input.rbt12);
+  const residualShare = year === 2033 ? partilha.federal : 1 - partilha.pisCofins;
+  const dasResidual = input.revenue * dasRate * residualShare;
+  const ivaRate =
+    year === 2033 ? newRate : newRate * (CBS_SHARE / REFERENCE_RATE) + IBS_TEST_RATE;
+  const taxableShare = 1 - Math.min(100, Math.max(0, input.monofasicoShare)) / 100;
+  const supplierShare = Math.min(100, Math.max(0, input.simplesSupplierShare || 0));
+  const purchases = Math.min(Math.max(0, input.purchases), input.revenue);
+  const credits = purchases * (1 - supplierShare / 100) * ivaRate;
+  const iva = Math.max(0, input.revenue * taxableShare * ivaRate - credits);
+  const cppFora = cppOutsideDas(anexo);
+  const lines: TaxLine[] = [
+    {
+      label: `DAS residual (${year === 2033 ? "IRPJ, CSLL e CPP" : "sem PIS/COFINS"} · ${pct(dasRate * residualShare)})`,
+      value: dasResidual,
+    },
+    { label: `${year === 2033 ? "IBS + CBS" : "CBS + IBS teste"} líquido (${pct(ivaRate)} − créditos)`, value: iva },
+  ];
+  if (cppFora) lines.push({ label: `CPP patronal via GPS (${pct(CPP_RATE)} da folha)`, value: Math.max(0, input.payroll) * CPP_RATE });
+  const total = lines.reduce((a, l) => a + l.value, 0);
+  const notes = [
+    `Anexo ${anexo}${isCurrent ? "" : " estimado pela atividade"}; partilha do DAS aproximada.`,
+    "Clientes PJ aproveitam crédito integral do IBS/CBS destacado.",
+  ];
+  if (activity.sector === "servico" && year !== 2033) notes.push("ISS segue dentro do DAS até 2032.");
+  return {
+    ...base,
+    total,
+    rate: input.revenue > 0 ? total / input.revenue : 0,
+    lines,
+    isAvailable: true,
+    estimateNote: notes.join(" "),
+  };
+}
 
 export interface RegimeComparisonItem {
   regime: BusinessRegime;
@@ -283,18 +358,23 @@ export function simplesAnexoWarning(
 }
 
 
-/** Compara a carga pós-reforma nos três regimes empresariais. */
+function compareSimplesEligible(input: SimulationInput): boolean {
+  const rbt12 = input.rbt12 && input.rbt12 > 0 ? input.rbt12 : input.revenue * 12;
+  return rbt12 <= SIMPLES_LIMITE_ANUAL;
+}
+
+/** Compara a carga pós-reforma nos regimes empresariais (inclui Simples Híbrido). */
 export function compareRegimes(
   input: SimulationInput,
   year: YearId,
 ): RegimeComparisonItem[] {
-  const regimes: { id: BusinessRegime; label: string }[] = [
-    { id: "simples", label: "Simples Nacional" },
+  const regimes: { id: Exclude<BusinessRegime, "simples_hibrido">; label: string }[] = [
+    { id: "simples", label: "Simples Nacional (tradicional)" },
     { id: "presumido", label: "Lucro Presumido" },
     { id: "real", label: "Lucro Real" },
   ];
 
-  const items = regimes.map(({ id, label }) => {
+  const items: RegimeComparisonItem[] = regimes.map(({ id, label }) => {
     const isCurrent = input.taxpayerType === id;
     if (id === "simples" && year === 2033) {
       return {
@@ -341,6 +421,10 @@ export function compareRegimes(
     } satisfies RegimeComparisonItem;
   });
 
+  if (input.taxpayerType === "simples" || compareSimplesEligible(input)) {
+    items.splice(1, 0, simplesHibrido(input, year, input.taxpayerType === "simples"));
+  }
+
   const availableTotals = items.flatMap((item) =>
     item.isAvailable && item.total !== null ? [item.total] : [],
   );
@@ -371,7 +455,7 @@ export function pjClientAdvisory(
   if (!simples) return null;
   if (!simples.isAvailable) return null;
   if (!simples.isCurrent && (!simples.isAvailable || !simples.isBest)) return null;
-  return "Boa parte da sua receita vem de clientes PJ que provavelmente aproveitam o crédito integral do seu IBS/CBS. Mesmo com carga nominal menor, permanecer no Simples pode ser menos competitivo com esses clientes, que perdem esse crédito — vale considerar esse fator na decisão de regime.";
+  return "Boa parte da sua receita vem de clientes PJ que provavelmente aproveitam o crédito integral do seu IBS/CBS. Mesmo com carga nominal menor, permanecer no Simples pode ser menos competitivo com esses clientes, que perdem esse crédito. O Simples Nacional Híbrido preserva o crédito integral para esses clientes — vale considerar essa opção na decisão de regime.";
 }
 
 export function simulate(input: SimulationInput, year: YearId): SimulationResult {
