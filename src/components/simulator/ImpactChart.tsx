@@ -103,7 +103,7 @@ export function ImpactChart({
 
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Evolução da transição
+            Evolução ano a ano (2026 a 2033)
           </p>
           <div className="h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
