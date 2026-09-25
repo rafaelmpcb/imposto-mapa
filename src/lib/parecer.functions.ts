@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { sugerirAchados } from "@/lib/parecer/compilar";
+import type { YearId } from "@/lib/tax/constants";
 import {
   LIMITACOES,
   type CaseEscopo,
