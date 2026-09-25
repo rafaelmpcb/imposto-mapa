@@ -297,7 +297,30 @@ export const YEARS = [
   { id: 2033, label: "2033 — regime pleno (projeção de longo prazo)" },
 ] as const;
 
-export type YearId = (typeof YEARS)[number]["id"];
+export type YearId = 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033;
+
+/**
+ * Rampa de substituição do ICMS/ISS pelo IBS (EC 132/2023, art. 128 e seguintes
+ * da LC 214/2025): 1/10 por ano entre 2029 e 2032, integral em 2033.
+ */
+export const IBS_RAMP: Record<number, number> = {
+  2029: 0.1,
+  2030: 0.2,
+  2031: 0.3,
+  2032: 0.4,
+};
+
+/** Todos os anos da transição, para a visão ano a ano. */
+export const TRANSITION_YEARS: { id: YearId; label: string; short: string }[] = [
+  { id: 2026, label: "2026 — ano-teste (CBS 0,9% compensável e IBS 0,1%)", short: "2026" },
+  { id: 2027, label: "2027 — CBS plena substitui PIS/COFINS", short: "2027" },
+  { id: 2028, label: "2028 — calibragem das alíquotas de referência", short: "2028" },
+  { id: 2029, label: "2029 — IBS 10% / ICMS e ISS em 90%", short: "2029" },
+  { id: 2030, label: "2030 — IBS 20% / ICMS e ISS em 80%", short: "2030" },
+  { id: 2031, label: "2031 — IBS 30% / ICMS e ISS em 70%", short: "2031" },
+  { id: 2032, label: "2032 — IBS 40% / ICMS e ISS em 60%", short: "2032" },
+  { id: 2033, label: "2033 — regime pleno (IBS + CBS integrais)", short: "2033" },
+];
 
 /* ---------------- Configuração ajustável pelo escritório ---------------- */
 
