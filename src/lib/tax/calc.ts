@@ -338,12 +338,16 @@ function simplesHibrido(input: SimulationInput, year: YearId, isCurrent: boolean
   }
   const activity = getActivity(input.activityId);
   const { rate: newRate } = effectiveRate(input);
-  const partilha = simplesPartilha(anexo, rbt12);
   const dasRate = simplesEffectiveRate(anexo, input.revenue, input.rbt12);
-  const residualShare = year === 2033 ? partilha.federal : 1 - partilha.pisCofins;
-  const dasResidual = input.revenue * dasRate * residualShare;
-  const ivaRate =
-    year === 2033 ? newRate : newRate * (CBS_SHARE / REFERENCE_RATE) + IBS_TEST_RATE;
+  const partilha = simplesPartilha(anexo, rbt12, dasRate);
+  const t = transition(year);
+  const subnacional = Math.max(0, 1 - partilha.federal - partilha.pisCofins);
+  const residualShare =
+    year === 2033
+      ? partilha.federal
+      : 1 - partilha.pisCofins - subnacional * t.ibsRamp;
+  const dasResidual = input.revenue * dasRate * Math.max(0, residualShare);
+  const ivaRate = year === 2033 ? newRate : newRate * t.newRateShare + t.testRate;
   const taxableShare = 1 - Math.min(100, Math.max(0, input.monofasicoShare)) / 100;
   const supplierShare = Math.min(100, Math.max(0, input.simplesSupplierShare || 0));
   const purchases = Math.min(Math.max(0, input.purchases), input.revenue);
@@ -352,10 +356,10 @@ function simplesHibrido(input: SimulationInput, year: YearId, isCurrent: boolean
   const cppFora = cppOutsideDas(anexo);
   const lines: TaxLine[] = [
     {
-      label: `DAS residual (${year === 2033 ? "IRPJ, CSLL e CPP" : "sem PIS/COFINS"} · ${pct(dasRate * residualShare)})`,
+      label: `DAS residual (${year === 2033 ? "IRPJ, CSLL e CPP" : "sem PIS/COFINS"} · ${pct(dasRate * Math.max(0, residualShare))})`,
       value: dasResidual,
     },
-    { label: `${year === 2033 ? "IBS + CBS" : "CBS + IBS teste"} líquido (${pct(ivaRate)} − créditos)`, value: iva },
+    { label: `${year === 2033 ? "IBS + CBS" : "CBS + IBS da rampa"} líquido (${pct(ivaRate)} − créditos)`, value: iva },
   ];
   if (cppFora) lines.push({ label: `CPP patronal via GPS (${pct(CPP_RATE)} da folha)`, value: Math.max(0, input.payroll) * CPP_RATE });
   const total = lines.reduce((a, l) => a + l.value, 0);
@@ -363,7 +367,16 @@ function simplesHibrido(input: SimulationInput, year: YearId, isCurrent: boolean
     `Anexo ${anexo}${isCurrent ? "" : " estimado pela atividade"}; ${partilha.faixa}ª faixa; partilha oficial do DAS (LC 123/2006, redação LC 155/2016).`,
     "Clientes PJ aproveitam crédito integral do IBS/CBS destacado.",
   ];
-  if (activity.sector === "servico" && year !== 2033) notes.push("ISS segue dentro do DAS até 2032.");
+  if (partilha.issRedistribuido) {
+    notes.push("ISS limitado a 5% na 5ª faixa, com o excedente redistribuído aos tributos federais da faixa.");
+  }
+  if (activity.sector === "servico" && year !== 2033) {
+    notes.push(
+      t.ibsRamp > 0
+        ? `ISS ainda dentro do DAS, já reduzido a ${pct(1 - t.ibsRamp)} pela rampa da transição.`
+        : "ISS segue dentro do DAS até 2032.",
+    );
+  }
   return {
     ...base,
     total,
