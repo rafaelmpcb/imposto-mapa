@@ -13,6 +13,12 @@ export interface CnpjData {
   representante_sugerido: string;
   /** Atividade sugerida a partir do CNAE principal. */
   atividade_sugerida: string;
+  /**
+   * Regime detectado na base pública da Receita:
+   * "simples" (optante), "mei" (optante pelo MEI), "regular" (não optante — Lucro Presumido ou Real)
+   * ou null quando a fonte não informa.
+   */
+  regime_sugerido: "simples" | "mei" | "regular" | null;
 }
 
 export const onlyDigits = (value: string) => value.replace(/\D/g, "");

@@ -118,13 +118,23 @@ function Simulator() {
       // Nova empresa = novos números: zera todos os campos financeiros para o padrão.
       setInput((prev) => ({
         ...defaultInput(),
-        taxpayerType: prev.taxpayerType,
+        taxpayerType:
+          res.data.regime_sugerido === "simples" || res.data.regime_sugerido === "mei"
+            ? res.data.regime_sugerido
+            : res.data.regime_sugerido === "regular"
+              ? "presumido"
+              : prev.taxpayerType,
         activityId: res.data.atividade_sugerida,
         simplesAnexo: inferSimplesAnexo(
           res.data.atividade_sugerida,
         ) as SimulationInput["simplesAnexo"],
         ...(res.data.uf && UFS.includes(res.data.uf) ? { uf: res.data.uf } : {}),
       }));
+      // Simples/MEI são certezas da base pública: pré-seleciona e marca como escolhido.
+      // "regular" pode ser Presumido ou Real — pré-preenche Presumido, mas exige confirmação.
+      setTaxpayerChosen(
+        res.data.regime_sugerido === "simples" || res.data.regime_sugerido === "mei",
+      );
       setActivitySuggested(true);
       setAnexoSuggested(true);
 
@@ -419,6 +429,18 @@ function Simulator() {
                       <p className="text-muted-foreground">
                         CNAE {cnpjData.cnae_codigo} — {cnpjData.cnae_descricao}
                       </p>
+                      {cnpjData.regime_sugerido ? (
+                        <p className="text-muted-foreground">
+                          Regime identificado na base pública da Receita:{" "}
+                          <span className="font-semibold text-foreground">
+                            {cnpjData.regime_sugerido === "simples"
+                              ? "Simples Nacional"
+                              : cnpjData.regime_sugerido === "mei"
+                                ? "MEI"
+                                : "Regime regular (Lucro Presumido ou Lucro Real — confirme abaixo)"}
+                          </span>
+                        </p>
+                      ) : null}
                       {cnpjData.representante_sugerido ? (
                         <p className="text-muted-foreground">
                           Representante sugerido: {cnpjData.representante_sugerido} (confirme antes
@@ -442,7 +464,7 @@ function Simulator() {
 
               <Field
                 label="Tipo de contribuinte"
-                hint="A Receita Federal não informa publicamente o regime tributário — confirme com o cliente. Essa escolha muda todo o cálculo."
+                hint="Quando o CNPJ é consultado, o regime é identificado automaticamente na base pública da Receita (Simples/MEI ou regime regular). Confirme com o cliente — essa escolha muda todo o cálculo."
               >
                 <Select
                   value={taxpayerChosen ? input.taxpayerType : ""}

@@ -15,6 +15,7 @@ const cnpjDataSchema = z.object({
   cnae_descricao: z.string().max(500),
   representante_sugerido: z.string().max(300),
   atividade_sugerida: z.string().max(100),
+  regime_sugerido: z.enum(["simples", "mei", "regular"]).nullable().optional(),
 });
 
 const schema = z.object({
@@ -65,7 +66,9 @@ export const Route = createFileRoute("/api/public/relatorio-pdf")({
           year: parsed.data.year as YearId,
           clientName: parsed.data.clientName ?? null,
           cnpj: parsed.data.cnpj ?? null,
-          cnpjData: parsed.data.cnpjData ?? null,
+          cnpjData: parsed.data.cnpjData
+            ? { ...parsed.data.cnpjData, regime_sugerido: parsed.data.cnpjData.regime_sugerido ?? null }
+            : null,
         });
 
         const slug = slugifyWords(parsed.data.clientName ?? "", 60);

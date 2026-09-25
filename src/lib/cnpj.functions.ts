@@ -72,6 +72,14 @@ function fromBrasilApi(raw: Record<string, unknown>, digits: string): CnpjData {
     cnae_descricao: descricao,
     representante_sugerido: pickPartner(qsa),
     atividade_sugerida: activityFromCnae(codigo, descricao),
+    regime_sugerido:
+      raw["opcao_pelo_mei"] === true
+        ? "mei"
+        : raw["opcao_pelo_simples"] === true
+          ? "simples"
+          : raw["opcao_pelo_simples"] === false
+            ? "regular"
+            : null,
   };
 }
 
@@ -106,6 +114,14 @@ function fromReceitaWs(raw: Record<string, unknown>, digits: string): CnpjData {
     cnae_descricao: descricao,
     representante_sugerido: pickPartner(qsa),
     atividade_sugerida: activityFromCnae(codigo, descricao),
+    regime_sugerido: (() => {
+      const simples = raw["simples"] as Record<string, unknown> | undefined;
+      const simei = raw["simei"] as Record<string, unknown> | undefined;
+      if (simei?.["optante"] === true) return "mei";
+      if (simples?.["optante"] === true) return "simples";
+      if (simples?.["optante"] === false) return "regular";
+      return null;
+    })(),
   };
 }
 
