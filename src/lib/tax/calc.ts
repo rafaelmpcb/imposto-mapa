@@ -266,15 +266,35 @@ export function simplesFaixa(anexo: string, rbt12: number): number {
   return (idx === -1 ? table.length - 1 : idx) + 1;
 }
 
+/** Teto do percentual efetivo de ISS dentro do DAS (LC 123/2006, notas dos Anexos III, IV e V). */
+export const SIMPLES_ISS_TETO = 0.05;
+
 /**
  * Partilha oficial da faixa: federal = IRPJ + CSLL + CPP (fica no DAS no híbrido);
  * pisCofins = parcela de PIS/COFINS (sai do DAS a partir de 2027).
+ * Na 5ª faixa dos Anexos III, IV e V, se o ISS efetivo (alíquota efetiva × % do ISS)
+ * passar de 5%, o ISS fica em 5% e o excedente é transferido, na proporção,
+ * aos tributos federais da mesma faixa. Para isso, informe a alíquota efetiva do DAS.
  */
-export function simplesPartilha(anexo: string, rbt12: number): { federal: number; pisCofins: number; faixa: number } {
+export function simplesPartilha(
+  anexo: string,
+  rbt12: number,
+  dasRate?: number,
+): { federal: number; pisCofins: number; faixa: number; iss: number; issRedistribuido: boolean } {
   const faixa = simplesFaixa(anexo, rbt12);
   const row = (PARTILHA_OFICIAL[anexo] ?? PARTILHA_OFICIAL["III"]!)[faixa - 1]!;
-  const [irpj, csll, cofins, pis, cpp] = row;
-  return { federal: (irpj + csll + cpp) / 100, pisCofins: (cofins + pis) / 100, faixa };
+  let [irpj, csll, cofins, pis, cpp] = row.map((v) => v / 100) as [number, number, number, number, number];
+  const federalSum = irpj + csll + cofins + pis + cpp;
+  let iss = ["III", "IV", "V"].includes(anexo) ? Math.max(0, 1 - federalSum) : 0;
+  let issRedistribuido = false;
+  if (faixa === 5 && iss > 0 && dasRate && dasRate > 0 && dasRate * iss > SIMPLES_ISS_TETO) {
+    const newIss = SIMPLES_ISS_TETO / dasRate;
+    const factor = 1 + (iss - newIss) / federalSum;
+    irpj *= factor; csll *= factor; cofins *= factor; pis *= factor; cpp *= factor;
+    iss = newIss;
+    issRedistribuido = true;
+  }
+  return { federal: irpj + csll + cpp, pisCofins: cofins + pis, faixa, iss, issRedistribuido };
 }
 
 export const SIMPLES_LIMITE_ANUAL = 4_800_000;
