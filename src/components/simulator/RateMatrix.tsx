@@ -107,6 +107,10 @@ const ROWS: MatrixRow[] = [
 
 const YEAR_COLUMNS: YearId[] = [2026, 2027, 2033];
 
+/** Coluna em destaque: anos intermediários seguem a regra vigente desde 2027. */
+const highlightColumn = (year: YearId): YearId =>
+  year <= 2026 ? 2026 : year >= 2033 ? 2033 : 2027;
+
 const toText = (fraction: number) =>
   (fraction * 100).toLocaleString("pt-BR", { maximumFractionDigits: 4 });
 
@@ -203,7 +207,7 @@ export function RateMatrix({
               {YEAR_COLUMNS.map((y) => (
                 <th
                   key={y}
-                  className={`py-2 pl-3 text-right font-semibold ${y === year ? "text-navy" : ""}`}
+                  className={`py-2 pl-3 text-right font-semibold ${y === highlightColumn(year) ? "text-navy" : ""}`}
                 >
                   {y}
                 </th>
@@ -263,7 +267,7 @@ export function RateMatrix({
                             setDraft(toText(value));
                           }}
                           className={`rounded px-2 py-1 tabular-nums transition-colors hover:bg-secondary ${
-                            y === year ? "font-semibold text-navy" : ""
+                            y === highlightColumn(year) ? "font-semibold text-navy" : ""
                           }`}
                           title="Clique para ajustar"
                         >
