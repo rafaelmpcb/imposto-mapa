@@ -303,7 +303,7 @@ function simplesHibrido(input: SimulationInput, year: YearId, isCurrent: boolean
   }
   const activity = getActivity(input.activityId);
   const { rate: newRate } = effectiveRate(input);
-  const partilha = SIMPLES_PARTILHA[anexo] ?? SIMPLES_PARTILHA["III"]!;
+  const partilha = simplesPartilha(anexo, rbt12);
   const dasRate = simplesEffectiveRate(anexo, input.revenue, input.rbt12);
   const residualShare = year === 2033 ? partilha.federal : 1 - partilha.pisCofins;
   const dasResidual = input.revenue * dasRate * residualShare;
@@ -325,7 +325,7 @@ function simplesHibrido(input: SimulationInput, year: YearId, isCurrent: boolean
   if (cppFora) lines.push({ label: `CPP patronal via GPS (${pct(CPP_RATE)} da folha)`, value: Math.max(0, input.payroll) * CPP_RATE });
   const total = lines.reduce((a, l) => a + l.value, 0);
   const notes = [
-    `Anexo ${anexo}${isCurrent ? "" : " estimado pela atividade"}; partilha do DAS aproximada.`,
+    `Anexo ${anexo}${isCurrent ? "" : " estimado pela atividade"}; ${partilha.faixa}ª faixa; partilha oficial do DAS (LC 123/2006, redação LC 155/2016).`,
     "Clientes PJ aproveitam crédito integral do IBS/CBS destacado.",
   ];
   if (activity.sector === "servico" && year !== 2033) notes.push("ISS segue dentro do DAS até 2032.");
