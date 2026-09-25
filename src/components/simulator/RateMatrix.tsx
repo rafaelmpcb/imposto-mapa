@@ -18,7 +18,7 @@ interface MatrixRow {
   key: string;
   label: string;
   regimes: string;
-  years: Record<YearId, Applicability>;
+  years: Partial<Record<YearId, Applicability>>;
   note?: string;
 }
 
