@@ -455,7 +455,7 @@ export function pjClientAdvisory(
   if (!simples) return null;
   if (!simples.isAvailable) return null;
   if (!simples.isCurrent && (!simples.isAvailable || !simples.isBest)) return null;
-  return "Boa parte da sua receita vem de clientes PJ que provavelmente aproveitam o crédito integral do seu IBS/CBS. Mesmo com carga nominal menor, permanecer no Simples pode ser menos competitivo com esses clientes, que perdem esse crédito — vale considerar esse fator na decisão de regime.";
+  return "Boa parte da sua receita vem de clientes PJ que provavelmente aproveitam o crédito integral do seu IBS/CBS. Mesmo com carga nominal menor, permanecer no Simples pode ser menos competitivo com esses clientes, que perdem esse crédito. O Simples Nacional Híbrido preserva o crédito integral para esses clientes — vale considerar essa opção na decisão de regime.";
 }
 
 export function simulate(input: SimulationInput, year: YearId): SimulationResult {

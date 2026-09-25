@@ -589,7 +589,7 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
     const items = compareRegimes(input, year);
     doc.heading("Comparação entre regimes após a reforma");
     doc.text(
-      `Carga tributária mensal estimada em ${year}, após a reforma, nos três regimes empresariais.`,
+      `Carga tributária mensal estimada em ${year}, após a reforma, nos regimes empresariais, incluindo o Simples Nacional Híbrido (DAS residual + IBS/CBS por fora) quando a empresa é elegível ao Simples.`,
       { size: 9.5, color: MUTED },
     );
     doc.gap(4);
