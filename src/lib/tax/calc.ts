@@ -219,14 +219,28 @@ function scenario(lines: TaxLine[], base: number): Scenario {
  * 2033: regime pleno — IBS+CBS substituem PIS/COFINS/ICMS/ISS.
  */
 function transition(year: YearId) {
-  switch (year) {
-    case 2026:
-      return { newRateShare: 0, keepPisCofins: true, keepIcmsIss: true, testRate: IBS_TEST_RATE + CBS_TEST_RATE * 0 };
-    case 2027:
-      return { newRateShare: CBS_SHARE / REFERENCE_RATE, keepPisCofins: false, keepIcmsIss: true, testRate: IBS_TEST_RATE };
-    default:
-      return { newRateShare: 1, keepPisCofins: false, keepIcmsIss: false, testRate: 0 };
+  if (year === 2026) {
+    return {
+      newRateShare: 0,
+      keepPisCofins: true,
+      icmsIssFactor: 1,
+      ibsRamp: 0,
+      testRate: IBS_TEST_RATE + CBS_TEST_RATE * 0,
+    };
   }
+  if (year === 2033) {
+    return { newRateShare: 1, keepPisCofins: false, icmsIssFactor: 0, ibsRamp: 1, testRate: 0 };
+  }
+  // 2027 e 2028: CBS plena, ICMS/ISS integrais, IBS em teste.
+  // 2029 a 2032: IBS entra em 1/10 por ano e ICMS/ISS recuam na mesma proporção.
+  const ramp = IBS_RAMP[year] ?? 0;
+  return {
+    newRateShare: (CBS_SHARE + IBS_SHARE * ramp) / REFERENCE_RATE,
+    keepPisCofins: false,
+    icmsIssFactor: 1 - ramp,
+    ibsRamp: ramp,
+    testRate: ramp > 0 ? 0 : IBS_TEST_RATE,
+  };
 }
 
 export type BusinessRegime = "simples" | "simples_hibrido" | "presumido" | "real";
