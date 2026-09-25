@@ -373,6 +373,7 @@ export function ResultView({
   const [officeName, setOfficeName] = useState("");
   const [ratesUpdatedAt, setRatesUpdatedAt] = useState<string | null>(null);
   const [ratesVersion, setRatesVersion] = useState(0);
+  const [anoAAno, setAnoAAno] = useState(false);
   // ratesVersion entra como dependência porque as alíquotas editadas na tabela
   // são constantes de módulo, não parte de `input`.
   const result = useMemo(() => simulate(input, year), [input, year, ratesVersion]);
