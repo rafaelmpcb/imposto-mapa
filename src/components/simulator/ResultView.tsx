@@ -1,7 +1,7 @@
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowDown, ArrowUp, Building2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { LEGAL_REFERENCE_DATE, YEARS, type YearId } from "@/lib/tax/constants";
+import { LEGAL_REFERENCE_DATE, TRANSITION_YEARS, YEARS, type YearId } from "@/lib/tax/constants";
 import type { CnpjData } from "@/lib/cnpj/types";
 import { emptyOfficeContact, getOfficeContact } from "@/lib/office-config.functions";
 import { getParameters } from "@/lib/tax-parameters.functions";
