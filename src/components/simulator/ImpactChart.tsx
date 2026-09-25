@@ -19,7 +19,7 @@ import {
   simulate,
   type SimulationInput,
 } from "@/lib/tax/calc";
-import { YEARS, type YearId } from "@/lib/tax/constants";
+import { TRANSITION_YEARS, type YearId } from "@/lib/tax/constants";
 
 const compact = (v: number) =>
   v.toLocaleString("pt-BR", { notation: "compact", maximumFractionDigits: 1 });
