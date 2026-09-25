@@ -9,7 +9,7 @@ import {
   type SimulationInput,
   type TaxpayerType,
 } from "@/lib/tax/calc";
-import { LEGAL_REFERENCE_DATE, YEARS, getActivity, type YearId } from "@/lib/tax/constants";
+import { LEGAL_REFERENCE_DATE, TRANSITION_YEARS, getActivity, type YearId } from "@/lib/tax/constants";
 
 /** Atividades tipicamente exercidas por sociedades uniprofissionais (ISS fixo). */
 const UNIPROFISSIONAL_ACTIVITIES = ["advocacia", "contabilidade", "saude", "engenharia"];
@@ -574,7 +574,7 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
   }
   doc.gap(6);
   doc.text(
-    `Marcos: ${YEARS.map((y) => y.label).join(" · ")}.`,
+    `Marcos da transição: ${TRANSITION_YEARS.map((y) => y.label).join(" · ")}.`,
     { size: 8.5, color: MUTED },
   );
   if (input.taxpayerType === "simples") {

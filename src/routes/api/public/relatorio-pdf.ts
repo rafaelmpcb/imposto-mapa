@@ -21,7 +21,7 @@ const schema = z.object({
   clientName: z.string().max(200).optional().nullable(),
   cnpj: z.string().max(30).optional().nullable(),
   cnpjData: cnpjDataSchema.optional().nullable(),
-  year: z.union([z.literal(2026), z.literal(2027), z.literal(2033)]),
+  year: z.number().int().min(2026).max(2033),
   input: z.object({
     taxpayerType: z.enum(["pf", "simples", "presumido", "real", "mei"]),
     activityId: z.string().max(60),
