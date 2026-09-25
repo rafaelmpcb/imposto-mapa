@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { sugerirAchados } from "@/lib/parecer/compilar";
+import type { YearId } from "@/lib/tax/constants";
 import {
   LIMITACOES,
   type CaseEscopo,
@@ -676,7 +677,7 @@ async function compilarSnapshot(admin: Admin, caseId: string): Promise<ParecerSn
   let anoBase: number | null = null;
   if (sim) {
     const { compareRegimes, defaultInput } = await import("@/lib/tax/calc");
-    const year = num(sim["year_id"]) as 2026 | 2027 | 2033;
+    const year = num(sim["year_id"]) as YearId;
     anoBase = year;
     try {
       const input = { ...defaultInput(), ...(simInput as object) } as Parameters<typeof compareRegimes>[0];

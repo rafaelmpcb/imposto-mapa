@@ -10,6 +10,7 @@ import {
   CPP_RATE,
   CSLL_RATE,
   DEPENDENT_DEDUCTION,
+  IBS_RAMP,
   IBS_SHARE,
   IBS_TEST_RATE,
   ICMS_BY_UF,
@@ -219,14 +220,28 @@ function scenario(lines: TaxLine[], base: number): Scenario {
  * 2033: regime pleno — IBS+CBS substituem PIS/COFINS/ICMS/ISS.
  */
 function transition(year: YearId) {
-  switch (year) {
-    case 2026:
-      return { newRateShare: 0, keepPisCofins: true, keepIcmsIss: true, testRate: IBS_TEST_RATE + CBS_TEST_RATE * 0 };
-    case 2027:
-      return { newRateShare: CBS_SHARE / REFERENCE_RATE, keepPisCofins: false, keepIcmsIss: true, testRate: IBS_TEST_RATE };
-    default:
-      return { newRateShare: 1, keepPisCofins: false, keepIcmsIss: false, testRate: 0 };
+  if (year === 2026) {
+    return {
+      newRateShare: 0,
+      keepPisCofins: true,
+      icmsIssFactor: 1,
+      ibsRamp: 0,
+      testRate: IBS_TEST_RATE + CBS_TEST_RATE * 0,
+    };
   }
+  if (year === 2033) {
+    return { newRateShare: 1, keepPisCofins: false, icmsIssFactor: 0, ibsRamp: 1, testRate: 0 };
+  }
+  // 2027 e 2028: CBS plena, ICMS/ISS integrais, IBS em teste.
+  // 2029 a 2032: IBS entra em 1/10 por ano e ICMS/ISS recuam na mesma proporção.
+  const ramp = IBS_RAMP[year] ?? 0;
+  return {
+    newRateShare: (CBS_SHARE + IBS_SHARE * ramp) / REFERENCE_RATE,
+    keepPisCofins: false,
+    icmsIssFactor: 1 - ramp,
+    ibsRamp: ramp,
+    testRate: ramp > 0 ? 0 : IBS_TEST_RATE,
+  };
 }
 
 export type BusinessRegime = "simples" | "simples_hibrido" | "presumido" | "real";
@@ -323,12 +338,16 @@ function simplesHibrido(input: SimulationInput, year: YearId, isCurrent: boolean
   }
   const activity = getActivity(input.activityId);
   const { rate: newRate } = effectiveRate(input);
-  const partilha = simplesPartilha(anexo, rbt12);
   const dasRate = simplesEffectiveRate(anexo, input.revenue, input.rbt12);
-  const residualShare = year === 2033 ? partilha.federal : 1 - partilha.pisCofins;
-  const dasResidual = input.revenue * dasRate * residualShare;
-  const ivaRate =
-    year === 2033 ? newRate : newRate * (CBS_SHARE / REFERENCE_RATE) + IBS_TEST_RATE;
+  const partilha = simplesPartilha(anexo, rbt12, dasRate);
+  const t = transition(year);
+  const subnacional = Math.max(0, 1 - partilha.federal - partilha.pisCofins);
+  const residualShare =
+    year === 2033
+      ? partilha.federal
+      : 1 - partilha.pisCofins - subnacional * t.ibsRamp;
+  const dasResidual = input.revenue * dasRate * Math.max(0, residualShare);
+  const ivaRate = year === 2033 ? newRate : newRate * t.newRateShare + t.testRate;
   const taxableShare = 1 - Math.min(100, Math.max(0, input.monofasicoShare)) / 100;
   const supplierShare = Math.min(100, Math.max(0, input.simplesSupplierShare || 0));
   const purchases = Math.min(Math.max(0, input.purchases), input.revenue);
@@ -337,10 +356,10 @@ function simplesHibrido(input: SimulationInput, year: YearId, isCurrent: boolean
   const cppFora = cppOutsideDas(anexo);
   const lines: TaxLine[] = [
     {
-      label: `DAS residual (${year === 2033 ? "IRPJ, CSLL e CPP" : "sem PIS/COFINS"} · ${pct(dasRate * residualShare)})`,
+      label: `DAS residual (${year === 2033 ? "IRPJ, CSLL e CPP" : "sem PIS/COFINS"} · ${pct(dasRate * Math.max(0, residualShare))})`,
       value: dasResidual,
     },
-    { label: `${year === 2033 ? "IBS + CBS" : "CBS + IBS teste"} líquido (${pct(ivaRate)} − créditos)`, value: iva },
+    { label: `${year === 2033 ? "IBS + CBS" : "CBS + IBS da rampa"} líquido (${pct(ivaRate)} − créditos)`, value: iva },
   ];
   if (cppFora) lines.push({ label: `CPP patronal via GPS (${pct(CPP_RATE)} da folha)`, value: Math.max(0, input.payroll) * CPP_RATE });
   const total = lines.reduce((a, l) => a + l.value, 0);
@@ -348,7 +367,16 @@ function simplesHibrido(input: SimulationInput, year: YearId, isCurrent: boolean
     `Anexo ${anexo}${isCurrent ? "" : " estimado pela atividade"}; ${partilha.faixa}ª faixa; partilha oficial do DAS (LC 123/2006, redação LC 155/2016).`,
     "Clientes PJ aproveitam crédito integral do IBS/CBS destacado.",
   ];
-  if (activity.sector === "servico" && year !== 2033) notes.push("ISS segue dentro do DAS até 2032.");
+  if (partilha.issRedistribuido) {
+    notes.push("ISS limitado a 5% na 5ª faixa, com o excedente redistribuído aos tributos federais da faixa.");
+  }
+  if (activity.sector === "servico" && year !== 2033) {
+    notes.push(
+      t.ibsRamp > 0
+        ? `ISS ainda dentro do DAS, já reduzido a ${pct(1 - t.ibsRamp)} pela rampa da transição.`
+        : "ISS segue dentro do DAS até 2032.",
+    );
+  }
   return {
     ...base,
     total,
@@ -708,8 +736,14 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
       value: Math.max(0, newBase * newRate * share - credits * share),
     });
   }
-  if (t.keepIcmsIss) {
-    reformLines.push({ label: consumptionOldLabel, value: revenue * consumptionOldRate });
+  if (t.icmsIssFactor > 0) {
+    const partial = t.icmsIssFactor < 1;
+    reformLines.push({
+      label: partial
+        ? `${consumptionOldLabel} — ${pct(t.icmsIssFactor)} da alíquota (rampa da transição)`
+        : consumptionOldLabel,
+      value: revenue * consumptionOldRate * t.icmsIssFactor,
+    });
   }
   if (t.testRate > 0) {
     reformLines.push({
@@ -724,9 +758,18 @@ export function simulate(input: SimulationInput, year: YearId): SimulationResult
       "Em 2026 vigoram apenas as alíquotas de teste (CBS 0,9% compensável com PIS/COFINS e IBS 0,1%): o impacto financeiro é baixo, mas há obrigações acessórias novas.",
     );
   }
-  if (year === 2027) {
+  if (year === 2027 || year === 2028) {
     notes.push(
-      "Em 2027 PIS e COFINS são extintos e substituídos pela CBS; ICMS e ISS seguem vigentes até a transição estadual/municipal.",
+      "PIS e COFINS estão extintos e substituídos pela CBS; ICMS e ISS seguem integralmente vigentes, com o IBS ainda em alíquota de teste (2028 é o ano de calibragem das alíquotas de referência).",
+    );
+  }
+  if (t.ibsRamp > 0 && year !== 2033) {
+    notes.push(
+      `Ano intermediário da transição estadual/municipal: o IBS entra com ${pct(
+        t.ibsRamp,
+      )} da sua alíquota e o ${consumptionOldLabel.split(" ")[0]} é reduzido a ${pct(
+        t.icmsIssFactor,
+      )} do valor atual (redução de 1/10 por ano entre 2029 e 2032).`,
     );
   }
 

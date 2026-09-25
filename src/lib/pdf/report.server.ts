@@ -9,7 +9,7 @@ import {
   type SimulationInput,
   type TaxpayerType,
 } from "@/lib/tax/calc";
-import { LEGAL_REFERENCE_DATE, YEARS, getActivity, type YearId } from "@/lib/tax/constants";
+import { LEGAL_REFERENCE_DATE, TRANSITION_YEARS, getActivity, type YearId } from "@/lib/tax/constants";
 
 /** Atividades tipicamente exercidas por sociedades uniprofissionais (ISS fixo). */
 const UNIPROFISSIONAL_ACTIVITIES = ["advocacia", "contabilidade", "saude", "engenharia"];
@@ -541,10 +541,10 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
   /* 3b. Evolução ao longo da transição */
   doc.heading("Evolução da carga ao longo da transição");
   doc.text(
-    "Mesma projeção do gráfico da tela de resultado, com os valores informados por você, nos três marcos da transição.",
+    "Mesma projeção do gráfico da tela de resultado, com os valores informados por você, ano a ano de 2026 a 2033.",
     { size: 9, color: MUTED, after: 4 },
   );
-  const evolution = YEARS.map((y) => {
+  const evolution = TRANSITION_YEARS.map((y) => {
     const r = simulate(input, y.id);
     return { id: y.id, label: y.label, current: r.current, reform: r.reform };
   });
@@ -574,7 +574,7 @@ export async function buildReportPdf(payload: ReportPayload): Promise<Uint8Array
   }
   doc.gap(6);
   doc.text(
-    `Marcos: ${YEARS.map((y) => y.label).join(" · ")}.`,
+    `Marcos da transição: ${TRANSITION_YEARS.map((y) => y.label).join(" · ")}.`,
     { size: 8.5, color: MUTED },
   );
   if (input.taxpayerType === "simples") {

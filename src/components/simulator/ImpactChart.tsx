@@ -19,7 +19,7 @@ import {
   simulate,
   type SimulationInput,
 } from "@/lib/tax/calc";
-import { YEARS, type YearId } from "@/lib/tax/constants";
+import { TRANSITION_YEARS, type YearId } from "@/lib/tax/constants";
 
 const compact = (v: number) =>
   v.toLocaleString("pt-BR", { notation: "compact", maximumFractionDigits: 1 });
@@ -42,12 +42,12 @@ export function ImpactChart({
     { name: "Hoje", valor: Math.round(result.current.total), tone: "atual" },
     { name: projectedLabel, valor: Math.round(result.reform.total), tone: "reforma" },
   ];
-  const evolution = YEARS.map((y) => {
+  const evolution = TRANSITION_YEARS.map((y) => {
     const r = simulate(input, y.id);
     return {
-      name: String(y.id),
+      name: y.short,
       Atual: Math.round(r.current.total),
-       Projetado: Math.round(r.reform.total),
+      Projetado: Math.round(r.reform.total),
     };
   });
 
@@ -103,7 +103,7 @@ export function ImpactChart({
 
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Evolução da transição
+            Evolução ano a ano (2026 a 2033)
           </p>
           <div className="h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">

@@ -1,7 +1,7 @@
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowDown, ArrowUp, Building2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { LEGAL_REFERENCE_DATE, YEARS, type YearId } from "@/lib/tax/constants";
+import { LEGAL_REFERENCE_DATE, TRANSITION_YEARS, YEARS, type YearId } from "@/lib/tax/constants";
 import type { CnpjData } from "@/lib/cnpj/types";
 import { emptyOfficeContact, getOfficeContact } from "@/lib/office-config.functions";
 import { getParameters } from "@/lib/tax-parameters.functions";
@@ -373,6 +373,7 @@ export function ResultView({
   const [officeName, setOfficeName] = useState("");
   const [ratesUpdatedAt, setRatesUpdatedAt] = useState<string | null>(null);
   const [ratesVersion, setRatesVersion] = useState(0);
+  const [anoAAno, setAnoAAno] = useState(false);
   // ratesVersion entra como dependência porque as alíquotas editadas na tabela
   // são constantes de módulo, não parte de `input`.
   const result = useMemo(() => simulate(input, year), [input, year, ratesVersion]);
@@ -599,23 +600,61 @@ export function ResultView({
             />
           </Field>
           <div>
-            <h2 className="text-2xl font-semibold">Ano de referência</h2>
-            <div className="mt-3 grid gap-2 sm:grid-cols-3">
-              {YEARS.map((y) => (
-                <button
-                  key={y.id}
-                  type="button"
-                  onClick={() => onYearChange(y.id)}
-                  className={`rounded-md border px-4 py-3 text-left text-sm transition-colors ${
-                    year === y.id
-                      ? "border-navy bg-navy text-navy-foreground"
-                      : "border-input bg-card hover:bg-secondary"
-                  }`}
-                >
-                  {y.label}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-2xl font-semibold">Ano de referência</h2>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !anoAAno;
+                  setAnoAAno(next);
+                  if (!next && ![2026, 2027, 2033].includes(year)) onYearChange(2027);
+                }}
+                className="rounded-md border border-input bg-card px-3 py-2 text-sm font-medium transition-colors hover:bg-secondary"
+              >
+                {anoAAno ? "Ver só os marcos (2026, 2027 e 2033)" : "Ver ano a ano (2026 a 2033)"}
+              </button>
             </div>
+            {anoAAno ? (
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {TRANSITION_YEARS.map((y) => (
+                  <button
+                    key={y.id}
+                    type="button"
+                    onClick={() => onYearChange(y.id)}
+                    title={y.label}
+                    className={`rounded-md border px-3 py-3 text-sm font-semibold transition-colors ${
+                      year === y.id
+                        ? "border-navy bg-navy text-navy-foreground"
+                        : "border-input bg-card hover:bg-secondary"
+                    }`}
+                  >
+                    {y.short}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                {YEARS.map((y) => (
+                  <button
+                    key={y.id}
+                    type="button"
+                    onClick={() => onYearChange(y.id)}
+                    className={`rounded-md border px-4 py-3 text-left text-sm transition-colors ${
+                      year === y.id
+                        ? "border-navy bg-navy text-navy-foreground"
+                        : "border-input bg-card hover:bg-secondary"
+                    }`}
+                  >
+                    {y.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {anoAAno ? (
+              <p className="mt-2 text-sm text-muted-foreground">
+                {TRANSITION_YEARS.find((y) => y.id === year)?.label}
+              </p>
+            ) : null}
             <div className="mt-3">
               <Notice tone="warning">
                 Os valores de 2027 em diante são projeções baseadas no cronograma legal atual, que
