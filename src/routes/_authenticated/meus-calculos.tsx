@@ -13,6 +13,7 @@ import { DiagnosticoCompleto } from "@/components/cases/DiagnosticoCompleto";
 import { FunnelPanel } from "@/components/cases/FunnelPanel";
 import { StageSelect } from "@/components/cases/StageSelect";
 import { CasoCrmPanel } from "@/components/cases/CasoCrmPanel";
+import { ChecklistDocumentosDialog } from "@/components/cases/ChecklistDocumentosDialog";
 import { pipelineStats } from "@/lib/crm/alerts";
 
 import { HubTabBar, type HubTabId } from "@/components/hub/HubTabs";
@@ -100,6 +101,7 @@ function MyCalculations() {
   const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
   const [editingCaseName, setEditingCaseName] = useState("");
   const [confirmCaseId, setConfirmCaseId] = useState<string | null>(null);
+  const [checklistCase, setChecklistCase] = useState<{ name: string } | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -747,6 +749,12 @@ function MyCalculations() {
                           >
                             Renomear caso
                           </Button>
+                          <Button
+                            variant="ghost"
+                            onClick={() => setChecklistCase({ name: item.client_name ?? "" })}
+                          >
+                            Checklist de documentos
+                          </Button>
                           {confirmCaseId === item.id ? (
                             <>
                               <Button onClick={() => void handleDeleteCase(item.id)}>
@@ -874,6 +882,11 @@ function MyCalculations() {
           onClose={() => setMemoFor(null)}
         />
       ) : null}
+      <ChecklistDocumentosDialog
+        open={checklistCase !== null}
+        onOpenChange={(v) => { if (!v) setChecklistCase(null); }}
+        clientName={checklistCase?.name ?? ""}
+      />
     </main>
   );
 }
