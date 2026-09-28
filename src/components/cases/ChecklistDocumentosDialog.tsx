@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
 
 import {
   Dialog,
@@ -119,6 +118,7 @@ export function ChecklistDocumentosDialog({
   onOpenChange: (v: boolean) => void;
   clientName: string;
 }) {
+  const [msg, setMsg] = useState("");
   const [sel, setSel] = useState<Set<string>>(new Set(["diagnostico"]));
   const mods = useMemo(() => CHECKLIST_MODULOS.filter((m) => sel.has(m.id)), [sel]);
   const texto = useMemo(() => montarTexto(clientName, mods), [clientName, mods]);
@@ -134,9 +134,9 @@ export function ChecklistDocumentosDialog({
   const copiar = async () => {
     try {
       await navigator.clipboard.writeText(texto);
-      toast.success("Checklist copiado. Cole no WhatsApp ou e-mail.");
+      setMsg("Checklist copiado. Cole no WhatsApp ou e-mail.");
     } catch {
-      toast.error("Não foi possível copiar.");
+      setMsg("Não foi possível copiar.");
     }
   };
 
@@ -215,7 +215,8 @@ export function ChecklistDocumentosDialog({
           ))}
         </div>
 
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {msg ? <span className="mr-auto text-xs text-muted-foreground">{msg}</span> : null}
           <Button variant="ghost" onClick={imprimir} disabled={mods.length === 0}>
             Imprimir / salvar PDF
           </Button>
