@@ -124,6 +124,7 @@ export function NfseCarteiraPanel({
   useEffect(() => {
     if (busy || drafts.length > 0 || fila.length === 0) return;
     const [proximo, ...resto] = fila;
+    if (!proximo) return;
     setFila(resto);
     void handleFiles(proximo.files, proximo.lado);
     // eslint-disable-next-line react-hooks/exhaustive-deps
