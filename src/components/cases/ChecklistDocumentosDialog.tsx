@@ -89,6 +89,49 @@ export const CHECKLIST_MODULOS: Modulo[] = [
   },
 ];
 
+type Regime = "simples" | "presumido" | "real";
+
+const PROCURACAO: DocItem = {
+  nome: "Procuração eletrônica no e-CAC outorgada ao CNPJ do escritório",
+  formato: "Cadastro no portal e-CAC (enviamos o passo a passo)",
+  porque: "Com ela o próprio escritório baixa as declarações e arquivos fiscais na Receita Federal, sem depender de envio seu.",
+  obrigatorio: true,
+};
+const ALUGUEIS: DocItem = {
+  nome: "Relação de contratos de aluguel (pagos ou recebidos)",
+  formato: "PDF dos contratos ou planilha com locador/locatário, valor e prazo",
+  porque: "Aluguéis têm regra própria na Reforma e não aparecem completos nas declarações fiscais.",
+  obrigatorio: true,
+};
+
+const REGIME_DIAGNOSTICO: Record<Regime, { label: string; resumo: string; docs: DocItem[] }> = {
+  simples: {
+    label: "Simples Nacional",
+    resumo: "Com a procuração o escritório baixa o PGDAS-D. As notas precisam vir do sistema emissor ou da contabilidade.",
+    docs: [
+      PROCURACAO,
+      { nome: "XML das notas de venda (NF-e/NFC-e) do período", formato: "ZIP com os XML (não serve PDF/DANFE)", porque: "Mostra o que a empresa vende e para quem, base do imposto devido e do preço necessário.", obrigatorio: true },
+      { nome: "XML das notas de compra (NF-e) do período", formato: "ZIP com os XML", porque: "Mostra os fornecedores e o crédito que a empresa poderá aproveitar.", obrigatorio: true },
+      { nome: "XML das notas de serviço prestados e tomados (NFS-e) do período", formato: "ZIP com os XML", porque: "Serviços têm regras próprias na Reforma; sem elas o cálculo fica incompleto.", obrigatorio: true },
+      ALUGUEIS,
+    ],
+  },
+  presumido: {
+    label: "Lucro Presumido",
+    resumo: "Com a procuração o escritório baixa notas e SPED. Falta apenas o que a escrituração não mostra por completo.",
+    docs: [
+      PROCURACAO,
+      { nome: "Relatório de despesas com terceiros do Razão/Balancete (ou XML das notas de serviço tomadas)", formato: "Excel/PDF com fornecedor, CNPJ e valor — ou ZIP com os XML", porque: "No Presumido os serviços contratados não ficam detalhados no SPED; sem isso os créditos ficam subestimados.", obrigatorio: true },
+      ALUGUEIS,
+    ],
+  },
+  real: {
+    label: "Lucro Real",
+    resumo: "No Lucro Real a escrituração já traz compras, vendas e serviços. Basta a procuração e os contratos.",
+    docs: [PROCURACAO, ALUGUEIS],
+  },
+};
+
 function montarTexto(clientName: string, mods: Modulo[]) {
   const linhas: string[] = [];
   linhas.push(`Olá${clientName ? `, ${clientName}` : ""}! Para concluirmos a análise, precisamos dos documentos abaixo.`);
@@ -120,7 +163,16 @@ export function ChecklistDocumentosDialog({
 }) {
   const [msg, setMsg] = useState("");
   const [sel, setSel] = useState<Set<string>>(new Set(["diagnostico"]));
-  const mods = useMemo(() => CHECKLIST_MODULOS.filter((m) => sel.has(m.id)), [sel]);
+  const [regime, setRegime] = useState<Regime | null>(null);
+  const mods = useMemo(
+    () =>
+      CHECKLIST_MODULOS.filter((m) => sel.has(m.id)).map((m) => {
+        if (m.id !== "diagnostico" || !regime) return m;
+        const r = REGIME_DIAGNOSTICO[regime];
+        return { ...m, titulo: `${m.titulo} — ${r.label}`, resumo: r.resumo, docs: r.docs };
+      }),
+    [sel, regime],
+  );
   const texto = useMemo(() => montarTexto(clientName, mods), [clientName, mods]);
 
   const toggle = (id: string) =>
@@ -172,6 +224,26 @@ export function ChecklistDocumentosDialog({
             Escolha os módulos contratados. Cada documento vem com o formato certo e o motivo do pedido.
           </DialogDescription>
         </DialogHeader>
+
+        <div>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Regime do cliente
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {([null, "simples", "presumido", "real"] as const).map((r) => (
+              <button
+                key={r ?? "geral"}
+                type="button"
+                onClick={() => setRegime(r)}
+                className={`rounded-md border px-3 py-1.5 text-sm ${
+                  regime === r ? "border-navy bg-navy text-navy-foreground" : "border-border bg-card text-foreground"
+                }`}
+              >
+                {r ? REGIME_DIAGNOSTICO[r].label : "Lista completa"}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="flex flex-wrap gap-2">
           {CHECKLIST_MODULOS.map((m) => (
