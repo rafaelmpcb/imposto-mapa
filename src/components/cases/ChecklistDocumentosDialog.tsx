@@ -118,10 +118,10 @@ const REGIME_DIAGNOSTICO: Record<Regime, { label: string; resumo: string; docs: 
   },
   presumido: {
     label: "Lucro Presumido",
-    resumo: "Com a procuração o escritório baixa notas e SPED. Falta apenas o que a escrituração não mostra por completo.",
+    resumo: "Com a procuração o escritório baixa notas e SPED. As notas de serviço tomadas vêm do Ambiente Nacional da NFS-e (ADN); o relatório do Razão/Balancete só entra se houver prestador em município fora do padrão nacional.",
     docs: [
       PROCURACAO,
-      { nome: "Relatório de despesas com terceiros do Razão/Balancete (ou XML das notas de serviço tomadas)", formato: "Excel/PDF com fornecedor, CNPJ e valor — ou ZIP com os XML", porque: "No Presumido os serviços contratados não ficam detalhados no SPED; sem isso os créditos ficam subestimados.", obrigatorio: true },
+      { nome: "XML das notas de serviço (NFS-e) tomadas — Ambiente Nacional da NFS-e", formato: "ZIP com os XML (baixamos no portal nacional com a procuração)", porque: "Mostra os serviços contratados e os créditos da Reforma. Só pedimos o relatório de despesas com terceiros do Razão/Balancete quando houver prestador em município ainda não integrado ao padrão nacional.", obrigatorio: true },
       ALUGUEIS,
     ],
   },
