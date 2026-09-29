@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 
 import { Button, Notice } from "@/components/simulator/ui";
@@ -56,9 +56,11 @@ const TIPO_POR_LADO: Record<Lado, "fornecedor" | "cliente"> = {
 export function NfseCarteiraPanel({
   caseId,
   onApplied,
+  incoming,
 }: {
   caseId: string;
   onApplied: () => void | Promise<void>;
+  incoming?: { id: number; tomado: File[]; prestado: File[] } | null;
 }) {
   const salvarNotas = useServerFn(saveNotasServico);
   const classificar = useServerFn(classifyContrapartesServico);
@@ -109,7 +111,25 @@ export function NfseCarteiraPanel({
     }
   };
 
-  const handleFiles = async (files: FileList | null, ladoAtual: Lado) => {
+  const [fila, setFila] = useState<{ files: File[]; lado: Lado }[]>([]);
+
+  useEffect(() => {
+    if (!incoming) return;
+    const novos: { files: File[]; lado: Lado }[] = [];
+    if (incoming.tomado.length) novos.push({ files: incoming.tomado, lado: "tomado" });
+    if (incoming.prestado.length) novos.push({ files: incoming.prestado, lado: "prestado" });
+    if (novos.length) setFila(novos);
+  }, [incoming?.id]);
+
+  useEffect(() => {
+    if (busy || drafts.length > 0 || fila.length === 0) return;
+    const [proximo, ...resto] = fila;
+    setFila(resto);
+    void handleFiles(proximo.files, proximo.lado);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fila, busy, drafts.length]);
+
+  const handleFiles = async (files: FileList | File[] | null, ladoAtual: Lado) => {
     if (!files || files.length === 0) return;
     setBusy(true);
     setError("");

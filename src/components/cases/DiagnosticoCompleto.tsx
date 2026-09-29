@@ -7,6 +7,7 @@ import { CarteiraResult } from "@/components/cases/CarteiraResult";
 import { PgdasdPanel } from "@/components/cases/PgdasdPanel";
 import { NfeUnificadoPanel } from "@/components/cases/NfeUnificadoPanel";
 import { NfseCarteiraPanel } from "@/components/cases/NfseCarteiraPanel";
+import { UploadUnicoPanel, type PacoteTriado } from "@/components/cases/UploadUnicoPanel";
 import { PainelCargaPanel } from "@/components/cases/PainelCargaPanel";
 import { CreditoNcmPanel } from "@/components/cases/CreditoNcmPanel";
 import { DebitoNcmPanel } from "@/components/cases/DebitoNcmPanel";
@@ -126,7 +127,9 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
 
   /* ---------------- upload e mapeamento ---------------- */
 
-  const handleFiles = async (files: FileList | null) => {
+  const [pacote, setPacote] = useState<PacoteTriado | null>(null);
+
+  const handleFiles = async (files: FileList | File[] | null) => {
     if (!files || files.length === 0) return;
     setError("");
     try {
@@ -568,6 +571,13 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
 
       {error ? <Notice tone="warning">{error}</Notice> : null}
 
+      <UploadUnicoPanel
+        caseCnpj={caseItem.cnpj}
+        onTriado={(p) => {
+          setPacote(p);
+          if (p.resultado.planilhas.length > 0) void handleFiles(p.resultado.planilhas);
+        }}
+      />
       <ul className="space-y-3">
         {DIAGNOSTIC_DOCS.filter((doc) => doc.key !== "dados_regime" || isSimples).map((doc) => {
           const status =
@@ -595,7 +605,15 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
 
               {doc.key === "dados_regime" ? (
                 <div className="mt-3">
-                  <PgdasdPanel caseItem={caseItem} onStatus={setRegimeStatus} />
+                  <PgdasdPanel
+                    caseItem={caseItem}
+                    onStatus={setRegimeStatus}
+                    incoming={
+                      pacote?.resultado.pgdasd[0]
+                        ? { id: pacote.id, file: pacote.resultado.pgdasd[0] }
+                        : null
+                    }
+                  />
                 </div>
               ) : doc.key === "servicos_tomados" ? (
                 <NfseServicoPanel
@@ -634,9 +652,19 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
                         caseId={caseItem.id}
                         caseCnpj={caseItem.cnpj}
                         onApplied={refresh}
+                        incoming={pacote ? { id: pacote.id, files: pacote.resultado.nfe } : null}
                       />
                       <NfseCarteiraPanel
                         caseId={caseItem.id}
+                        incoming={
+                          pacote
+                            ? {
+                                id: pacote.id,
+                                tomado: pacote.resultado.nfseTomado,
+                                prestado: pacote.resultado.nfsePrestado,
+                              }
+                            : null
+                        }
                         onApplied={async () => {
                           await refresh();
                           setNbsReload((v) => v + 1);

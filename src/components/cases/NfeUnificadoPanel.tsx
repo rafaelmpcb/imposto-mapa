@@ -53,10 +53,12 @@ export function NfeUnificadoPanel({
   caseId,
   caseCnpj,
   onApplied,
+  incoming,
 }: {
   caseId: string;
   caseCnpj: string | null;
   onApplied: () => void | Promise<void>;
+  incoming?: { id: number; files: File[] } | null;
 }) {
   const saveCompra = useServerFn(saveNotasCompra);
   const saveVenda = useServerFn(saveNotasVenda);
@@ -150,7 +152,12 @@ export function NfeUnificadoPanel({
     }
   };
 
-  const handleFiles = async (files: FileList | null) => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (incoming && incoming.files.length > 0) void handleFiles(incoming.files);
+  }, [incoming?.id]);
+
+  const handleFiles = async (files: FileList | File[] | null) => {
     if (!files || files.length === 0) return;
     if (cnpjCaso.length !== 14) {
       setError(

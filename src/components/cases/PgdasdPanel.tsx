@@ -31,9 +31,11 @@ const toNum = (v: string) => {
 export function PgdasdPanel({
   caseItem,
   onStatus,
+  incoming,
 }: {
   caseItem: CaseRecord;
   onStatus?: (status: string) => void;
+  incoming?: { id: number; file: File } | null;
 }) {
   const navigate = useNavigate();
   const load = useServerFn(listPgdasd);
@@ -90,6 +92,11 @@ export function PgdasdPanel({
       setBusy(false);
     }
   };
+
+  useEffect(() => {
+    if (incoming?.file) void handleFile(incoming.file);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [incoming?.id]);
 
   const cnpjDivergente = useMemo(() => {
     const caseCnpj = onlyDigits(caseItem.cnpj ?? "");
