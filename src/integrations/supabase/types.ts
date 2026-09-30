@@ -61,6 +61,65 @@ export type Database = {
           },
         ]
       }
+      case_contracts: {
+        Row: {
+          ambiente: string | null
+          case_id: string
+          created_at: string
+          document_key: string | null
+          id: string
+          kind: string
+          params: Json
+          request_signature_key: string | null
+          sign_url: string | null
+          signed_at: string | null
+          signed_file_url: string | null
+          status: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          ambiente?: string | null
+          case_id: string
+          created_at?: string
+          document_key?: string | null
+          id?: string
+          kind: string
+          params?: Json
+          request_signature_key?: string | null
+          sign_url?: string | null
+          signed_at?: string | null
+          signed_file_url?: string | null
+          status?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          ambiente?: string | null
+          case_id?: string
+          created_at?: string
+          document_key?: string | null
+          id?: string
+          kind?: string
+          params?: Json
+          request_signature_key?: string | null
+          sign_url?: string | null
+          signed_at?: string | null
+          signed_file_url?: string | null
+          status?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_contracts_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       case_diagnostic_docs: {
         Row: {
           case_id: string
@@ -1001,6 +1060,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      integration_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: []
       }
       item_revisao_evento: {
         Row: {
