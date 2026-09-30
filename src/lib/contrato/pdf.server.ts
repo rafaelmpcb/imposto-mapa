@@ -152,7 +152,7 @@ class Pdf {
           height: h,
           borderColor: LINE,
           borderWidth: 0.6,
-          color: row.head ? HEAD_BG : undefined,
+          ...(row.head ? { color: HEAD_BG } : {}),
         });
         let yy = this.y - pad - size;
         for (const ln of cell.lines) {
@@ -184,7 +184,7 @@ export async function gerarPdfContrato(esc: DadosEscritorio, d: DocumentoContrat
         pdf.text(b.texto, { size: 10.5, bold: true, color: NAVY, gap: 6 });
         break;
       case "paragrafo":
-        pdf.text(b.texto, { bold: b.negrito, align: b.alinhamento });
+        pdf.text(b.texto, { bold: b.negrito ?? false, align: b.alinhamento ?? "esquerda" });
         break;
       case "espaco":
         pdf.y -= b.altura ?? 10;
