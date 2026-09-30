@@ -23,6 +23,7 @@ import { Route as AuthenticatedMeusCalculosRouteImport } from './routes/_authent
 import { Route as AuthenticatedParametrosRouteImport } from './routes/_authenticated/parametros'
 import { Route as RelatorioTokenRouteImport } from './routes/relatorio.$token'
 import { Route as STokenRouteImport } from './routes/s.$token'
+import { Route as ApiPublicClicksignWebhookRouteImport } from './routes/api/public/clicksign-webhook'
 import { Route as ApiPublicParecerPdfRouteImport } from './routes/api/public/parecer-pdf'
 import { Route as ApiPublicRelatorioPdfRouteImport } from './routes/api/public/relatorio-pdf'
 
@@ -97,6 +98,12 @@ const STokenRoute = STokenRouteImport.update({
   path: '/s/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicClicksignWebhookRoute =
+  ApiPublicClicksignWebhookRouteImport.update({
+    id: '/api/public/clicksign-webhook',
+    path: '/api/public/clicksign-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicParecerPdfRoute = ApiPublicParecerPdfRouteImport.update({
   id: '/api/public/parecer-pdf',
   path: '/api/public/parecer-pdf',
@@ -122,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/parametros': typeof AuthenticatedParametrosRoute
   '/relatorio/$token': typeof RelatorioTokenRoute
   '/s/$token': typeof STokenRoute
+  '/api/public/clicksign-webhook': typeof ApiPublicClicksignWebhookRoute
   '/api/public/parecer-pdf': typeof ApiPublicParecerPdfRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
 }
@@ -139,6 +147,7 @@ export interface FileRoutesByTo {
   '/parametros': typeof AuthenticatedParametrosRoute
   '/relatorio/$token': typeof RelatorioTokenRoute
   '/s/$token': typeof STokenRoute
+  '/api/public/clicksign-webhook': typeof ApiPublicClicksignWebhookRoute
   '/api/public/parecer-pdf': typeof ApiPublicParecerPdfRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
 }
@@ -158,6 +167,7 @@ export interface FileRoutesById {
   '/_authenticated/parametros': typeof AuthenticatedParametrosRoute
   '/relatorio/$token': typeof RelatorioTokenRoute
   '/s/$token': typeof STokenRoute
+  '/api/public/clicksign-webhook': typeof ApiPublicClicksignWebhookRoute
   '/api/public/parecer-pdf': typeof ApiPublicParecerPdfRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
 }
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/parametros'
     | '/relatorio/$token'
     | '/s/$token'
+    | '/api/public/clicksign-webhook'
     | '/api/public/parecer-pdf'
     | '/api/public/relatorio-pdf'
   fileRoutesByTo: FileRoutesByTo
@@ -194,6 +205,7 @@ export interface FileRouteTypes {
     | '/parametros'
     | '/relatorio/$token'
     | '/s/$token'
+    | '/api/public/clicksign-webhook'
     | '/api/public/parecer-pdf'
     | '/api/public/relatorio-pdf'
   id:
@@ -212,6 +224,7 @@ export interface FileRouteTypes {
     | '/_authenticated/parametros'
     | '/relatorio/$token'
     | '/s/$token'
+    | '/api/public/clicksign-webhook'
     | '/api/public/parecer-pdf'
     | '/api/public/relatorio-pdf'
   fileRoutesById: FileRoutesById
@@ -228,6 +241,7 @@ export interface RootRouteChildren {
   SimuladorRoute: typeof SimuladorRoute
   RelatorioTokenRoute: typeof RelatorioTokenRoute
   STokenRoute: typeof STokenRoute
+  ApiPublicClicksignWebhookRoute: typeof ApiPublicClicksignWebhookRoute
   ApiPublicParecerPdfRoute: typeof ApiPublicParecerPdfRoute
   ApiPublicRelatorioPdfRoute: typeof ApiPublicRelatorioPdfRoute
 }
@@ -332,6 +346,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof STokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/clicksign-webhook': {
+      id: '/api/public/clicksign-webhook'
+      path: '/api/public/clicksign-webhook'
+      fullPath: '/api/public/clicksign-webhook'
+      preLoaderRoute: typeof ApiPublicClicksignWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/parecer-pdf': {
       id: '/api/public/parecer-pdf'
       path: '/api/public/parecer-pdf'
@@ -376,6 +397,7 @@ const rootRouteChildren: RootRouteChildren = {
   SimuladorRoute: SimuladorRoute,
   RelatorioTokenRoute: RelatorioTokenRoute,
   STokenRoute: STokenRoute,
+  ApiPublicClicksignWebhookRoute: ApiPublicClicksignWebhookRoute,
   ApiPublicParecerPdfRoute: ApiPublicParecerPdfRoute,
   ApiPublicRelatorioPdfRoute: ApiPublicRelatorioPdfRoute,
 }
