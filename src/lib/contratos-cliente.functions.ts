@@ -80,8 +80,8 @@ export const enviarContratosClicksign = createServerFn({ method: "POST" })
     const advogado = await cs.criarSignatario(cfg, {
       nome: cfgRaw["clicksign_signatario_nome"] || "Leonardo Azevedo Pinheiro Borges",
       email: advEmail,
-      celular: cfgRaw["clicksign_signatario_celular"],
-      cpf: cfgRaw["clicksign_signatario_cpf"],
+      celular: cfgRaw["clicksign_signatario_celular"] ?? "",
+      cpf: cfgRaw["clicksign_signatario_cpf"] ?? "",
     });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
