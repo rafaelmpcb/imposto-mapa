@@ -22,8 +22,9 @@ import {
 } from "@/lib/crm.functions";
 import { ALERT_CLASSES, caseAlert } from "@/lib/crm/alerts";
 import { brl } from "@/lib/tax/calc";
+import { ContratoPanel } from "@/components/cases/ContratoPanel";
 
-type Aba = "comercial" | "contatos" | "timeline";
+type Aba = "comercial" | "contatos" | "timeline" | "contratos";
 
 function soDigitos(v: string | null): string {
   return (v ?? "").replace(/\D/g, "");
@@ -210,7 +211,7 @@ export function CasoCrmPanel({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        {(["comercial", "contatos", "timeline"] as const).map((k) => (
+        {(["comercial", "contatos", "timeline", "contratos"] as const).map((k) => (
           <button
             key={k}
             type="button"
@@ -223,7 +224,9 @@ export function CasoCrmPanel({
               ? "Dados comerciais"
               : k === "contatos"
                 ? `Contatos (${contatos.length})`
-                : `Linha do tempo (${interacoes.length})`}
+                : k === "timeline"
+                  ? `Linha do tempo (${interacoes.length})`
+                  : "Contratos e assinatura"}
           </button>
         ))}
         <span
@@ -466,6 +469,9 @@ export function CasoCrmPanel({
             </ol>
           )}
         </section>
+      ) : null}
+      {aba === "contratos" ? (
+        <ContratoPanel caseItem={caseItem} contatoEmail={contatos.find((c) => c.email)?.email ?? ""} />
       ) : null}
     </div>
   );
