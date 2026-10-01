@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 
 import { Button, Field, Notice, TextInput } from "@/components/simulator/ui";
+import { ClicksignPanel } from "@/components/config/ClicksignPanel";
 import { HelpButton } from "@/components/help/HelpPanel";
 import {
   getTaxConfig,
@@ -263,6 +264,8 @@ function TaxConfigPage() {
             </Button>
           </div>
         </section>
+
+        <ClicksignPanel />
 
         <div className="flex flex-wrap gap-4">
           <Link to="/meus-calculos" className="text-sm font-semibold text-navy underline">
