@@ -42,6 +42,17 @@ function baixar(nome: string, base64: string) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
+/** cnpj_data salvo na simulação vinculado ao caso (JsonValue). */
+function cnpjDataDoCaso(caseItem: CaseRecord): Partial<CnpjData> | null {
+  for (const sim of caseItem.simulations ?? []) {
+    const raw = sim?.cnpj_data;
+    if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+      return raw as Partial<CnpjData>;
+    }
+  }
+  return null;
+}
+
 export function ContratoPanel({
   caseItem,
   contatoEmail,
@@ -55,16 +66,18 @@ export function ContratoPanel({
   const lerCfg = useServerFn(getClicksignConfig);
   const consultarCnpj = useServerFn(lookupCnpj);
 
+  const cnpjSalvo = cnpjDataDoCaso(caseItem);
+
   const [kinds, setKinds] = useState<ContratoKind[]>(["diagnostico"]);
   const [cli, setCli] = useState<DadosContratante>({
-    razaoSocial: caseItem.client_name ?? "",
+    razaoSocial: cnpjSalvo?.razao_social || caseItem.client_name || "",
     cnpj: caseItem.cnpj ?? "",
-    representante: caseItem.primary_contact_name ?? "",
+    representante: cnpjSalvo?.representante_sugerido || caseItem.primary_contact_name || "",
     cpf: "",
-    endereco: "",
+    endereco: cnpjSalvo?.endereco ?? "",
     email: contatoEmail,
     telefone: caseItem.primary_contact_phone ?? "",
-    atividade: "",
+    atividade: cnpjSalvo?.atividade_sugerida ?? "",
     operacoes: "",
   });
   const [diag, setDiag] = useState(() => ({ ...paramsDiagnosticoPadrao(), valorTotal: caseItem.deal_value || 0 }));
