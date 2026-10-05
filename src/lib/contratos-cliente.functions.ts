@@ -70,32 +70,38 @@ export const enviarContratosClicksign = createServerFn({ method: "POST" })
     const cfg = { token, ambiente: cfgRaw["clicksign_ambiente"] === "producao" ? "producao" : "sandbox" } as const;
 
     const arquivos = await montar(data);
-    const cliente = await cs.criarSignatario(cfg, {
+    const envelopeId = await cs.criarEnvelope(cfg, `${arquivos.map((a) => a.titulo).join(" + ")} — ${data.contratante.razaoSocial ?? ""}`);
+    const docs: { a: (typeof arquivos)[number]; id: string }[] = [];
+    for (const a of arquivos) docs.push({ a, id: await cs.adicionarDocumento(cfg, envelopeId, a.arquivo, a.base64) });
+
+    const cliente = await cs.adicionarSignatario(cfg, envelopeId, {
       nome: data.contratante.representante,
       email: data.contratante.email,
       celular: data.contratante.telefone,
       cpf: data.contratante.cpf,
     });
     const advEmail = cfgRaw["clicksign_signatario_email"] || "leonardo@azevedoeadvogados.adv.br";
-    const advogado = await cs.criarSignatario(cfg, {
+    const advogado = await cs.adicionarSignatario(cfg, envelopeId, {
       nome: cfgRaw["clicksign_signatario_nome"] || "Leonardo Azevedo Pinheiro Borges",
       email: advEmail,
       celular: cfgRaw["clicksign_signatario_celular"] ?? "",
       cpf: cfgRaw["clicksign_signatario_cpf"] ?? "",
     });
+    for (const d of docs) {
+      await cs.vincularSignatario(cfg, envelopeId, d.id, cliente, "contractor");
+      await cs.vincularSignatario(cfg, envelopeId, d.id, advogado, "contractee");
+    }
+    await cs.ativarEnvelope(cfg, envelopeId);
+    try {
+      await cs.notificar(cfg, envelopeId, `Olá, ${data.contratante.representante.split(" ")[0]}. Segue a proposta para assinatura eletrônica.`);
+    } catch {
+      /* a ativação já envia o e-mail de solicitação */
+    }
+    const url = cs.linkEnvelope(cfg.ambiente, envelopeId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const docKeys: string[] = [];
     const registros: ContratoCaso[] = [];
-    for (const a of arquivos) {
-      const docKey = await cs.criarDocumento(cfg, a.arquivo, a.base64);
-      docKeys.push(docKey);
-      const reqCliente = await cs.vincularSignatario(cfg, docKey, cliente, "contractor");
-      const reqAdv = await cs.vincularSignatario(cfg, docKey, advogado, "contractee");
-      const msg = `Olá, ${data.contratante.representante.split(" ")[0]}. Segue a proposta "${a.titulo}" para assinatura eletrônica.`;
-      await cs.notificar(cfg, reqCliente, msg);
-      await cs.notificar(cfg, reqAdv, "Proposta enviada ao cliente para assinatura.");
-      const url = cs.linkAssinatura(cfg.ambiente, reqCliente);
+    for (const { a, id: docKey } of docs) {
       const { data: row, error } = await supabaseAdmin
         .from("case_contracts")
         .insert({
@@ -104,7 +110,7 @@ export const enviarContratosClicksign = createServerFn({ method: "POST" })
           titulo: a.titulo,
           status: "enviado",
           document_key: docKey,
-          request_signature_key: reqCliente,
+          request_signature_key: envelopeId,
           sign_url: url,
           ambiente: cfg.ambiente,
           params: { contratante: data.contratante, [a.kind]: a.kind === "diagnostico" ? data.diagnostico : data.assessoria } as never,
@@ -113,13 +119,6 @@ export const enviarContratosClicksign = createServerFn({ method: "POST" })
         .single();
       if (error) throw new Error(error.message);
       registros.push(row as unknown as ContratoCaso);
-    }
-    if (docKeys.length > 1) {
-      try {
-        await cs.criarLote(cfg, cliente, docKeys);
-      } catch {
-        /* o lote é opcional: cada documento já tem seu link */
-      }
     }
     await supabaseAdmin.from("cases").update({ stage: "proposta_enviada" }).eq("id", data.caseId);
     await supabaseAdmin.from("case_interactions").insert({

@@ -27,21 +27,25 @@ export const Route = createFileRoute("/api/public/clicksign-webhook")({
           return new Response("Assinatura inválida", { status: 401 });
         }
 
-        let payload: { event?: { name?: string }; document?: { key?: string; downloads?: { signed_file_url?: string } } };
+        let payload: {
+          event?: { name?: string };
+          document?: { key?: string; id?: string; downloads?: { signed_file_url?: string } };
+          envelope?: { key?: string; id?: string };
+        };
         try {
           payload = JSON.parse(body);
         } catch {
           return new Response("JSON inválido", { status: 400 });
         }
         const evento = payload.event?.name ?? "";
-        const key = payload.document?.key;
-        if (!key) return new Response("ok");
+        const docKey = payload.document?.key ?? payload.document?.id;
+        const envKey = payload.envelope?.key ?? payload.envelope?.id;
+        if (!docKey && !envKey) return new Response("ok");
 
-        const { data: contrato } = await supabaseAdmin
-          .from("case_contracts")
-          .select("id,case_id,titulo,status")
-          .eq("document_key", key)
-          .maybeSingle();
+        let q = supabaseAdmin.from("case_contracts").select("id,case_id,titulo,status");
+        q = docKey ? q.eq("document_key", docKey) : q.eq("request_signature_key", envKey!);
+        const { data: lista } = await q;
+        const contrato = lista?.[0];
         if (!contrato) return new Response("ok");
 
         if (evento === "auto_close" || evento === "close") {
