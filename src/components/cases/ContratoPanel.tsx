@@ -21,7 +21,7 @@ import {
   type ContratoCaso,
 } from "@/lib/contratos-cliente.functions";
 import { getClicksignConfig } from "@/lib/integracao.functions";
-import { lookupCnpj } from "@/lib/cnpj.functions";
+import { lookupCnpj, type CnpjData } from "@/lib/cnpj.functions";
 
 const STATUS: Record<string, string> = {
   gerado: "Gerado",
