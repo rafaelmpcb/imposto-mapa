@@ -21,6 +21,7 @@ import {
   type ContratoCaso,
 } from "@/lib/contratos-cliente.functions";
 import { getClicksignConfig } from "@/lib/integracao.functions";
+import { lookupCnpj } from "@/lib/cnpj.functions";
 
 const STATUS: Record<string, string> = {
   gerado: "Gerado",
@@ -52,6 +53,7 @@ export function ContratoPanel({
   const enviar = useServerFn(enviarContratosClicksign);
   const listar = useServerFn(listarContratosCaso);
   const lerCfg = useServerFn(getClicksignConfig);
+  const consultarCnpj = useServerFn(lookupCnpj);
 
   const [kinds, setKinds] = useState<ContratoKind[]>(["diagnostico"]);
   const [cli, setCli] = useState<DadosContratante>({
@@ -82,6 +84,27 @@ export function ContratoPanel({
   useEffect(() => {
     if (contatoEmail && !cli.email) setCli((c) => ({ ...c, email: contatoEmail }));
   }, [contatoEmail, cli.email]);
+
+  useEffect(() => {
+    const cnpj = caseItem.cnpj;
+    if (!cnpj) return;
+    let ativo = true;
+    void consultarCnpj({ data: { cnpj } })
+      .then((r) => {
+        if (!ativo || !r.ok || !r.data) return;
+        const d = r.data;
+        setCli((c) => ({
+          ...c,
+          endereco: c.endereco || d.endereco || "",
+          razaoSocial: c.razaoSocial || d.razao_social || "",
+        }));
+      })
+      .catch(() => {});
+    return () => {
+      ativo = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [caseItem.cnpj]);
 
   const toggleKind = (k: ContratoKind) =>
     setKinds((prev) => (prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k]));
