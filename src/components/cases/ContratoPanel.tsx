@@ -98,9 +98,11 @@ export function ContratoPanel({
     if (contatoEmail && !cli.email) setCli((c) => ({ ...c, email: contatoEmail }));
   }, [contatoEmail, cli.email]);
 
+  // Consulta pública só como contingência, quando o caso não tem dados salvos
+  // de CNPJ em nenhuma simulação (criado direto no CRM, sem cálculo prévio).
   useEffect(() => {
     const cnpj = caseItem.cnpj;
-    if (!cnpj) return;
+    if (!cnpj || cnpjSalvo) return;
     let ativo = true;
     void consultarCnpj({ data: { cnpj } })
       .then((r) => {
