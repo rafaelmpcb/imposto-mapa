@@ -118,16 +118,16 @@ export const gerarAnaliseIa = createServerFn({ method: "POST" })
       .maybeSingle();
     const inp = (sim?.input ?? {}) as Record<string, unknown>;
     const num = (v: unknown) => (typeof v === "number" && isFinite(v) ? v : null);
-    const folha = num(inp.payroll);
-    const fat = num(inp.revenue);
+    const folha = num(inp["payroll"]);
+    const fat = num(inp["revenue"]);
     const premissas = {
       folhaMensal: folha,
       folhaAnual: folha != null ? folha * 12 : null,
       faturamentoMensal: fat,
       relacaoFolhaFaturamentoPct: folha != null && fat ? Math.round((folha / fat) * 1000) / 10 : null,
-      margemLucroPct: num(inp.profitMargin),
-      comprasMensais: num(inp.purchases),
-      anexoSimples: inp.simplesAnexo ?? null,
+      margemLucroPct: num(inp["profitMargin"]),
+      comprasMensais: num(inp["purchases"]),
+      anexoSimples: inp["simplesAnexo"] ?? null,
     };
     const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
       method: "POST",
