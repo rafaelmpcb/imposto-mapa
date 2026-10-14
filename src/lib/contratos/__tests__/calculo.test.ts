@@ -71,3 +71,14 @@ describe("reequilíbrio de contratos", () => {
     expect(minutaNotificacao(r, "Contrato de TI", "Alfa Ltda")).toContain("Alfa Ltda");
   });
 });
+
+describe("transição gradual dos tributos antigos", () => {
+  it("ISS ainda pesa em 2029 (90%) e some em 2033", async () => {
+    const { remanescenteSubnacional, remanescenteFederal } = await import("@/lib/preco/necessario");
+    expect(remanescenteSubnacional(2028)).toBe(1);
+    expect(remanescenteSubnacional(2029)).toBe(0.9);
+    expect(remanescenteSubnacional(2032)).toBe(0.6);
+    expect(remanescenteSubnacional(2033)).toBe(0);
+    expect(remanescenteFederal(2027)).toBe(0);
+  });
+});

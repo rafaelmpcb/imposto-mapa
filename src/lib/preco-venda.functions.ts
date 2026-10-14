@@ -285,7 +285,13 @@ export const calcularPrecoNecessario = createServerFn({ method: "POST" })
         regime_cliente_snapshot: nota?.cnpj ? (regimePorCnpj.get(nota.cnpj) ?? null) : null,
         status_preco: calc.status,
       });
-      for (const p of projetarPorAno(valor, calc.valorDesonerado, aliquota, cronograma)) {
+      for (const p of projetarPorAno(valor, calc.valorDesonerado, aliquota, cronograma, {
+        federais:
+          Number(item["valor_ipi"] ?? 0) +
+          Number(item["valor_pis"] ?? 0) +
+          Number(item["valor_cofins"] ?? 0),
+        subnacionais: Number(item["valor_icms"] ?? 0),
+      })) {
         projecoes.push({
           case_id: data.caseId,
           item_id: itemId,
@@ -315,7 +321,10 @@ export const calcularPrecoNecessario = createServerFn({ method: "POST" })
         regime_cliente_snapshot: nota?.cnpj ? (regimePorCnpj.get(nota.cnpj) ?? null) : null,
         status_preco: calc.status,
       });
-      for (const p of projetarPorAno(valor, calc.valorDesonerado, aliquota, cronograma)) {
+      for (const p of projetarPorAno(valor, calc.valorDesonerado, aliquota, cronograma, {
+        federais: 0,
+        subnacionais: Number(item["valor_iss"] ?? 0),
+      })) {
         projecoes.push({
           case_id: data.caseId,
           item_id: itemId,
