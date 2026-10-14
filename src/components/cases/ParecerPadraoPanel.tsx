@@ -5,6 +5,7 @@ import { Button, Notice, TextInput } from "@/components/simulator/ui";
 import { ParecerApresentacao } from "@/components/cases/ParecerApresentacao";
 import { ParecerDashboard } from "@/components/cases/ParecerDashboard";
 import { withAuthRetry } from "@/lib/auth-retry";
+import { gerarAnaliseIa } from "@/lib/parecer-ia.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { avaliarChecklist } from "@/lib/parecer/compilar";
 import {
@@ -130,6 +131,53 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
   const setAchado = (i: number, patch: Partial<Achado>) => {
     const lista = achados.map((a, idx) => (idx === i ? { ...a, ...patch } : a));
     setEdicoes((e) => ({ ...e, sec3: { achados: lista } }));
+  };
+
+  const [iaBusy, setIaBusy] = useState(false);
+  const analisar = useServerFn(gerarAnaliseIa);
+  const handleIa = async () => {
+    if (!atual) return;
+    setBusy(true);
+    setIaBusy(true);
+    setMsg("");
+    setErro("");
+    try {
+      const res = await withAuthRetry(() => analisar({ data: { id: atual.id } }));
+      if (!res.ok) {
+        setErro(res.motivo);
+        return;
+      }
+      const a = res.analise;
+      const plano: NonNullable<ParecerEdicoes["sec9"]> = { ...(edicoes.sec9 ?? {}) };
+      for (const p of a.plano) {
+        plano[p.area] = {
+          acao: p.acao,
+          responsavel: p.responsavel,
+          prazo: p.prazo,
+          prioridade: p.prioridade,
+          indicador: p.indicador,
+        };
+      }
+      setEdicoes((e) => ({
+        ...e,
+        sec3: { achados: a.achados.slice(0, 3) },
+        sec4: a.compras,
+        sec5: a.vendas,
+        sec6: a.dre,
+        sec7: a.fluxo,
+        sec8: { ...e.sec8, recomendacao: a.regimes },
+        sec9: plano,
+        sec10: { ...e.sec10, sintese: a.sintese },
+      }));
+      setMsg(
+        "Análise da IA aplicada aos campos do analista. Revise cada texto e clique em Salvar edições.",
+      );
+    } catch {
+      setErro("Falha ao gerar a análise com IA.");
+    } finally {
+      setBusy(false);
+      setIaBusy(false);
+    }
   };
 
   const handleLink = async () => {
@@ -275,6 +323,9 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
           </Button>
           {atual ? (
             <>
+              <Button onClick={() => void handleIa()} disabled={busy}>
+                {iaBusy ? "IA analisando…" : "Gerar análise e plano com IA"}
+              </Button>
               <Button variant="ghost" onClick={() => void handleSalvar()} disabled={busy}>
                 Salvar edições
               </Button>
