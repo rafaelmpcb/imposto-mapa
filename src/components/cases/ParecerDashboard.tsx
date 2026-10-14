@@ -57,7 +57,7 @@ function Card({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-5 ${
+      className={`min-w-0 rounded-2xl border p-5 ${
         destaque ? "border-transparent bg-navy text-navy-foreground" : TONE_CARD[tone]
       }`}
     >
@@ -78,7 +78,7 @@ function Card({
 function Numero({ valor, sub }: { valor: string; sub?: string | undefined }) {
   return (
     <div>
-      <p className="font-presentation-display text-3xl leading-tight">{valor}</p>
+      <p className="break-words font-presentation-display text-2xl leading-tight tabular-nums tracking-tight xl:text-3xl">{valor}</p>
       {sub ? <p className="mt-1 text-xs opacity-80">{sub}</p> : null}
     </div>
   );
@@ -369,7 +369,7 @@ export function ParecerDashboard({
           {snapshot.sec8.cenarios.length === 0 ? (
             <Vazio>Sem comparação de regimes disponível para este Caso.</Vazio>
           ) : (
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {snapshot.sec8.cenarios.map((c) => {
                 const melhor = melhorRegime?.label === c.label;
                 return (
@@ -386,7 +386,7 @@ export function ParecerDashboard({
                         </span>
                       ) : null}
                     </div>
-                    <p className="mt-2 font-presentation-display text-2xl">
+                    <p className="mt-2 break-words font-presentation-display text-xl tabular-nums tracking-tight lg:text-2xl">
                       {c.total == null ? "Não disponível" : brl(c.total)}
                     </p>
                     {c.rate != null ? (

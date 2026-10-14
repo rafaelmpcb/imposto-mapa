@@ -190,7 +190,9 @@ function RegimeComparison({
         </div>
       ) : null}
 
-      <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div
+        className={`mt-4 grid gap-4 sm:grid-cols-2 ${items.length >= 4 ? "2xl:grid-cols-4" : "xl:grid-cols-3"}`}
+      >
         {items.map((item) => {
           const expandable =
             !item.isCurrent && item.isAvailable && Boolean(currentItem?.isAvailable);
@@ -210,7 +212,7 @@ function RegimeComparison({
               </div>
               {item.isAvailable && item.total !== null && item.rate !== null ? (
                 <>
-                  <p className="mt-3 text-2xl font-bold tabular-nums text-foreground">
+                  <p className="mt-3 break-words text-xl font-bold tabular-nums tracking-tight text-foreground lg:text-2xl">
                     {brl(item.total)}
                   </p>
                   <p className="text-xs text-muted-foreground">
