@@ -77,16 +77,21 @@ function resumir(s: ParecerSnapshot) {
   };
 }
 
-const INSTRUCOES = `Você é um consultor tributário sênior de um escritório de advocacia brasileiro, especialista na Reforma Tributária do consumo (EC 132/2023 e LC 214/2025: CBS, IBS, Imposto Seletivo, transição 2026–2033, split payment, não cumulatividade plena).
-Recebe o retrato JSON de um Diagnóstico Completo feito com documentos fiscais reais do cliente. Sua tarefa é interpretar os números para o analista preparar uma apresentação direcionada e assertiva.
+const INSTRUCOES = `Você é um consultor tributário sênior e estrategista de negócios de um escritório de advocacia brasileiro, especialista na Reforma Tributária do consumo (EC 132/2023 e LC 214/2025: CBS, IBS, Imposto Seletivo, transição 2026–2033, split payment, não cumulatividade plena).
+Recebe o retrato JSON de um Diagnóstico Completo feito com documentos fiscais reais do cliente, mais as premissas da simulação (folha de pagamento, faturamento, margem). Sua tarefa é INTERPRETAR os números e traduzi-los em impacto no negócio, para o analista preparar uma apresentação direcionada e assertiva.
+Postura: você é ESTRATEGISTA, não auditor. É PROIBIDO centrar a análise em apontar documentos faltantes, lacunas de carga ou falhas do cálculo. Trabalhe com o que existe.
 Regras:
-- Escreva em português do Brasil, linguagem executiva, direta, sem jargão desnecessário.
-- Use SOMENTE os números presentes nos dados; cite valores em R$ e percentuais quando existirem. Nunca invente números. Se um bloco estiver vazio, diga que não há dado suficiente.
-- achados: exatamente 3, os mais relevantes, no formato impacto → causa → decisão.
-- compras, vendas, dre, fluxo, regimes: um parágrafo cada (3 a 6 frases) explicando o que mudou e por quê, de forma que o analista entenda o cálculo.
-- regimes: compare os cenários de regime e indique o caminho mais indicado com justificativa; lembre que é insumo para o parecer do advogado.
-- plano: uma ação concreta para cada uma das 8 áreas (${AREAS_PLANO.map((a) => `${a.id} = ${a.pergunta}`).join("; ")}). Responsável como cargo (ex.: "Gerente de compras"), prazo relativo (ex.: "30 dias"), indicador mensurável.
-- sintese: conclusão estratégica em um parágrafo, respeitando as limitações listadas.`;
+- Escreva em português do Brasil, linguagem executiva, direta.
+- Use SOMENTE os números presentes nos dados; cite valores em R$ e percentuais. Nunca invente números.
+- Eixos de análise: valor adicionado e margem de contribuição tributária; ganho ou perda de créditos nas compras; necessidade de repasse de preço (B2B x B2C); efeito do split payment no capital de giro; comparativo de regimes.
+- Folha de pagamento não gera crédito de IBS/CBS. Use a folha informada na simulação (premissas.folhaMensal / folhaAnual) para: peso na DRE e no IRPJ/CSLL, relação folha/faturamento e Fator R (≥ 28% permite Anexo III no Simples). Leve isso para o plano de RH e Financeiro.
+- Se despesas operacionais não estiverem detalhadas na DRE, analise a geração de caixa operacional com receita, custo, créditos e folha — não diga que "faltam dados".
+- Só mencione ausência de dado em, no máximo, uma frase curta e apenas se impedir uma conclusão essencial.
+- achados: exatamente 3, os de maior impacto financeiro, no formato impacto → causa → decisão.
+- compras, vendas, dre, fluxo, regimes: um parágrafo cada (3 a 6 frases) explicando o que muda, por quê e o que isso significa para o negócio.
+- regimes: compare os cenários e indique o caminho mais indicado com justificativa; é insumo para o parecer do advogado.
+- plano: uma ação concreta e executável para cada uma das 8 áreas (${AREAS_PLANO.map((a) => `${a.id} = ${a.pergunta}`).join("; ")}). Responsável como cargo, prazo relativo, indicador mensurável. Nada de ações genéricas do tipo "enviar documentos".
+- sintese: conclusão estratégica em um parágrafo.`;
 
 export const gerarAnaliseIa = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -95,7 +100,7 @@ export const gerarAnaliseIa = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
       .from("parecer_padrao")
-      .select("dados_compilados_json")
+      .select("dados_compilados_json, case_id")
       .eq("id", data.id)
       .maybeSingle();
     if (error || !row) return { ok: false, motivo: "Parecer não encontrado." };
@@ -104,6 +109,26 @@ export const gerarAnaliseIa = createServerFn({ method: "POST" })
     if (!key) return { ok: false, motivo: "A IA não está configurada no servidor." };
 
     const snap = row.dados_compilados_json as unknown as ParecerSnapshot;
+    const { data: sim } = await supabaseAdmin
+      .from("simulations")
+      .select("input")
+      .eq("case_id", row.case_id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const inp = (sim?.input ?? {}) as Record<string, unknown>;
+    const num = (v: unknown) => (typeof v === "number" && isFinite(v) ? v : null);
+    const folha = num(inp.payroll);
+    const fat = num(inp.revenue);
+    const premissas = {
+      folhaMensal: folha,
+      folhaAnual: folha != null ? folha * 12 : null,
+      faturamentoMensal: fat,
+      relacaoFolhaFaturamentoPct: folha != null && fat ? Math.round((folha / fat) * 1000) / 10 : null,
+      margemLucroPct: num(inp.profitMargin),
+      comprasMensais: num(inp.purchases),
+      anexoSimples: inp.simplesAnexo ?? null,
+    };
     const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
       method: "POST",
       headers: {
