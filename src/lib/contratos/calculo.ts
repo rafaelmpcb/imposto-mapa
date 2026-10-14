@@ -7,6 +7,8 @@
  * Nada aqui é recomendação comercial — é o piso técnico da renegociação.
  */
 
+import { remanescenteFederal, remanescenteSubnacional } from "@/lib/preco/necessario";
+
 export type RegimePrestador = "real" | "presumido" | "simples";
 export type PerfilContratante = "regular" | "simples" | "consumidor_final";
 export type CenarioId = "margem_prestador" | "custo_contratante" | "equilibrio";
@@ -42,6 +44,8 @@ export interface PremissasPrestador {
   mantidaPct: number;
   /** O prestador destaca IBS/CBS aproveitável pelo contratante. */
   destacaIbsCbs: boolean;
+  /** Parcela do substituído que é ISS (cai gradualmente de 2029 a 2032), em % do preço. */
+  issPct: number;
   nota: string;
 }
 
@@ -51,18 +55,21 @@ export const PREMISSAS_PRESTADOR: Record<RegimePrestador, PremissasPrestador> = 
     substituidaPct: 14.25,
     mantidaPct: 10,
     destacaIbsCbs: true,
+    issPct: 5,
     nota: "PIS/COFINS não cumulativos (9,25%) e ISS estimado em 5% substituídos; IRPJ/CSLL estimados sobre o resultado.",
   },
   presumido: {
     substituidaPct: 8.65,
     mantidaPct: 10.88,
     destacaIbsCbs: true,
+    issPct: 5,
     nota: "PIS/COFINS cumulativos (3,65%) e ISS estimado em 5% substituídos; IRPJ/CSLL com presunção de 32% da receita.",
   },
   simples: {
     substituidaPct: 6,
     mantidaPct: 4.5,
     destacaIbsCbs: false,
+    issPct: 0,
     nota: "No Simples o IBS/CBS fica dentro do DAS; pela convenção adotada, não transfere crédito cheio ao contratante.",
   },
 };
@@ -188,6 +195,15 @@ const substDe = (i: ContratoInput) =>
   (i.substituidaPct ?? PREMISSAS_PRESTADOR[i.regimePrestador].substituidaPct) / 100;
 const mantidaDe = (i: ContratoInput) =>
   (i.mantidaPct ?? PREMISSAS_PRESTADOR[i.regimePrestador].mantidaPct) / 100;
+/** Tributos que seguem no ano: os mantidos + o que ainda resta de PIS/COFINS e ISS. */
+const mantidaNoAno = (i: ContratoInput, ano: number) => {
+  const subst = substDe(i);
+  const iss = Math.min(subst, PREMISSAS_PRESTADOR[i.regimePrestador].issPct / 100);
+  const fed = subst - iss;
+  return (
+    mantidaDe(i) + fed * remanescenteFederal(ano) + iss * remanescenteSubnacional(ano)
+  );
+};
 const aprovDe = (i: ContratoInput) => {
   const base =
     i.aproveitamentoContratantePct ?? APROVEITAMENTO_CONTRATANTE[i.perfilContratante];
@@ -225,7 +241,7 @@ function cenarioNoAno(
   label: string,
 ): CenarioContrato {
   const e = aliquotaEfetiva(input, ano);
-  const mantida = mantidaDe(input);
+  const mantida = mantidaNoAno(input, ano);
   const aprov = aprovDe(input);
   const custoDireto = Math.max(0, Number(input.precoMensalAtual) || 0) * (clampPct(input.custoDiretoPct) / 100);
   const creditoInsumos = custoDireto * (clampPct(input.creditoInsumosPct) / 100) * e;
@@ -258,7 +274,7 @@ export function precoSugerido(
   cenario: CenarioId,
 ): number {
   const e = aliquotaEfetiva(input, ano);
-  const mantida = mantidaDe(input);
+  const mantida = mantidaNoAno(input, ano);
   const aprov = aprovDe(input);
   const custoDireto = atual.custoDireto;
   const creditoInsumos = custoDireto * (clampPct(input.creditoInsumosPct) / 100) * e;
