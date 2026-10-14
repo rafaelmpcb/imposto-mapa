@@ -81,15 +81,41 @@ export function calcularPrecoNecessarioItem(
   };
 }
 
-/** Série do preço necessário por ano da transição. */
+/**
+ * Fração dos tributos atuais que ainda existe em cada ano da transição (LC 214/2025):
+ * PIS/COFINS/IPI saem em 2027; ICMS/ISS caem 10 p.p. ao ano de 2029 a 2032 e somem em 2033.
+ */
+export const remanescenteFederal = (ano: number): number => (ano <= 2026 ? 1 : 0);
+export const remanescenteSubnacional = (ano: number): number => {
+  if (ano <= 2028) return 1;
+  if (ano >= 2033) return 0;
+  return Math.round((1 - (ano - 2028) * 0.1) * 100) / 100;
+};
+
+export interface TributosLegados {
+  /** PIS, COFINS e IPI do item, em R$. */
+  federais: number;
+  /** ICMS e ISS do item, em R$. */
+  subnacionais: number;
+}
+
+/**
+ * Série do preço necessário por ano da transição. Em cada ano soma a parcela
+ * de IBS/CBS daquele ano com os tributos antigos que ainda não foram extintos.
+ */
 export function projetarPorAno(
   valorItem: number,
   valorDesonerado: number,
   aliquotaPlenaItem: number,
   cronograma: { ano: number; fracao: number }[],
+  legados?: TributosLegados,
 ): { ano: number; precoNecessarioAno: number; variacaoPctAno: number }[] {
   return cronograma.map(({ ano, fracao }) => {
-    const preco = round2(valorDesonerado * (1 + aliquotaPlenaItem * Number(fracao)));
+    const resto = legados
+      ? legados.federais * remanescenteFederal(ano) +
+        legados.subnacionais * remanescenteSubnacional(ano)
+      : 0;
+    const preco = round2(valorDesonerado * (1 + aliquotaPlenaItem * Number(fracao)) + resto);
     return {
       ano,
       precoNecessarioAno: preco,
