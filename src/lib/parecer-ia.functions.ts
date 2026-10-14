@@ -142,7 +142,7 @@ export const gerarAnaliseIa = createServerFn({ method: "POST" })
         store: false,
         reasoning: { effort: "medium" },
         instructions: INSTRUCOES,
-        input: [{ role: "user", content: JSON.stringify(resumir(snap)) }],
+        input: [{ role: "user", content: JSON.stringify({ premissas, diagnostico: resumir(snap) }) }],
         text: { format: { type: "json_schema", name: "analise_parecer", strict: true, schema: SCHEMA } },
       }),
     });
