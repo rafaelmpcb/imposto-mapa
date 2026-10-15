@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 
 import { Notice } from "@/components/simulator/ui";
+import { SpedImpactoRegimes } from "@/components/cases/SpedImpactoRegimes";
 import type { PacoteTriado } from "@/components/cases/UploadUnicoPanel";
 import { listSped, removeSped, saveSped, type SpedConferenciaMes, type SpedRegistro } from "@/lib/sped.functions";
 import type { SpedContribResumo, SpedIcmsResumo } from "@/lib/sped/parse";
@@ -95,6 +96,8 @@ export function SpedPanel({ caseId, pacote }: { caseId: string; pacote: PacoteTr
           ) : null}
         </div>
       ) : null}
+
+      <SpedImpactoRegimes itens={itens} />
 
       {icms.length > 0 ? (
         <Tabela
