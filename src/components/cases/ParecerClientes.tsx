@@ -20,6 +20,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { CenariosCliente } from "@/components/cases/CenariosCliente";
 import { FichaNegociacaoDialog } from "@/components/cases/FichaNegociacaoDialog";
 import { brl } from "@/lib/tax/calc";
 import type { ClienteDetalheSnap } from "@/lib/parecer/tipos";
@@ -143,6 +144,12 @@ function DetalheCliente({
           </p>
         </Box>
       </div>
+
+      <CenariosCliente
+        faturamentoTotal={d.valorBase}
+        meses={d.meses.length}
+        regimeCliente={d.regime}
+      />
 
       <Box titulo="Faturamento, crédito transferido e participação">
         {serie.length === 0 ? (
