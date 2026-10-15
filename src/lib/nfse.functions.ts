@@ -162,8 +162,9 @@ export const saveNotasServico = createServerFn({ method: "POST" })
                   itemLc116: nota.codigoServico ?? null,
                   descricao: null,
                   valorServico: nota.valorTotal,
-                  // conta como receita válida, sem esperar revisão de NBS
-                  temClassificacaoDocumento: true,
+                  // layout municipal não destaca IBS/CBS: estima pela alíquota
+                  // nominal do ano (regime geral), como qualquer nota sem cClassTrib
+                  temClassificacaoDocumento: false,
                   cclasstrib: null,
                   baseCalculo: 0,
                   vCBS: 0,
