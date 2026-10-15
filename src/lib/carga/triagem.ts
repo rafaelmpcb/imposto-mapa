@@ -34,7 +34,23 @@ export async function triarPacote(files: File[], caseCnpj: string | null): Promi
     naoReconhecidos: [],
   };
 
+  // O mesmo arquivo pode vir duplicado no pacote (zip dentro de zip, pastas
+  // repetidas). Cópias exatas são descartadas silenciosamente para não
+  // inflar a carga; a trava de nota duplicada continua valendo na gravação.
+  const vistos = new Set<string>();
+  const assinatura = (nome: string, conteudo: string) => {
+    let h = 5381;
+    for (let i = 0; i < conteudo.length; i += 97) h = ((h << 5) + h + conteudo.charCodeAt(i)) | 0;
+    return `${nome}|${conteudo.length}|${h}`;
+  };
+  const jaVisto = (chave: string) => {
+    if (vistos.has(chave)) return true;
+    vistos.add(chave);
+    return false;
+  };
+
   const texto = (nome: string, conteudo: string) => {
+    if (jaVisto(assinatura(nome, conteudo))) return;
     const ext = tipoPorNome(nome);
     const file = () => new File([conteudo], nome, { type: ext === "json" ? "application/json" : "text/xml" });
 
@@ -84,6 +100,7 @@ export async function triarPacote(files: File[], caseCnpj: string | null): Promi
         await abrirZip(await entry.async("uint8array"), profundidade + 1);
       } else if (ext === "pdf" || ext === "xlsx" || ext === "xls" || ext === "csv") {
         const blob = await entry.async("blob");
+        if (jaVisto(`${nome}|${blob.size}`)) continue;
         const f = new File([blob], nome);
         (ext === "pdf" ? r.pgdasd : r.planilhas).push(f);
       } else if (ext === "txt") {
