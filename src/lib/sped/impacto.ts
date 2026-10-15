@@ -22,6 +22,9 @@ export interface BaseSpedAnual {
   regimeDeclarado: SpedContribResumo["regime"];
   saldoCredorIcms: number;
   saldoCredorPisCofins: number;
+  /** Entradas que geram crédito de IBS/CBS (sem remessas, transferências e devoluções). */
+  entradasComCredito?: number;
+  expurgos?: { remessas: number; transferencias: number; devolucoes: number };
 }
 
 export interface LinhaRegimeAno {
@@ -64,10 +67,18 @@ export function baseAnual(
 
   const receitaContrib = soma(contrib, (c) => c.resumo.receitaBruta) * fc;
   const saidasIcms = soma(icms, (c) => c.resumo.saidas.valor) * fi;
+  const grupos = { credito: 0, remessa: 0, transferencia: 0, devolucao: 0 };
+  for (const m of icms)
+    for (const c of m.resumo.porCfop ?? []) {
+      const g = grupoEntrada(c.cfop);
+      if (g) grupos[g] += c.valor;
+    }
+  const temCfop = icms.some((m) => (m.resumo.porCfop ?? []).length > 0);
+  const entradas = r2(soma(icms, (c) => c.resumo.entradas.valor) * fi);
   return {
     meses,
     receita: r2(receitaContrib > 0 ? receitaContrib : saidasIcms),
-    entradas: r2(soma(icms, (c) => c.resumo.entradas.valor) * fi),
+    entradas,
     icmsDebitos: r2(soma(icms, (c) => c.resumo.icms.debitos) * fi),
     icmsCreditos: r2(soma(icms, (c) => c.resumo.icms.creditos) * fi),
     icmsRecolhido: r2(soma(icms, (c) => c.resumo.icms.aRecolher) * fi),
@@ -77,6 +88,12 @@ export function baseAnual(
     regimeDeclarado: ultContrib?.regime ?? null,
     saldoCredorIcms: r2(ultIcms?.icms.saldoCredorTransportar ?? 0),
     saldoCredorPisCofins: r2((ultContrib?.pis.saldoCredorFinal ?? 0) + (ultContrib?.cofins.saldoCredorFinal ?? 0)),
+    entradasComCredito: temCfop ? r2(grupos.credito * fi) : entradas,
+    expurgos: {
+      remessas: r2(grupos.remessa * fi),
+      transferencias: r2(grupos.transferencia * fi),
+      devolucoes: r2(grupos.devolucao * fi),
+    },
   };
 }
 
