@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { filtrarNotasDuplicadas } from "@/lib/carga/dedup";
 import { registrarDuplicados } from "@/lib/carga/duplicados";
 import type { NfeNota } from "@/lib/nfe/parse";
 import {
@@ -20,6 +21,16 @@ export interface NfeClassificacao {
   updated: string | null;
 }
 
+/** Chave de negócio para deduplicar NF-e sem depender só da chave de 44 dígitos. */
+function chaveCompostaNfe(
+  cnpjEmitente: string | null,
+  serie: string | null,
+  numero: string | null,
+): string | null {
+  if (!numero) return null;
+  return `${cnpjEmitente ?? ""}|${serie ?? ""}|${numero}`;
+}
+
 /** Grava as notas lidas do XML (ignora chaves já registradas no Caso). */
 export const saveNotasCompra = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -32,28 +43,35 @@ export const saveNotasCompra = createServerFn({ method: "POST" })
     // ON CONFLICT não é aceito: filtramos as chaves já gravadas manualmente.
     const { data: existentes } = await supabaseAdmin
       .from("nota_fiscal_compra_xml")
-      .select("id,chave_acesso,arquivo_original")
+      .select("id,chave_acesso,numero_nota,serie,cnpj_emitente,arquivo_original")
       .eq("case_id", data.caseId);
     const existentesRows = (existentes ?? []) as {
       id: string;
       chave_acesso: string | null;
+      numero_nota: string | null;
+      serie: string | null;
+      cnpj_emitente: string | null;
       arquivo_original: string;
     }[];
     const jaGravadas = new Set(
       existentesRows.map((r) => r.chave_acesso).filter((c): c is string => Boolean(c)),
     );
+    // Trava de negócio: mesmo sem chave de 44 dígitos, a nota é reconhecida por
+    // CNPJ do emitente + série + número.
+    const jaGravadasCompostas = new Set(
+      existentesRows
+        .map((r) => chaveCompostaNfe(r.cnpj_emitente, r.serie, r.numero_nota))
+        .filter((c): c is string => Boolean(c)),
+    );
 
-    const vistas = new Set<string>();
-    const repetidas: { chave: string; arquivo: string }[] = [];
-    const novas = data.notas.filter((n) => {
-      if (!n.chave) return true;
-      if (jaGravadas.has(n.chave) || vistas.has(n.chave)) {
-        if (jaGravadas.has(n.chave)) repetidas.push({ chave: n.chave, arquivo: n.arquivo });
-        return false;
-      }
-      vistas.add(n.chave);
-      return true;
-    });
+    const { novas, repetidas } = filtrarNotasDuplicadas(
+      data.notas.map((n) => ({
+        ...n,
+        composta: chaveCompostaNfe(n.cnpjEmitente, n.serie, n.numero),
+      })),
+      jaGravadas,
+      jaGravadasCompostas,
+    );
     const duplicados = await registrarDuplicados(
       supabaseAdmin,
       data.caseId,
@@ -79,7 +97,7 @@ export const saveNotasCompra = createServerFn({ method: "POST" })
       const ins = await supabaseAdmin
         .from("nota_fiscal_compra_xml")
         .insert(payload as never)
-        .select("id,chave_acesso,arquivo_original");
+        .select("id,chave_acesso,numero_nota,serie,cnpj_emitente,arquivo_original");
       if (ins.error) throw new Error(ins.error.message);
       inseridas = ins.data ?? [];
     }
@@ -89,9 +107,12 @@ export const saveNotasCompra = createServerFn({ method: "POST" })
     // também são reprocessadas: os itens antigos são substituídos.
     const notasGravadas = [...existentesRows, ...(inseridas as typeof existentesRows)];
     const idPorChave = new Map<string, string>();
+    const idPorComposta = new Map<string, string>();
     const idPorArquivo = new Map<string, string>();
     for (const n of notasGravadas) {
       if (n.chave_acesso) idPorChave.set(n.chave_acesso, n.id);
+      const composta = chaveCompostaNfe(n.cnpj_emitente, n.serie, n.numero_nota);
+      if (composta) idPorComposta.set(composta, n.id);
       idPorArquivo.set(n.arquivo_original, n.id);
     }
 
@@ -121,6 +142,7 @@ export const saveNotasCompra = createServerFn({ method: "POST" })
     for (const nota of notasComItens) {
       const notaId =
         (nota.chave ? idPorChave.get(nota.chave) : undefined) ??
+        idPorComposta.get(chaveCompostaNfe(nota.cnpjEmitente, nota.serie, nota.numero) ?? "") ??
         idPorArquivo.get(nota.arquivo.slice(0, 200));
       if (!notaId || notaIdsReprocessados.has(notaId)) continue;
       notaIdsReprocessados.add(notaId);
