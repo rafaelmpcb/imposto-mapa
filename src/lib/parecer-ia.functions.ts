@@ -121,8 +121,8 @@ export const gerarAnaliseIa = createServerFn({ method: "POST" })
     const folha = num(inp["payroll"]);
     const fat = num(inp["revenue"]);
     const premissas = {
-      folhaMensal: folha,
-      folhaAnual: folha != null ? folha * 12 : null,
+      folhaMensal: folha != null ? Math.round((folha / 12) * 100) / 100 : null,
+      folhaAnual: folha,
       faturamentoMensal: fat,
       relacaoFolhaFaturamentoPct: folha != null && fat ? Math.round((folha / fat) * 1000) / 10 : null,
       margemLucroPct: num(inp["profitMargin"]),
