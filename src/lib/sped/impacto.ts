@@ -5,6 +5,7 @@
  */
 import { ALIQUOTA_PLENA_PADRAO_PCT, ANOS_DISPONIVEIS, fracaoDoAno } from "@/lib/contratos/calculo";
 import { remanescenteFederal, remanescenteSubnacional } from "@/lib/preco/necessario";
+import { grupoEntrada } from "@/lib/sped/cfop-credito";
 import type { SpedContribResumo, SpedIcmsResumo } from "@/lib/sped/parse";
 
 export type RegimeComparado = "real" | "presumido";
@@ -22,6 +23,9 @@ export interface BaseSpedAnual {
   regimeDeclarado: SpedContribResumo["regime"];
   saldoCredorIcms: number;
   saldoCredorPisCofins: number;
+  /** Entradas que geram crédito de IBS/CBS (sem remessas, transferências e devoluções). */
+  entradasComCredito?: number;
+  expurgos?: { remessas: number; transferencias: number; devolucoes: number };
 }
 
 export interface LinhaRegimeAno {
@@ -64,10 +68,18 @@ export function baseAnual(
 
   const receitaContrib = soma(contrib, (c) => c.resumo.receitaBruta) * fc;
   const saidasIcms = soma(icms, (c) => c.resumo.saidas.valor) * fi;
+  const grupos = { credito: 0, remessa: 0, transferencia: 0, devolucao: 0 };
+  for (const m of icms)
+    for (const c of m.resumo.porCfop ?? []) {
+      const g = grupoEntrada(c.cfop);
+      if (g) grupos[g] += c.valor;
+    }
+  const temCfop = icms.some((m) => (m.resumo.porCfop ?? []).length > 0);
+  const entradas = r2(soma(icms, (c) => c.resumo.entradas.valor) * fi);
   return {
     meses,
     receita: r2(receitaContrib > 0 ? receitaContrib : saidasIcms),
-    entradas: r2(soma(icms, (c) => c.resumo.entradas.valor) * fi),
+    entradas,
     icmsDebitos: r2(soma(icms, (c) => c.resumo.icms.debitos) * fi),
     icmsCreditos: r2(soma(icms, (c) => c.resumo.icms.creditos) * fi),
     icmsRecolhido: r2(soma(icms, (c) => c.resumo.icms.aRecolher) * fi),
@@ -77,6 +89,12 @@ export function baseAnual(
     regimeDeclarado: ultContrib?.regime ?? null,
     saldoCredorIcms: r2(ultIcms?.icms.saldoCredorTransportar ?? 0),
     saldoCredorPisCofins: r2((ultContrib?.pis.saldoCredorFinal ?? 0) + (ultContrib?.cofins.saldoCredorFinal ?? 0)),
+    entradasComCredito: temCfop ? r2(grupos.credito * fi) : entradas,
+    expurgos: {
+      remessas: r2(grupos.remessa * fi),
+      transferencias: r2(grupos.transferencia * fi),
+      devolucoes: r2(grupos.devolucao * fi),
+    },
   };
 }
 
@@ -89,7 +107,7 @@ function pisCofinsHoje(b: BaseSpedAnual, regime: RegimeComparado): { valor: numb
       return { valor: b.pisCofinsRecolhido, creditos: b.pisCofinsCreditos, declarado: true };
   }
   if (regime === "presumido") return { valor: r2(b.receita * PIS_COFINS_CUM), creditos: 0, declarado: false };
-  const creditos = r2(b.entradas * PIS_COFINS_NC);
+  const creditos = r2((b.entradasComCredito ?? b.entradas) * PIS_COFINS_NC);
   return { valor: r2(Math.max(0, b.receita * PIS_COFINS_NC - creditos)), creditos, declarado: false };
 }
 
@@ -99,9 +117,9 @@ export function impactoPorRegime(b: BaseSpedAnual, aliquotaPlenaPct = ALIQUOTA_P
     const hojeTotal = r2(b.icmsRecolhido + b.ipiDevido + pc.valor);
     const anos = ANOS_DISPONIVEIS.map((ano): LinhaRegimeAno => {
       const aliq = (aliquotaPlenaPct / 100) * fracaoDoAno(ano);
-      const debito = b.receita * aliq;
+      const debito = Math.max(0, b.receita - (b.expurgos?.devolucoes ?? 0)) * aliq;
       // Na reforma, Real e Presumido têm não cumulatividade plena: crédito sobre as entradas.
-      const credito = b.entradas * aliq;
+      const credito = (b.entradasComCredito ?? b.entradas) * aliq;
       const liquido = Math.max(0, debito - credito);
       const icms = b.icmsRecolhido * remanescenteSubnacional(ano);
       const ipi = b.ipiDevido * remanescenteFederal(ano);
