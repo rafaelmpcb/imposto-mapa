@@ -15,6 +15,16 @@ import {
 
 export type DirecaoServico = "tomado" | "prestado";
 
+/** Chave de negócio para deduplicar NFS-e sem chave de acesso nacional. */
+function chaveCompostaServico(
+  cnpjPrestador: string | null,
+  serie: string | null,
+  numero: string | null,
+): string | null {
+  if (!numero) return null;
+  return `${cnpjPrestador ?? ""}|${serie ?? ""}|${numero}`;
+}
+
 const TABELA_ITEM: Record<DirecaoServico, string> = {
   tomado: "nota_servico_nfse_item",
   prestado: "nota_servico_nfse_item_prestado",
@@ -43,13 +53,16 @@ export const saveNotasServico = createServerFn({ method: "POST" })
     const existentesRows: {
       id: string;
       chave_acesso: string | null;
+      numero_nota: string | null;
+      serie: string | null;
+      cnpj_prestador: string | null;
       arquivo_original: string;
       direcao: string;
     }[] = [];
     for (let from = 0; ; from += 1000) {
       const { data: pagina, error } = await supabaseAdmin
         .from("nota_servico_nfse")
-        .select("id,chave_acesso,arquivo_original,direcao")
+        .select("id,chave_acesso,numero_nota,serie,cnpj_prestador,arquivo_original,direcao")
         .eq("case_id", data.caseId)
         .order("id")
         .range(from, from + 999);
@@ -60,16 +73,31 @@ export const saveNotasServico = createServerFn({ method: "POST" })
     const jaGravadas = new Set(
       existentesRows.map((r) => r.chave_acesso).filter((c): c is string => Boolean(c)),
     );
+    // Trava de negócio: layouts municipais nem sempre têm chave nacional, então
+    // a duplicidade também é reconhecida por CNPJ do prestador + série + número.
+    const jaGravadasCompostas = new Set(
+      existentesRows
+        .map((r) => chaveCompostaServico(r.cnpj_prestador, r.serie, r.numero_nota))
+        .filter((c): c is string => Boolean(c)),
+    );
 
     const vistas = new Set<string>();
+    const vistasCompostas = new Set<string>();
     const repetidas: { chave: string; arquivo: string }[] = [];
     const notas = data.notas.filter((n) => {
-      if (!n.chave) return true;
-      if (jaGravadas.has(n.chave) || vistas.has(n.chave)) {
-        if (jaGravadas.has(n.chave)) repetidas.push({ chave: n.chave, arquivo: n.arquivo });
+      const composta = chaveCompostaServico(n.cnpjPrestador, n.serie, n.numero);
+      const chaveJaExiste = n.chave ? jaGravadas.has(n.chave) : false;
+      const compostaJaExiste = composta ? jaGravadasCompostas.has(composta) : false;
+      const chaveVista = n.chave ? vistas.has(n.chave) : false;
+      const compostaVista = composta ? vistasCompostas.has(composta) : false;
+      if (chaveJaExiste || compostaJaExiste || chaveVista || compostaVista) {
+        if (chaveJaExiste || compostaJaExiste) {
+          repetidas.push({ chave: n.chave ?? composta ?? n.arquivo, arquivo: n.arquivo });
+        }
         return false;
       }
-      vistas.add(n.chave);
+      if (n.chave) vistas.add(n.chave);
+      if (composta) vistasCompostas.add(composta);
       return true;
     });
     const duplicados = await registrarDuplicados(
@@ -102,7 +130,7 @@ export const saveNotasServico = createServerFn({ method: "POST" })
       const ins = await supabaseAdmin
         .from("nota_servico_nfse")
         .insert(payload as never)
-        .select("id,chave_acesso,arquivo_original");
+        .select("id,chave_acesso,numero_nota,serie,cnpj_prestador,arquivo_original");
       if (ins.error) throw new Error(ins.error.message);
       inseridas = ins.data ?? [];
     }
@@ -110,12 +138,15 @@ export const saveNotasServico = createServerFn({ method: "POST" })
     // Notas já gravadas na mesma direção também são reprocessadas em reenvios.
     const gravadas = [
       ...existentesRows.filter((n) => n.direcao === direcao),
-      ...(inseridas as { id: string; chave_acesso: string | null; arquivo_original: string }[]),
+      ...(inseridas as (typeof existentesRows)[number][]),
     ];
     const idPorChave = new Map<string, string>();
+    const idPorComposta = new Map<string, string>();
     const idPorArquivo = new Map<string, string>();
     for (const n of gravadas) {
       if (n.chave_acesso) idPorChave.set(n.chave_acesso, n.id);
+      const composta = chaveCompostaServico(n.cnpj_prestador, n.serie, n.numero_nota);
+      if (composta) idPorComposta.set(composta, n.id);
       idPorArquivo.set(n.arquivo_original, n.id);
     }
 
@@ -177,6 +208,7 @@ export const saveNotasServico = createServerFn({ method: "POST" })
       if (itensNota.length === 0) continue;
       const notaId =
         (nota.chave ? idPorChave.get(nota.chave) : undefined) ??
+        idPorComposta.get(chaveCompostaServico(nota.cnpjPrestador, nota.serie, nota.numero) ?? "") ??
         idPorArquivo.get(nota.arquivo.slice(0, 200));
       if (!notaId || notaIdsReprocessados.has(notaId)) continue;
       notaIdsReprocessados.add(notaId);
