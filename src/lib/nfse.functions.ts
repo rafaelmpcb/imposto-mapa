@@ -154,7 +154,8 @@ export const saveNotasServico = createServerFn({ method: "POST" })
                   itemLc116: nota.codigoServico ?? null,
                   descricao: null,
                   valorServico: nota.valorTotal,
-                  temClassificacaoDocumento: false,
+                  // conta como receita válida, sem esperar revisão de NBS
+                  temClassificacaoDocumento: true,
                   cclasstrib: null,
                   baseCalculo: 0,
                   vCBS: 0,
