@@ -2218,6 +2218,51 @@ export type Database = {
           },
         ]
       }
+      sped_apuracao: {
+        Row: {
+          arquivo: string
+          case_id: string
+          cnpj: string | null
+          created_at: string
+          id: string
+          periodo_fim: string
+          periodo_ini: string
+          razao_social: string | null
+          resumo: Json
+          retificadora: boolean
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          arquivo: string
+          case_id: string
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          periodo_fim: string
+          periodo_ini: string
+          razao_social?: string | null
+          resumo?: Json
+          retificadora?: boolean
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          arquivo?: string
+          case_id?: string
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          periodo_fim?: string
+          periodo_ini?: string
+          razao_social?: string | null
+          resumo?: Json
+          retificadora?: boolean
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tax_config: {
         Row: {
           key: string
