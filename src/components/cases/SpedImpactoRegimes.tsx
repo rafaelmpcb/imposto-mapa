@@ -40,6 +40,20 @@ export function SpedImpactoRegimes({ itens }: { itens: SpedRegistro[] }) {
         Base anualizada de {base.meses} mês(es) do SPED: receita {brl(base.receita)} · entradas {brl(base.entradas)} ·
         ICMS recolhido {brl(base.icmsRecolhido)} · PIS/Cofins recolhido {brl(base.pisCofinsRecolhido)}.
       </p>
+      {base.expurgos ? (
+        <dl className="mt-2 grid max-w-md grid-cols-[1fr_auto] gap-x-3 gap-y-0.5 text-xs">
+          <dt className="text-muted-foreground">Entradas escrituradas no SPED</dt>
+          <dd className="text-right">{brl(base.entradas)}</dd>
+          <dt className="text-muted-foreground">(−) Remessas e retornos</dt>
+          <dd className="text-right">−{brl(base.expurgos.remessas)}</dd>
+          <dt className="text-muted-foreground">(−) Transferências entre filiais</dt>
+          <dd className="text-right">−{brl(base.expurgos.transferencias)}</dd>
+          <dt className="text-muted-foreground">(−) Devoluções de venda (abatem o débito)</dt>
+          <dd className="text-right">−{brl(base.expurgos.devolucoes)}</dd>
+          <dt className="font-semibold text-foreground">(=) Base com direito a crédito IBS/CBS</dt>
+          <dd className="text-right font-semibold text-foreground">{brl(base.entradasComCredito ?? base.entradas)}</dd>
+        </dl>
+      ) : null}
 
       <div className="mt-2 flex flex-wrap gap-1">
         {regimes[0]!.anos.map((a) => (
