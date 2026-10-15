@@ -233,8 +233,9 @@ export const getDre = createServerFn({ method: "POST" })
         linhas,
         insumos,
         despesasPorAno,
+        // A folha informada na simulação já é o total anual — não multiplicar por 12.
         sugestaoDespesaAnual:
-          simInput && Number(simInput.payroll) > 0 ? round2(Number(simInput.payroll) * 12) : null,
+          simInput && Number(simInput.payroll) > 0 ? round2(Number(simInput.payroll)) : null,
         semSimulacao: !simInput,
         regime: simInput?.taxpayerType ?? null,
         anos,

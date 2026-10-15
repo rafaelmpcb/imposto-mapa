@@ -38,6 +38,7 @@ export function DrePanel({ caseId, reloadKey = 0 }: { caseId: string; reloadKey?
   const [rascunho, setRascunho] = useState<Record<number, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [periodo, setPeriodo] = useState<"anual" | "mensal">("anual");
 
   const load = useCallback(async () => {
     try {
@@ -238,6 +239,17 @@ export function DrePanel({ caseId, reloadKey = 0 }: { caseId: string; reloadKey?
             ? ` Sugestão a partir da folha informada na simulação: ${brl(dados.sugestaoDespesaAnual)} por ano.`
             : ""}
         </p>
+        <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+          Valores digitados são:
+          <select
+            value={periodo}
+            onChange={(e) => setPeriodo(e.target.value as "anual" | "mensal")}
+            className="rounded border border-input bg-background px-2 py-1 text-sm text-foreground"
+          >
+            <option value="anual">Total anual</option>
+            <option value="mensal">Média mensal (o sistema multiplica por 12)</option>
+          </select>
+        </div>
         <div className="mt-2 flex flex-wrap gap-2">
           {dados.anos.map((a) => (
             <label key={a.ano} className="text-xs text-muted-foreground">
@@ -253,7 +265,20 @@ export function DrePanel({ caseId, reloadKey = 0 }: { caseId: string; reloadKey?
           ))}
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          <Button disabled={busy} onClick={() => void aplicarDespesas(rascunho)}>
+          <Button
+            disabled={busy}
+            onClick={() => {
+              const fator = periodo === "mensal" ? 12 : 1;
+              const convertido = Object.fromEntries(
+                dados.anos.map((a) => {
+                  const v = Number(String(rascunho[a.ano] ?? "").replace(",", ".")) || 0;
+                  return [a.ano, String(Math.round(v * fator * 100) / 100)];
+                }),
+              );
+              setPeriodo("anual");
+              void aplicarDespesas(convertido);
+            }}
+          >
             {busy ? "Salvando..." : "Salvar despesas"}
           </Button>
           {dados.sugestaoDespesaAnual ? (
