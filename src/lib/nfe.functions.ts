@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { filtrarNotasDuplicadas } from "@/lib/carga/dedup";
 import { registrarDuplicados } from "@/lib/carga/duplicados";
 import type { NfeNota } from "@/lib/nfe/parse";
 import {
@@ -63,25 +64,14 @@ export const saveNotasCompra = createServerFn({ method: "POST" })
         .filter((c): c is string => Boolean(c)),
     );
 
-    const vistas = new Set<string>();
-    const vistasCompostas = new Set<string>();
-    const repetidas: { chave: string; arquivo: string }[] = [];
-    const novas = data.notas.filter((n) => {
-      const composta = chaveCompostaNfe(n.cnpjEmitente, n.serie, n.numero);
-      const chaveJaExiste = n.chave ? jaGravadas.has(n.chave) : false;
-      const compostaJaExiste = composta ? jaGravadasCompostas.has(composta) : false;
-      const chaveVista = n.chave ? vistas.has(n.chave) : false;
-      const compostaVista = composta ? vistasCompostas.has(composta) : false;
-      if (chaveJaExiste || compostaJaExiste || chaveVista || compostaVista) {
-        if (chaveJaExiste || compostaJaExiste) {
-          repetidas.push({ chave: n.chave ?? composta ?? n.arquivo, arquivo: n.arquivo });
-        }
-        return false;
-      }
-      if (n.chave) vistas.add(n.chave);
-      if (composta) vistasCompostas.add(composta);
-      return true;
-    });
+    const { novas, repetidas } = filtrarNotasDuplicadas(
+      data.notas.map((n) => ({
+        ...n,
+        composta: chaveCompostaNfe(n.cnpjEmitente, n.serie, n.numero),
+      })),
+      jaGravadas,
+      jaGravadasCompostas,
+    );
     const duplicados = await registrarDuplicados(
       supabaseAdmin,
       data.caseId,
