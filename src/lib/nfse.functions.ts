@@ -142,13 +142,35 @@ export const saveNotasServico = createServerFn({ method: "POST" })
     const itensPayload: Record<string, unknown>[] = [];
     const notaIdsReprocessados = new Set<string>();
     for (const nota of data.notas) {
-      if ((nota.itens?.length ?? 0) === 0) continue;
+      // Layouts municipais podem não detalhar o serviço: usa o total da nota
+      // como um item único para que a receita/crédito entre no cálculo.
+      const itensNota: NfseServicoItem[] =
+        (nota.itens?.length ?? 0) > 0
+          ? nota.itens
+          : nota.valorTotal > 0
+            ? [
+                {
+                  nbs: null,
+                  itemLc116: nota.codigoServico ?? null,
+                  descricao: null,
+                  valorServico: nota.valorTotal,
+                  temClassificacaoDocumento: false,
+                  cclasstrib: null,
+                  baseCalculo: 0,
+                  vCBS: 0,
+                  vIBSUF: 0,
+                  vIBSMun: 0,
+                  vISS: 0,
+                },
+              ]
+            : [];
+      if (itensNota.length === 0) continue;
       const notaId =
         (nota.chave ? idPorChave.get(nota.chave) : undefined) ??
         idPorArquivo.get(nota.arquivo.slice(0, 200));
       if (!notaId || notaIdsReprocessados.has(notaId)) continue;
       notaIdsReprocessados.add(notaId);
-      for (const item of nota.itens ?? []) {
+      for (const item of itensNota) {
         const base = {
           nota_servico_id: notaId,
           case_id: data.caseId,
