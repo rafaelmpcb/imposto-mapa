@@ -39,16 +39,24 @@ export const saveNotasServico = createServerFn({ method: "POST" })
     const direcao: DirecaoServico = data.direcao ?? "tomado";
     if (data.notas.length === 0) return { ok: true as const, inserted: 0, itens: 0 };
 
-    const { data: existentes } = await supabaseAdmin
-      .from("nota_servico_nfse")
-      .select("id,chave_acesso,arquivo_original,direcao")
-      .eq("case_id", data.caseId);
-    const existentesRows = (existentes ?? []) as {
+    // Paginado: o servidor devolve no máximo 1000 linhas por consulta.
+    const existentesRows: {
       id: string;
       chave_acesso: string | null;
       arquivo_original: string;
       direcao: string;
-    }[];
+    }[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data: pagina, error } = await supabaseAdmin
+        .from("nota_servico_nfse")
+        .select("id,chave_acesso,arquivo_original,direcao")
+        .eq("case_id", data.caseId)
+        .order("id")
+        .range(from, from + 999);
+      if (error) throw new Error(error.message);
+      existentesRows.push(...((pagina ?? []) as typeof existentesRows));
+      if (!pagina || pagina.length < 1000) break;
+    }
     const jaGravadas = new Set(
       existentesRows.map((r) => r.chave_acesso).filter((c): c is string => Boolean(c)),
     );
@@ -210,18 +218,20 @@ export const saveNotasServico = createServerFn({ method: "POST" })
       }
     }
 
-    if (notaIdsReprocessados.size > 0) {
+    // Lotes pequenos: listas grandes de IDs estouram o limite de URL do servidor.
+    const ids = [...notaIdsReprocessados];
+    for (let i = 0; i < ids.length; i += 100) {
       const delItens = await supabaseAdmin
         .from(TABELA_ITEM[direcao] as "nota_servico_nfse_item")
         .delete()
-        .in("nota_servico_id", [...notaIdsReprocessados]);
+        .in("nota_servico_id", ids.slice(i, i + 100));
       if (delItens.error) throw new Error(delItens.error.message);
     }
 
-    if (itensPayload.length > 0) {
+    for (let i = 0; i < itensPayload.length; i += 500) {
       const ins = await supabaseAdmin
         .from(TABELA_ITEM[direcao] as "nota_servico_nfse_item")
-        .insert(itensPayload as never);
+        .insert(itensPayload.slice(i, i + 500) as never);
       if (ins.error) throw new Error(ins.error.message);
     }
 
