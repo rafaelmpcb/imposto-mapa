@@ -151,7 +151,6 @@ export function parseServicos(root: Element, valorTotal: number): NfseServicoIte
 
 export function parseNfseXml(xml: string, arquivo: string): NfseNota {
   const base: NfseNota = {
-    status: "dps" as NfseStatus,
     arquivo,
     chave: null,
     numero: null,
