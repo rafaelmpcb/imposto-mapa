@@ -9,6 +9,15 @@ import {
   type PainelCargaPayload,
 } from "@/lib/carga.functions";
 import { brl } from "@/lib/tax/calc";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const pct1 = (v: number) => `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
 
@@ -17,6 +26,66 @@ const CATEGORIA_LABEL = {
   nao_e_nota: "Não é nota",
   ignorado: "Ignorado",
 } as const;
+
+type ItemFora = PainelCargaPayload["foraDoCalculo"][number];
+
+function ForaDoCalculoDialog({ itens }: { itens: ItemFora[] }) {
+  const [busca, setBusca] = useState("");
+  const total = itens.reduce((s, d) => s + (d.valor > 0 ? d.valor : 0), 0);
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return itens;
+    return itens.filter((d) =>
+      [d.arquivo, d.label, d.motivo, d.numero ?? "", CATEGORIA_LABEL[d.categoria]]
+        .join(" ")
+        .toLowerCase()
+        .includes(q),
+    );
+  }, [itens, busca]);
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="w-full justify-between">
+          <span>Ver documentos que não entraram no cálculo ({itens.length})</span>
+          <span className="text-xs tabular-nums text-muted-foreground">{brl(total)}</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Documentos que não entraram no cálculo</DialogTitle>
+        </DialogHeader>
+        <Input
+          placeholder="Buscar por arquivo, nota ou motivo"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">
+          {filtrados.length} de {itens.length} documento(s)
+        </p>
+        <ul className="max-h-[60vh] space-y-2 overflow-y-auto pr-1 text-sm">
+          {filtrados.map((d, i) => (
+            <li
+              key={`${d.arquivo}-${i}`}
+              className="flex justify-between gap-2 border-b border-border pb-2"
+            >
+              <span className="min-w-0">
+                <span className="block truncate text-foreground">{d.arquivo}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {d.label} · {CATEGORIA_LABEL[d.categoria]} · {d.motivo}
+                  {d.numero ? ` · nota ${d.numero}` : ""}
+                </span>
+              </span>
+              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                {d.valor > 0 ? brl(d.valor) : "—"}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 /**
  * Conferência da carga documental antes de olhar os resultados: o que entrou,
@@ -152,27 +221,7 @@ export function PainelCargaPanel({ caseId, reloadKey = 0 }: { caseId: string; re
       </div>
 
       {dados.foraDoCalculo.length > 0 ? (
-        <div className="rounded-lg border border-border p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Documentos que não entraram no cálculo
-          </p>
-          <ul className="mt-2 space-y-1 text-sm">
-            {dados.foraDoCalculo.map((d, i) => (
-              <li key={`${d.arquivo}-${i}`} className="flex flex-wrap justify-between gap-2">
-                <span className="min-w-0">
-                  <span className="block truncate text-foreground">{d.arquivo}</span>
-                  <span className="block text-xs text-muted-foreground">
-                    {d.label} · {CATEGORIA_LABEL[d.categoria]} · {d.motivo}
-                    {d.numero ? ` · nota ${d.numero}` : ""}
-                  </span>
-                </span>
-                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                  {d.valor > 0 ? brl(d.valor) : "—"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <ForaDoCalculoDialog itens={dados.foraDoCalculo} />
       ) : null}
 
       <p className="text-xs text-muted-foreground">
