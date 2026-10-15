@@ -51,7 +51,7 @@ export function NfseServicoPanel({
       const brutos = await readNfeRawFiles(Array.from(files));
       const lidas = brutos
         .map((b) => parseNfseXml(b.xml, b.arquivo))
-        .filter((n) => n.status !== "nao_e_nfse");
+        .filter((n) => n.status !== "nao_e_nfse" && n.status !== "dps");
       if (lidas.length === 0) {
         setError("Nenhuma nota de serviço (NFS-e) foi encontrada nos arquivos enviados.");
         return;

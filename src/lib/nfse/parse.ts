@@ -12,7 +12,24 @@ export type NfseStatus =
   | "xml_invalido"
   | "nao_e_nfse"
   /** Lido, mas sem chave/número de NFS-e Nacional (layout municipal legado, por exemplo). */
-  | "nao_e_nfse_nacional";
+  | "nao_e_nfse_nacional"
+  /** DPS (declaração prévia de serviço): não é nota. A NFS-e Nacional gerada a partir dela é o documento válido. */
+  | "dps";
+
+/**
+ * Detecta DPS (declaração prévia) ainda não convertida em NFS-e.
+ * Um XML/JSON de DPS tem `nDPS`/`infDPS` e nenhum identificador de NFS-e
+ * (`nNFSe`, `nNFS-e`, `Numero` ou `chNFSe`). A NFS-e Nacional embute o bloco
+ * da DPS, mas traz `nNFSe`/`chNFSe` — por isso a checagem da nota vem antes.
+ * Importar a DPS como nota duplica a receita (a mesma operação entra duas
+ * vezes: a declaração e a nota gerada).
+ */
+export function isDpsDocumento(conteudo: string): boolean {
+  const temNfse =
+    /<nNFSe[\s>]|<nNFS-e[\s>]|<Numero[\s>]|<chNFSe[\s>]|"nNFSe"\s*:|"chNFSe"\s*:/i.test(conteudo);
+  const temDps = /<nDPS[\s>]|<infDPS[\s>]|"nDPS"\s*:|"infDPS"\s*:/i.test(conteudo);
+  return temDps && !temNfse;
+}
 
 /** Serviço descrito na nota. */
 export interface NfseServicoItem {
@@ -157,6 +174,9 @@ export function parseNfseXml(xml: string, arquivo: string): NfseNota {
     return base;
   }
   if (doc.getElementsByTagName("parsererror").length > 0) return base;
+
+  // DPS ainda não convertida em NFS-e: não é nota e não entra no cálculo.
+  if (isDpsDocumento(xml)) return { ...base, status: "dps" };
 
   const root =
     findTag(doc, ["infNFSe", "InfNfse", "Nfse", "infDPS"]) ?? (doc.documentElement as Element | null);
@@ -357,6 +377,7 @@ export function parseNfseJson(raw: string, arquivo: string): NfseNota {
   } catch {
     return vazio;
   }
+  if (isDpsDocumento(raw)) return { ...vazio, status: "dps" };
 
   const prest = deepScope(json, ["prest", "prestador", "prestadorServico", "emit"]);
   const toma = deepScope(json, ["toma", "tomador", "tomadorServico", "dest"]);
