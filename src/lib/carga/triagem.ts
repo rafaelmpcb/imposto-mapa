@@ -55,6 +55,13 @@ export async function triarPacote(files: File[], caseCnpj: string | null): Promi
       return;
     }
     const nota = parseNfseArquivo({ arquivo: nome, conteudo, formato: ext as "xml" | "json" });
+    if (nota.status === "dps") {
+      r.naoReconhecidos.push({
+        arquivo: nome,
+        motivo: "DPS (declaração prévia) — não é nota emitida; a NFS-e Nacional correspondente é o documento válido",
+      });
+      return;
+    }
     if (nota.status !== "ok" && nota.status !== "sem_cnpj") {
       r.naoReconhecidos.push({ arquivo: nome, motivo: "não é NF-e nem NFS-e Nacional reconhecida" });
       return;

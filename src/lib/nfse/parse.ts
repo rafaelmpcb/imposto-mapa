@@ -377,6 +377,7 @@ export function parseNfseJson(raw: string, arquivo: string): NfseNota {
   } catch {
     return vazio;
   }
+  if (isDpsDocumento(raw)) return { ...vazio, status: "dps" };
 
   const prest = deepScope(json, ["prest", "prestador", "prestadorServico", "emit"]);
   const toma = deepScope(json, ["toma", "tomador", "tomadorServico", "dest"]);
