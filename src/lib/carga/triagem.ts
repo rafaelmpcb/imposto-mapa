@@ -1,4 +1,5 @@
 import { parseNfseArquivo } from "@/lib/nfse/parse";
+import { parseSped, type SpedArquivo } from "@/lib/sped/parse";
 
 /** Resultado da triagem de um pacote solto (ReceitaNetBX, contador, ERP). */
 export interface TriagemResultado {
@@ -7,7 +8,7 @@ export interface TriagemResultado {
   nfsePrestado: File[];
   pgdasd: File[];
   planilhas: File[];
-  sped: string[];
+  sped: SpedArquivo[];
   naoReconhecidos: { arquivo: string; motivo: string }[];
 }
 
@@ -38,8 +39,11 @@ export async function triarPacote(files: File[], caseCnpj: string | null): Promi
     const file = () => new File([conteudo], nome, { type: ext === "json" ? "application/json" : "text/xml" });
 
     if (ext === "txt") {
-      if (/^\|0000\|/m.test(conteudo.slice(0, 2000))) r.sped.push(nome);
-      else r.naoReconhecidos.push({ arquivo: nome, motivo: "texto sem layout reconhecido" });
+      if (/^\|0000\|/m.test(conteudo.slice(0, 2000))) {
+        const lido = parseSped(nome, conteudo);
+        if (lido.ok) r.sped.push(lido.item);
+        else r.naoReconhecidos.push({ arquivo: nome, motivo: lido.motivo });
+      } else r.naoReconhecidos.push({ arquivo: nome, motivo: "texto sem layout reconhecido" });
       return;
     }
     if (ext !== "xml" && ext !== "json") {
@@ -75,6 +79,8 @@ export async function triarPacote(files: File[], caseCnpj: string | null): Promi
         const blob = await entry.async("blob");
         const f = new File([blob], nome);
         (ext === "pdf" ? r.pgdasd : r.planilhas).push(f);
+      } else if (ext === "txt") {
+        texto(nome, new TextDecoder("latin1").decode(await entry.async("uint8array")));
       } else {
         texto(nome, await entry.async("string"));
       }
@@ -87,6 +93,7 @@ export async function triarPacote(files: File[], caseCnpj: string | null): Promi
       if (ext === "zip") await abrirZip(await file.arrayBuffer(), 0);
       else if (ext === "pdf") r.pgdasd.push(file);
       else if (ext === "xlsx" || ext === "xls" || ext === "csv") r.planilhas.push(file);
+      else if (ext === "txt") texto(file.name, new TextDecoder("latin1").decode(await file.arrayBuffer()));
       else texto(file.name, await file.text());
     } catch {
       r.naoReconhecidos.push({ arquivo: file.name, motivo: "arquivo corrompido ou ilegível" });
