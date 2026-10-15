@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { registrarDuplicados } from "@/lib/carga/duplicados";
-import type { NfseNota } from "@/lib/nfse/parse";
+import type { NfseNota, NfseServicoItem } from "@/lib/nfse/parse";
 import {
   FONTE_DOCUMENTO,
   FONTE_DOCUMENTO_EMITIDA,
