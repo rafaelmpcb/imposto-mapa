@@ -25,8 +25,7 @@ const MODULOS = [
   { id: "visao", label: "Visão geral" },
   { id: "regimes", label: "Regimes" },
   { id: "compras", label: "Compras e créditos" },
-  { id: "clientes", label: "Clientes e crédito transferido" },
-  { id: "precos", label: "Preço e margem" },
+  { id: "clientes", label: "Clientes, preço e margem" },
   { id: "caixa", label: "Caixa e split" },
   { id: "plano", label: "Achados e plano" },
 ] as const;
@@ -432,17 +431,31 @@ export function ParecerDashboard({
       ) : null}
 
       {modulo === "clientes" ? (
-        <ParecerClientes clientes={snapshot.sec5.clientes ?? []} />
+        <div className="space-y-6">
+          <section className="space-y-2">
+            <h3 className="font-presentation-display text-lg">Preço e margem por cliente</h3>
+            <p className="text-xs text-muted-foreground">
+              Selecione um cliente para ver crédito transferido, preço sugerido ano a ano e a ficha
+              de negociação.
+            </p>
+            <ParecerClientes clientes={snapshot.sec5.clientes ?? []} />
+          </section>
+          <section className="space-y-2 border-t border-border pt-6">
+            <h3 className="font-presentation-display text-lg">Visão consolidada da empresa</h3>
+            <p className="text-xs text-muted-foreground">
+              Média de todas as vendas analisadas — referência geral, não substitui a leitura por
+              cliente acima.
+            </p>
+            <ParecerPrecoVenda
+              sec5={snapshot.sec5}
+              sec4={snapshot.sec4}
+              ano={precoAno?.ano ?? anoSel}
+              onAno={(a) => setAno(a)}
+            />
+          </section>
+        </div>
       ) : null}
 
-      {modulo === "precos" ? (
-        <ParecerPrecoVenda
-          sec5={snapshot.sec5}
-          sec4={snapshot.sec4}
-          ano={precoAno?.ano ?? anoSel}
-          onAno={(a) => setAno(a)}
-        />
-      ) : null}
 
 
       {modulo === "caixa" ? (
