@@ -152,27 +152,7 @@ export function PainelCargaPanel({ caseId, reloadKey = 0 }: { caseId: string; re
       </div>
 
       {dados.foraDoCalculo.length > 0 ? (
-        <div className="rounded-lg border border-border p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Documentos que não entraram no cálculo
-          </p>
-          <ul className="mt-2 space-y-1 text-sm">
-            {dados.foraDoCalculo.map((d, i) => (
-              <li key={`${d.arquivo}-${i}`} className="flex flex-wrap justify-between gap-2">
-                <span className="min-w-0">
-                  <span className="block truncate text-foreground">{d.arquivo}</span>
-                  <span className="block text-xs text-muted-foreground">
-                    {d.label} · {CATEGORIA_LABEL[d.categoria]} · {d.motivo}
-                    {d.numero ? ` · nota ${d.numero}` : ""}
-                  </span>
-                </span>
-                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                  {d.valor > 0 ? brl(d.valor) : "—"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <ForaDoCalculoDialog itens={dados.foraDoCalculo} />
       ) : null}
 
       <p className="text-xs text-muted-foreground">
