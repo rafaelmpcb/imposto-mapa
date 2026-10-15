@@ -175,6 +175,9 @@ export function parseNfseXml(xml: string, arquivo: string): NfseNota {
   }
   if (doc.getElementsByTagName("parsererror").length > 0) return base;
 
+  // DPS ainda não convertida em NFS-e: não é nota e não entra no cálculo.
+  if (isDpsDocumento(xml)) return { ...base, status: "dps" };
+
   const root =
     findTag(doc, ["infNFSe", "InfNfse", "Nfse", "infDPS"]) ?? (doc.documentElement as Element | null);
   if (!root) return { ...base, status: "nao_e_nfse" };
