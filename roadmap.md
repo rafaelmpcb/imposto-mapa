@@ -12,3 +12,4 @@
 - [x] PGDAS-D: upload do extrato no Diagnóstico Completo (só Simples), extração por rótulos, conferência editável e aplicação do RBT12 real no motor.
 - [x] Composição de carteira via XML de NF-e de compra (fornecedores), com classificação BrasilAPI + CNPJá de reserva nas duas vias
 - [x] Landing page redesenhada como portal de soluções com 5 módulos (simulador, aluguéis, contratos, saldos credores, CAPEX) — 22/09/2026
+- [x] Leitura de SPED (EFD ICMS-IPI e EFD Contribuições) no envio único: apuração, saldos credores, conferência mensal com XMLs e envio à análise com IA — 15/10/2026

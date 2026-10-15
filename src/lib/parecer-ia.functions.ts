@@ -129,6 +129,19 @@ export const gerarAnaliseIa = createServerFn({ method: "POST" })
       comprasMensais: num(inp["purchases"]),
       anexoSimples: inp["simplesAnexo"] ?? null,
     };
+    const { data: speds } = await supabaseAdmin
+      .from("sped_apuracao" as never)
+      .select("tipo,periodo_ini,resumo")
+      .eq("case_id" as never, row.case_id as never)
+      .order("periodo_ini" as never, { ascending: true });
+    const escrituracao = ((speds ?? []) as unknown as { tipo: string; periodo_ini: string; resumo: Record<string, unknown> }[]).map(
+      (s) => {
+        const r = s.resumo as Record<string, any>;
+        return s.tipo === "icms_ipi"
+          ? { tipo: "EFD ICMS-IPI", mes: s.periodo_ini.slice(0, 7), saidas: r["saidas"], entradas: r["entradas"], icms: r["icms"], ipi: r["ipi"] }
+          : { tipo: "EFD Contribuições", mes: s.periodo_ini.slice(0, 7), regime: r["regime"], receitaBruta: r["receitaBruta"], pis: r["pis"], cofins: r["cofins"] };
+      },
+    );
     const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
       method: "POST",
       headers: {
@@ -142,7 +155,7 @@ export const gerarAnaliseIa = createServerFn({ method: "POST" })
         store: false,
         reasoning: { effort: "medium" },
         instructions: INSTRUCOES,
-        input: [{ role: "user", content: JSON.stringify({ premissas, diagnostico: resumir(snap) }) }],
+        input: [{ role: "user", content: JSON.stringify({ premissas, escrituracaoSped: escrituracao, diagnostico: resumir(snap) }) }],
         text: { format: { type: "json_schema", name: "analise_parecer", strict: true, schema: SCHEMA } },
       }),
     });

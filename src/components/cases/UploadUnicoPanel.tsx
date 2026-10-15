@@ -47,7 +47,7 @@ export function UploadUnicoPanel({
       <p className="mt-1 text-xs text-muted-foreground">
         Solte aqui o .zip ou os arquivos do jeito que vieram (ReceitaNetBX, contador ou ERP). O
         sistema separa sozinho: NF-e de compra e venda, NFS-e tomadas e prestadas, extrato do
-        PGDAS-D e planilha de carteira. Depois é só conferir cada bloco abaixo.
+        PGDAS-D, planilha de carteira e SPED (EFD ICMS-IPI e EFD Contribuições). Depois é só conferir cada bloco abaixo.
       </p>
       {semCnpj ? (
         <div className="mt-2">
@@ -73,7 +73,7 @@ export function UploadUnicoPanel({
       >
         {busy ? "Separando os arquivos…" : "Arraste o pacote aqui ou clique para escolher"}
         <span className="mt-1 text-xs font-normal text-muted-foreground">
-          .zip, .xml, .json, .pdf, .xlsx, .csv — vários de uma vez
+          .zip, .xml, .json, .txt (SPED), .pdf, .xlsx, .csv — vários de uma vez
         </span>
         <input
           type="file"
@@ -108,8 +108,10 @@ export function UploadUnicoPanel({
           ) : null}
           {resumo.sped.length > 0 ? (
             <p className="text-xs text-muted-foreground">
-              {resumo.sped.length} arquivo(s) do SPED identificado(s). A leitura do SPED ainda não
-              está disponível — por enquanto use os XMLs das notas.
+              {resumo.sped.length} arquivo(s) do SPED identificado(s). (
+              {resumo.sped.filter((x) => x.tipo === "icms_ipi").length} EFD ICMS-IPI ·{" "}
+              {resumo.sped.filter((x) => x.tipo === "contribuicoes").length} EFD Contribuições) lido(s)
+              — veja o bloco "Escrituração fiscal (SPED)" abaixo.
             </p>
           ) : null}
           {resumo.naoReconhecidos.length > 0 ? (

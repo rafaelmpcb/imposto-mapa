@@ -9,6 +9,7 @@ import { NfeUnificadoPanel } from "@/components/cases/NfeUnificadoPanel";
 import { NfseCarteiraPanel } from "@/components/cases/NfseCarteiraPanel";
 import { UploadUnicoPanel, type PacoteTriado } from "@/components/cases/UploadUnicoPanel";
 import { PainelCargaPanel } from "@/components/cases/PainelCargaPanel";
+import { SpedPanel } from "@/components/cases/SpedPanel";
 import { CreditoNcmPanel } from "@/components/cases/CreditoNcmPanel";
 import { DebitoNcmPanel } from "@/components/cases/DebitoNcmPanel";
 
@@ -578,6 +579,7 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
           if (p.resultado.planilhas.length > 0) void handleFiles(p.resultado.planilhas);
         }}
       />
+      <SpedPanel caseId={caseItem.id} pacote={pacote} />
       <ul className="space-y-3">
         {DIAGNOSTIC_DOCS.filter((doc) => doc.key !== "dados_regime" || isSimples).map((doc) => {
           const status =
