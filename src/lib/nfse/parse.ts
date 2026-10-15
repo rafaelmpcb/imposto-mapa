@@ -164,22 +164,27 @@ export function parseNfseXml(xml: string, arquivo: string): NfseNota {
   if (findTag(doc, ["infNFe"])) return { ...base, status: "nao_e_nfse" };
 
   const prestScope = findTag(root, ["prest", "PrestadorServico", "Prestador", "emit"]);
-  const tomaScope = findTag(root, ["toma", "TomadorServico", "Tomador", "dest"]);
+  const tomaScope = findTag(root, ["toma", "TomS", "TomadorServico", "Tomador", "dest"]);
 
   const valorTotal =
     num(findTag(root, ["vLiq", "vServ", "ValorLiquidoNfse", "ValorServicos"])) || 0;
   const emissao =
-    text(findTag(root, ["dhEmi", "DataEmissao", "dhProc", "dCompet"])) || "";
+    text(findTag(root, ["dhEmi", "dEmi", "DataEmissao", "dhProc", "dCompet"])) || "";
   const chaveAttr = root.getAttribute("Id") ?? "";
-  const chave =
-    onlyDigits(text(findTag(root, ["chNFSe", "CodigoVerificacao"])) || chaveAttr) || null;
-
   const cnpjPrestador = cnpjOf(prestScope);
   const itens = parseServicos(root, valorTotal);
-  const numero = text(findTag(root, ["nNFSe", "Numero", "nDPS"])) || null;
+  const numero = text(findTag(root, ["nNFSe", "nNFS-e", "Numero", "nDPS"])) || null;
+  const serieDoc = text(findTag(root, ["serie", "Serie"])) || "";
+  // Layouts municipais (ex.: Caxias do Sul) não têm chave nacional: usa
+  // referência do documento ou CNPJ+série+número como identificador único.
+  const chave =
+    onlyDigits(text(findTag(root, ["chNFSe", "CodigoVerificacao"])) || chaveAttr) ||
+    text(findTag(root, ["refNF"])) ||
+    (cnpjPrestador && numero ? `${cnpjPrestador}-${serieDoc}-${numero}` : "") ||
+    null;
 
-  // Só é NFS-e Nacional quando o documento traz chave de acesso e número.
-  const nacional = Boolean(chave && numero);
+  // Aceita NFS-e nacional e municipal, desde que tenha número.
+  const nacional = Boolean(numero);
 
   return {
     arquivo,
