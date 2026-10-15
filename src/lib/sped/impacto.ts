@@ -5,6 +5,7 @@
  */
 import { ALIQUOTA_PLENA_PADRAO_PCT, ANOS_DISPONIVEIS, fracaoDoAno } from "@/lib/contratos/calculo";
 import { remanescenteFederal, remanescenteSubnacional } from "@/lib/preco/necessario";
+import { grupoEntrada } from "@/lib/sped/cfop-credito";
 import type { SpedContribResumo, SpedIcmsResumo } from "@/lib/sped/parse";
 
 export type RegimeComparado = "real" | "presumido";
@@ -106,7 +107,7 @@ function pisCofinsHoje(b: BaseSpedAnual, regime: RegimeComparado): { valor: numb
       return { valor: b.pisCofinsRecolhido, creditos: b.pisCofinsCreditos, declarado: true };
   }
   if (regime === "presumido") return { valor: r2(b.receita * PIS_COFINS_CUM), creditos: 0, declarado: false };
-  const creditos = r2(b.entradas * PIS_COFINS_NC);
+  const creditos = r2((b.entradasComCredito ?? b.entradas) * PIS_COFINS_NC);
   return { valor: r2(Math.max(0, b.receita * PIS_COFINS_NC - creditos)), creditos, declarado: false };
 }
 
@@ -116,9 +117,9 @@ export function impactoPorRegime(b: BaseSpedAnual, aliquotaPlenaPct = ALIQUOTA_P
     const hojeTotal = r2(b.icmsRecolhido + b.ipiDevido + pc.valor);
     const anos = ANOS_DISPONIVEIS.map((ano): LinhaRegimeAno => {
       const aliq = (aliquotaPlenaPct / 100) * fracaoDoAno(ano);
-      const debito = b.receita * aliq;
+      const debito = Math.max(0, b.receita - (b.expurgos?.devolucoes ?? 0)) * aliq;
       // Na reforma, Real e Presumido têm não cumulatividade plena: crédito sobre as entradas.
-      const credito = b.entradas * aliq;
+      const credito = (b.entradasComCredito ?? b.entradas) * aliq;
       const liquido = Math.max(0, debito - credito);
       const icms = b.icmsRecolhido * remanescenteSubnacional(ano);
       const ipi = b.ipiDevido * remanescenteFederal(ano);

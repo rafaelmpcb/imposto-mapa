@@ -41,3 +41,17 @@ describe("impactoPorRegime", () => {
     expect(real!.anos.find((x) => x.ano === 2026)!.ibsCbsLiquido).toBe(0);
   });
 });
+
+describe("baseAnual — expurgo de CFOPs sem crédito", () => {
+  it("tira remessas, transferências e devoluções da base de crédito", async () => {
+    const { baseAnual } = await import("@/lib/sped/impacto");
+    const zero = { debitos: 0, ajustesDebitos: 0, estornosCreditos: 0, creditos: 0, ajustesCreditos: 0, estornosDebitos: 0, saldoCredorAnterior: 0, saldoApurado: 0, deducoes: 0, aRecolher: 0, saldoCredorTransportar: 0 };
+    const b = baseAnual(
+      [{ periodo_ini: "2025-01-01", resumo: { icms: zero, ipi: null, saidas: { valor: 1000, icms: 0 }, entradas: { valor: 1000, icms: 0 }, inventario: null,
+        porCfop: [{ cfop: "1102", valor: 400, icms: 0 }, { cfop: "1949", valor: 300, icms: 0 }, { cfop: "1152", valor: 200, icms: 0 }, { cfop: "1202", valor: 100, icms: 0 }] } }],
+      [],
+    )!;
+    expect(b.entradasComCredito).toBe(4800);
+    expect(b.expurgos).toEqual({ remessas: 3600, transferencias: 2400, devolucoes: 1200 });
+  });
+});
