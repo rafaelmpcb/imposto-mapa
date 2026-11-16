@@ -15,15 +15,17 @@ import { Route as AluguelRouteImport } from './routes/aluguel'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CapexRouteImport } from './routes/capex'
 import { Route as ContratosRouteImport } from './routes/contratos'
+import { Route as EquiparacaoHospitalarRouteImport } from './routes/equiparacao-hospitalar'
 import { Route as MonofasicoRouteImport } from './routes/monofasico'
 import { Route as SaldosCredoresRouteImport } from './routes/saldos-credores'
 import { Route as SimuladorRouteImport } from './routes/simulador'
 import { Route as AuthenticatedConfigAliquotasRouteImport } from './routes/_authenticated/config-aliquotas'
+import { Route as AuthenticatedEquiparacaoCompletaRouteImport } from './routes/_authenticated/equiparacao-completa'
 import { Route as AuthenticatedMeusCalculosRouteImport } from './routes/_authenticated/meus-calculos'
 import { Route as AuthenticatedParametrosRouteImport } from './routes/_authenticated/parametros'
 import { Route as RelatorioTokenRouteImport } from './routes/relatorio.$token'
 import { Route as STokenRouteImport } from './routes/s.$token'
-import { Route as ApiPublicClicksignWebhookRouteImport } from './routes/api/public/clicksign-webhook'
+import { Route as ApiPublicAssinafyWebhookRouteImport } from './routes/api/public/assinafy-webhook'
 import { Route as ApiPublicParecerPdfRouteImport } from './routes/api/public/parecer-pdf'
 import { Route as ApiPublicRelatorioPdfRouteImport } from './routes/api/public/relatorio-pdf'
 
@@ -56,6 +58,11 @@ const ContratosRoute = ContratosRouteImport.update({
   path: '/contratos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EquiparacaoHospitalarRoute = EquiparacaoHospitalarRouteImport.update({
+  id: '/equiparacao-hospitalar',
+  path: '/equiparacao-hospitalar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MonofasicoRoute = MonofasicoRouteImport.update({
   id: '/monofasico',
   path: '/monofasico',
@@ -75,6 +82,12 @@ const AuthenticatedConfigAliquotasRoute =
   AuthenticatedConfigAliquotasRouteImport.update({
     id: '/config-aliquotas',
     path: '/config-aliquotas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEquiparacaoCompletaRoute =
+  AuthenticatedEquiparacaoCompletaRouteImport.update({
+    id: '/equiparacao-completa',
+    path: '/equiparacao-completa',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedMeusCalculosRoute =
@@ -98,10 +111,10 @@ const STokenRoute = STokenRouteImport.update({
   path: '/s/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicClicksignWebhookRoute =
-  ApiPublicClicksignWebhookRouteImport.update({
-    id: '/api/public/clicksign-webhook',
-    path: '/api/public/clicksign-webhook',
+const ApiPublicAssinafyWebhookRoute =
+  ApiPublicAssinafyWebhookRouteImport.update({
+    id: '/api/public/assinafy-webhook',
+    path: '/api/public/assinafy-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicParecerPdfRoute = ApiPublicParecerPdfRouteImport.update({
@@ -121,15 +134,17 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/capex': typeof CapexRoute
   '/contratos': typeof ContratosRoute
+  '/equiparacao-hospitalar': typeof EquiparacaoHospitalarRoute
   '/monofasico': typeof MonofasicoRoute
   '/saldos-credores': typeof SaldosCredoresRoute
   '/simulador': typeof SimuladorRoute
   '/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
+  '/equiparacao-completa': typeof AuthenticatedEquiparacaoCompletaRoute
   '/meus-calculos': typeof AuthenticatedMeusCalculosRoute
   '/parametros': typeof AuthenticatedParametrosRoute
   '/relatorio/$token': typeof RelatorioTokenRoute
   '/s/$token': typeof STokenRoute
-  '/api/public/clicksign-webhook': typeof ApiPublicClicksignWebhookRoute
+  '/api/public/assinafy-webhook': typeof ApiPublicAssinafyWebhookRoute
   '/api/public/parecer-pdf': typeof ApiPublicParecerPdfRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
 }
@@ -139,15 +154,17 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/capex': typeof CapexRoute
   '/contratos': typeof ContratosRoute
+  '/equiparacao-hospitalar': typeof EquiparacaoHospitalarRoute
   '/monofasico': typeof MonofasicoRoute
   '/saldos-credores': typeof SaldosCredoresRoute
   '/simulador': typeof SimuladorRoute
   '/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
+  '/equiparacao-completa': typeof AuthenticatedEquiparacaoCompletaRoute
   '/meus-calculos': typeof AuthenticatedMeusCalculosRoute
   '/parametros': typeof AuthenticatedParametrosRoute
   '/relatorio/$token': typeof RelatorioTokenRoute
   '/s/$token': typeof STokenRoute
-  '/api/public/clicksign-webhook': typeof ApiPublicClicksignWebhookRoute
+  '/api/public/assinafy-webhook': typeof ApiPublicAssinafyWebhookRoute
   '/api/public/parecer-pdf': typeof ApiPublicParecerPdfRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
 }
@@ -159,15 +176,17 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/capex': typeof CapexRoute
   '/contratos': typeof ContratosRoute
+  '/equiparacao-hospitalar': typeof EquiparacaoHospitalarRoute
   '/monofasico': typeof MonofasicoRoute
   '/saldos-credores': typeof SaldosCredoresRoute
   '/simulador': typeof SimuladorRoute
   '/_authenticated/config-aliquotas': typeof AuthenticatedConfigAliquotasRoute
+  '/_authenticated/equiparacao-completa': typeof AuthenticatedEquiparacaoCompletaRoute
   '/_authenticated/meus-calculos': typeof AuthenticatedMeusCalculosRoute
   '/_authenticated/parametros': typeof AuthenticatedParametrosRoute
   '/relatorio/$token': typeof RelatorioTokenRoute
   '/s/$token': typeof STokenRoute
-  '/api/public/clicksign-webhook': typeof ApiPublicClicksignWebhookRoute
+  '/api/public/assinafy-webhook': typeof ApiPublicAssinafyWebhookRoute
   '/api/public/parecer-pdf': typeof ApiPublicParecerPdfRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
 }
@@ -179,15 +198,17 @@ export interface FileRouteTypes {
     | '/auth'
     | '/capex'
     | '/contratos'
+    | '/equiparacao-hospitalar'
     | '/monofasico'
     | '/saldos-credores'
     | '/simulador'
     | '/config-aliquotas'
+    | '/equiparacao-completa'
     | '/meus-calculos'
     | '/parametros'
     | '/relatorio/$token'
     | '/s/$token'
-    | '/api/public/clicksign-webhook'
+    | '/api/public/assinafy-webhook'
     | '/api/public/parecer-pdf'
     | '/api/public/relatorio-pdf'
   fileRoutesByTo: FileRoutesByTo
@@ -197,15 +218,17 @@ export interface FileRouteTypes {
     | '/auth'
     | '/capex'
     | '/contratos'
+    | '/equiparacao-hospitalar'
     | '/monofasico'
     | '/saldos-credores'
     | '/simulador'
     | '/config-aliquotas'
+    | '/equiparacao-completa'
     | '/meus-calculos'
     | '/parametros'
     | '/relatorio/$token'
     | '/s/$token'
-    | '/api/public/clicksign-webhook'
+    | '/api/public/assinafy-webhook'
     | '/api/public/parecer-pdf'
     | '/api/public/relatorio-pdf'
   id:
@@ -216,15 +239,17 @@ export interface FileRouteTypes {
     | '/auth'
     | '/capex'
     | '/contratos'
+    | '/equiparacao-hospitalar'
     | '/monofasico'
     | '/saldos-credores'
     | '/simulador'
     | '/_authenticated/config-aliquotas'
+    | '/_authenticated/equiparacao-completa'
     | '/_authenticated/meus-calculos'
     | '/_authenticated/parametros'
     | '/relatorio/$token'
     | '/s/$token'
-    | '/api/public/clicksign-webhook'
+    | '/api/public/assinafy-webhook'
     | '/api/public/parecer-pdf'
     | '/api/public/relatorio-pdf'
   fileRoutesById: FileRoutesById
@@ -236,12 +261,13 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CapexRoute: typeof CapexRoute
   ContratosRoute: typeof ContratosRoute
+  EquiparacaoHospitalarRoute: typeof EquiparacaoHospitalarRoute
   MonofasicoRoute: typeof MonofasicoRoute
   SaldosCredoresRoute: typeof SaldosCredoresRoute
   SimuladorRoute: typeof SimuladorRoute
   RelatorioTokenRoute: typeof RelatorioTokenRoute
   STokenRoute: typeof STokenRoute
-  ApiPublicClicksignWebhookRoute: typeof ApiPublicClicksignWebhookRoute
+  ApiPublicAssinafyWebhookRoute: typeof ApiPublicAssinafyWebhookRoute
   ApiPublicParecerPdfRoute: typeof ApiPublicParecerPdfRoute
   ApiPublicRelatorioPdfRoute: typeof ApiPublicRelatorioPdfRoute
 }
@@ -290,6 +316,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContratosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/equiparacao-hospitalar': {
+      id: '/equiparacao-hospitalar'
+      path: '/equiparacao-hospitalar'
+      fullPath: '/equiparacao-hospitalar'
+      preLoaderRoute: typeof EquiparacaoHospitalarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/monofasico': {
       id: '/monofasico'
       path: '/monofasico'
@@ -316,6 +349,13 @@ declare module '@tanstack/react-router' {
       path: '/config-aliquotas'
       fullPath: '/config-aliquotas'
       preLoaderRoute: typeof AuthenticatedConfigAliquotasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/equiparacao-completa': {
+      id: '/_authenticated/equiparacao-completa'
+      path: '/equiparacao-completa'
+      fullPath: '/equiparacao-completa'
+      preLoaderRoute: typeof AuthenticatedEquiparacaoCompletaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/meus-calculos': {
@@ -346,11 +386,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof STokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/clicksign-webhook': {
-      id: '/api/public/clicksign-webhook'
-      path: '/api/public/clicksign-webhook'
-      fullPath: '/api/public/clicksign-webhook'
-      preLoaderRoute: typeof ApiPublicClicksignWebhookRouteImport
+    '/api/public/assinafy-webhook': {
+      id: '/api/public/assinafy-webhook'
+      path: '/api/public/assinafy-webhook'
+      fullPath: '/api/public/assinafy-webhook'
+      preLoaderRoute: typeof ApiPublicAssinafyWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/parecer-pdf': {
@@ -372,12 +412,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedConfigAliquotasRoute: typeof AuthenticatedConfigAliquotasRoute
+  AuthenticatedEquiparacaoCompletaRoute: typeof AuthenticatedEquiparacaoCompletaRoute
   AuthenticatedMeusCalculosRoute: typeof AuthenticatedMeusCalculosRoute
   AuthenticatedParametrosRoute: typeof AuthenticatedParametrosRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedConfigAliquotasRoute: AuthenticatedConfigAliquotasRoute,
+  AuthenticatedEquiparacaoCompletaRoute: AuthenticatedEquiparacaoCompletaRoute,
   AuthenticatedMeusCalculosRoute: AuthenticatedMeusCalculosRoute,
   AuthenticatedParametrosRoute: AuthenticatedParametrosRoute,
 }
@@ -392,12 +434,13 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CapexRoute: CapexRoute,
   ContratosRoute: ContratosRoute,
+  EquiparacaoHospitalarRoute: EquiparacaoHospitalarRoute,
   MonofasicoRoute: MonofasicoRoute,
   SaldosCredoresRoute: SaldosCredoresRoute,
   SimuladorRoute: SimuladorRoute,
   RelatorioTokenRoute: RelatorioTokenRoute,
   STokenRoute: STokenRoute,
-  ApiPublicClicksignWebhookRoute: ApiPublicClicksignWebhookRoute,
+  ApiPublicAssinafyWebhookRoute: ApiPublicAssinafyWebhookRoute,
   ApiPublicParecerPdfRoute: ApiPublicParecerPdfRoute,
   ApiPublicRelatorioPdfRoute: ApiPublicRelatorioPdfRoute,
 }

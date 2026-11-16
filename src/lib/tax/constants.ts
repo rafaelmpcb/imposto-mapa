@@ -12,14 +12,21 @@
 /** Alíquota de referência cheia (CBS + IBS combinados). */
 export let REFERENCE_RATE = 0.265;
 
-/** Divisão estimada da alíquota de referência entre os dois tributos. */
-export let CBS_SHARE = 0.088; // federal (substitui PIS/COFINS)
-export let IBS_SHARE = 0.177; // estadual + municipal (substitui ICMS/ISS)
+/**
+ * Divisão estimada da alíquota de referência entre os dois tributos.
+ * CBS_SHARE = 11,3% homologado pelo TCU em 28/10/2026 (ainda sujeito a
+ * resolução do Senado até 15/12/2026). IBS_SHARE ajustado para fechar os
+ * 26,5% combinados de REFERENCE_RATE — a referência do IBS ainda não tem
+ * número homologado separadamente; usar os dois juntos (11,3% + 18,7%) daria
+ * ~30%, acima do teto da LC 214/2025, por isso não foi adotado aqui.
+ */
+export let CBS_SHARE = 0.113; // federal (substitui PIS/COFINS)
+export let IBS_SHARE = 0.152; // estadual + municipal (substitui ICMS/ISS)
 
 /** Alíquota simbólica de teste do IBS em 2026/2027. */
 export let IBS_TEST_RATE = 0.001;
 /** Alíquota de teste da CBS em 2026 (compensável com PIS/COFINS). */
-export let CBS_TEST_RATE = 0.009;
+export const CBS_TEST_RATE = 0.009;
 
 /** Data de referência da legislação usada nas estimativas. */
 export const LEGAL_REFERENCE_DATE = "setembro de 2026";
@@ -337,7 +344,6 @@ export const TUNABLES: TunableDef[] = [
   { key: "CBS_SHARE", label: "Parcela da CBS (federal)", group: "IBS / CBS", fallback: 0.088 },
   { key: "IBS_SHARE", label: "Parcela do IBS (estadual/municipal)", group: "IBS / CBS", fallback: 0.177 },
   { key: "IBS_TEST_RATE", label: "IBS — alíquota de teste", group: "IBS / CBS", fallback: 0.001 },
-  { key: "CBS_TEST_RATE", label: "CBS — alíquota de teste (2026)", group: "IBS / CBS", fallback: 0.009 },
   { key: "ISS_RATE", label: "ISS médio (serviços)", group: "Sistema atual", fallback: 0.05 },
   { key: "PIS_CUMULATIVO", label: "PIS cumulativo", group: "Sistema atual", fallback: 0.0065 },
   { key: "COFINS_CUMULATIVO", label: "COFINS cumulativo", group: "Sistema atual", fallback: 0.03 },
@@ -353,7 +359,6 @@ const setters: Record<string, (v: number) => void> = {
   CBS_SHARE: (v) => { CBS_SHARE = v; },
   IBS_SHARE: (v) => { IBS_SHARE = v; },
   IBS_TEST_RATE: (v) => { IBS_TEST_RATE = v; },
-  CBS_TEST_RATE: (v) => { CBS_TEST_RATE = v; },
   ISS_RATE: (v) => { ISS_RATE = v; },
   PIS_CUMULATIVO: (v) => { PIS_CUMULATIVO = v; },
   COFINS_CUMULATIVO: (v) => { COFINS_CUMULATIVO = v; },
@@ -369,7 +374,6 @@ const getters: Record<string, () => number> = {
   CBS_SHARE: () => CBS_SHARE,
   IBS_SHARE: () => IBS_SHARE,
   IBS_TEST_RATE: () => IBS_TEST_RATE,
-  CBS_TEST_RATE: () => CBS_TEST_RATE,
   ISS_RATE: () => ISS_RATE,
   PIS_CUMULATIVO: () => PIS_CUMULATIVO,
   COFINS_CUMULATIVO: () => COFINS_CUMULATIVO,

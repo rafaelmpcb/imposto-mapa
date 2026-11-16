@@ -10,14 +10,20 @@
 
 export const ALIQUOTA_PLENA_PADRAO_PCT = 26.5;
 
-/** Curva de rampa ESTIMADA da transição (editável por Caso). */
+/**
+ * Curva de rampa da transição (editável por Caso), em fração da alíquota plena
+ * já em vigor a cada ano: CBS cheia (8,8%) a partir de 2027 + IBS entrando em
+ * 1/10 por ano de 2029 a 2032 (ADCT, arts. 125-133, EC 132/2023; LC 214/2025),
+ * sobre a alíquota de referência de 26,5%. Mantida em sincronia com
+ * FRACAO_TRANSICAO em @/lib/contratos/calculo.
+ */
 export const CRONOGRAMA_PADRAO: { ano: number; fracao: number }[] = [
-  { ano: 2027, fracao: 0.1 },
-  { ano: 2028, fracao: 0.2 },
-  { ano: 2029, fracao: 0.4 },
-  { ano: 2030, fracao: 0.6 },
-  { ano: 2031, fracao: 0.8 },
-  { ano: 2032, fracao: 0.9 },
+  { ano: 2027, fracao: 0.336 },
+  { ano: 2028, fracao: 0.336 },
+  { ano: 2029, fracao: 0.398 },
+  { ano: 2030, fracao: 0.46 },
+  { ano: 2031, fracao: 0.522 },
+  { ano: 2032, fracao: 0.585 },
   { ano: 2033, fracao: 1 },
 ];
 
@@ -25,7 +31,7 @@ export const AVISO_DECISAO_COMERCIAL =
   "O percentual calculado responde \u201cquanto seria necess\u00e1rio para n\u00e3o perder nada?\u201d. A decis\u00e3o comercial de pre\u00e7o vem depois.";
 
 export const NOTA_RAMPA =
-  "A curva de transi\u00e7\u00e3o ano a ano \u00e9 uma estimativa de rampa, edit\u00e1vel por Caso, at\u00e9 haver cronograma oficial da LC 214/2025 carregado no sistema.";
+  "A curva de transi\u00e7\u00e3o ano a ano segue o cronograma oficial do ADCT (EC 132/2023) e da LC 214/2025, edit\u00e1vel por Caso quando houver premissa espec\u00edfica do cliente.";
 
 export const FONTE_ALIQUOTA_PLENA =
   "Al\u00edquota plena de refer\u00eancia do regime pleno (par\u00e2metro do Caso), reduzida pela tabela de exce\u00e7\u00f5es por NCM (buscadorncm.com.br / RFB-Serpro) ou por NBS (Anexo VIII v1.01.00, gov.br/nfse).";

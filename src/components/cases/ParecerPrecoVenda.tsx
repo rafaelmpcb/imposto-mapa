@@ -7,40 +7,11 @@ import { useMemo } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 import { PrecoChart } from "@/components/cases/ParecerCharts";
-import { CRONOGRAMA_PADRAO } from "@/lib/preco/necessario";
 import type { ParecerSnapshot } from "@/lib/parecer/tipos";
 import { brl } from "@/lib/tax/calc";
 
 const pct = (v: number, sinal = false) =>
   `${sinal && v > 0 ? "+" : ""}${v.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
-
-const FRACAO = new Map(CRONOGRAMA_PADRAO.map((c) => [c.ano, c.fracao]));
-
-interface Derivado {
-  /** Valor desonerado (preço sem tributos) do conjunto de vendas analisado. */
-  desonerado: number;
-  /** Alíquota plena efetiva média aplicada ao conjunto. */
-  aliquotaPlena: number;
-}
-
-/**
- * Recupera o valor desonerado e a alíquota plena média a partir de dois anos da
- * rampa: preco(ano) = desonerado * (1 + aliquota * fracao(ano)).
- */
-function derivar(porAno: ParecerSnapshot["sec5"]["porAno"]): Derivado | null {
-  const pts = porAno
-    .map((p) => ({ preco: p.precoNecessario, f: FRACAO.get(p.ano) ?? null }))
-    .filter((p): p is { preco: number; f: number } => p.f != null && p.preco > 0);
-  if (pts.length < 2) return null;
-  const a = pts[0]!;
-  const b = pts[pts.length - 1]!;
-  if (a.f === b.f) return null;
-  const desonerado = (a.preco * b.f - b.preco * a.f) / (b.f - a.f);
-  if (!(desonerado > 0)) return null;
-  const aliquota = (b.preco / desonerado - 1) / b.f;
-  if (!Number.isFinite(aliquota) || aliquota <= 0) return null;
-  return { desonerado, aliquotaPlena: aliquota };
-}
 
 function Pill({
   titulo,
@@ -60,7 +31,7 @@ function Pill({
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {titulo}
       </p>
-      <p className="mt-2 font-presentation-display text-xl leading-tight">
+      <p className="mt-2 break-words font-presentation-display text-xl leading-tight">
         {antes} <span className="text-muted-foreground">→</span> {depois}
       </p>
       <p className="mt-1 flex justify-between text-[11px] text-muted-foreground">
@@ -157,7 +128,7 @@ function Donut({
           </ResponsiveContainer>
         )}
       </div>
-      <p className="text-center font-presentation-display text-lg">{brl(total)}</p>
+      <p className="break-words text-center font-presentation-display text-xs">{brl(total)}</p>
       <ul className="mt-2 space-y-1 text-[11px]">
         {data.map((d) => (
           <li key={d.name} className="flex items-center justify-between gap-2">
@@ -199,11 +170,14 @@ export function ParecerPrecoVenda({
 }) {
   const anos = useMemo(() => sec5.porAno.slice().sort((a, b) => a.ano - b.ano), [sec5.porAno]);
   const anoSel = anos.find((a) => a.ano === ano) ?? anos[anos.length - 1] ?? null;
-  const derivado = useMemo(() => derivar(anos), [anos]);
 
   const valorAtual = sec5.valorAtual;
-  const desonerado = derivado?.desonerado ?? null;
-  const tributosAtuais = desonerado == null ? null : Math.max(valorAtual - desonerado, 0);
+  // Somados direto dos itens no snapshot (sec5.desonerado/tributosAtuais), não
+  // reconstruídos a partir de 2 pontos da rampa anual — essa reconstrução
+  // falhava sempre que esses 2 anos tinham a mesma fração (ex.: 2027 e 2028,
+  // antes de a rampa do IBS começar em 2029).
+  const desonerado = valorAtual > 0 ? sec5.desonerado : null;
+  const tributosAtuais = valorAtual > 0 ? sec5.tributosAtuais : null;
 
   const precoAno = anoSel?.precoNecessario ?? sec5.precoNecessario;
   const variacaoAno = anoSel?.variacaoPct ?? sec5.variacaoMediaPct;
@@ -284,7 +258,7 @@ export function ParecerPrecoVenda({
           <div>
             <p className="text-xs text-muted-foreground">Novo preço sugerido</p>
             <p className="mt-1 flex flex-wrap items-baseline gap-3">
-              <span className="font-presentation-display text-4xl leading-none">
+              <span className="break-words font-presentation-display text-3xl leading-tight">
                 {brl(precoAno)}
               </span>
               <span
@@ -320,25 +294,25 @@ export function ParecerPrecoVenda({
           Venda (valor sugerido)
         </p>
         <div className="mt-3 grid gap-5 lg:grid-cols-[minmax(0,320px)_1fr]">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-2">
             <div className="rounded-xl bg-card p-3">
               <p className="text-[11px] text-muted-foreground">Antes</p>
-              <p className="mt-1 font-presentation-display text-lg">{brl(valorAtual)}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">
+              <p className="mt-1 break-words font-presentation-display text-lg">{brl(valorAtual)}</p>
+              <p className="mt-1 break-words text-[11px] text-muted-foreground">
                 Líquido {desonerado == null ? "—" : brl(desonerado)}
               </p>
             </div>
             <div className="rounded-xl bg-mint-soft p-3">
               <p className="text-[11px] text-muted-foreground">Depois</p>
-              <p className="mt-1 font-presentation-display text-lg">{brl(precoAno)}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">
+              <p className="mt-1 break-words font-presentation-display text-lg">{brl(precoAno)}</p>
+              <p className="mt-1 break-words text-[11px] text-muted-foreground">
                 Líquido {desonerado == null ? "—" : brl(desonerado)}
               </p>
             </div>
             <div className="rounded-xl bg-amber-tone-soft p-3">
               <p className="text-[11px] text-muted-foreground">Sem repasse</p>
-              <p className="mt-1 font-presentation-display text-lg">{brl(valorAtual)}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">
+              <p className="mt-1 break-words font-presentation-display text-lg">{brl(valorAtual)}</p>
+              <p className="mt-1 break-words text-[11px] text-muted-foreground">
                 Líquido {liquidoSemRepasse == null ? "—" : brl(liquidoSemRepasse)}
               </p>
             </div>
@@ -383,11 +357,11 @@ export function ParecerPrecoVenda({
           <div className="mt-3 grid grid-cols-2 gap-3">
             <div className="rounded-xl bg-card p-3">
               <p className="text-[11px] text-muted-foreground">Antes</p>
-              <p className="mt-1 font-presentation-display text-lg">{brl(custoAntes)}</p>
+              <p className="mt-1 break-words font-presentation-display text-base">{brl(custoAntes)}</p>
             </div>
             <div className="rounded-xl bg-card p-3">
               <p className="text-[11px] text-muted-foreground">Depois</p>
-              <p className="mt-1 font-presentation-display text-lg">{brl(custoDepois)}</p>
+              <p className="mt-1 break-words font-presentation-display text-base">{brl(custoDepois)}</p>
             </div>
           </div>
           <div className="mt-4 rounded-xl bg-card p-3">
@@ -410,37 +384,37 @@ export function ParecerPrecoVenda({
             <thead className="text-left text-[11px] uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="py-1 font-semibold">Índice</th>
-                <th className="py-1 text-right font-semibold">Antes</th>
-                <th className="py-1 text-right font-semibold">Depois</th>
+                <th className="w-24 py-1 pl-3 text-right font-semibold">Antes</th>
+                <th className="w-24 py-1 pl-3 text-right font-semibold">Depois</th>
               </tr>
             </thead>
             <tbody className="tabular-nums">
               <tr className="border-t border-border/60">
                 <td className="py-1.5 text-muted-foreground">Markup</td>
-                <td className="py-1.5 text-right">
+                <td className="py-1.5 pl-3 text-right">
                   {markupAntes == null ? "—" : markupAntes.toFixed(3)}
                 </td>
-                <td className="py-1.5 text-right">
+                <td className="py-1.5 pl-3 text-right">
                   {markupDepois == null ? "—" : markupDepois.toFixed(3)}
                 </td>
               </tr>
               <tr className="border-t border-border/60">
                 <td className="py-1.5 text-muted-foreground">Markup %</td>
-                <td className="py-1.5 text-right">
+                <td className="py-1.5 pl-3 text-right">
                   {markupAntes == null ? "—" : pct((markupAntes - 1) * 100)}
                 </td>
-                <td className="py-1.5 text-right">
+                <td className="py-1.5 pl-3 text-right">
                   {markupDepois == null ? "—" : pct((markupDepois - 1) * 100)}
                 </td>
               </tr>
               <tr className="border-t border-border/60">
                 <td className="py-1.5 text-muted-foreground">Carga na venda</td>
-                <td className="py-1.5 text-right">
+                <td className="py-1.5 pl-3 text-right">
                   {tributosAtuais == null || valorAtual === 0
                     ? "—"
                     : pct((tributosAtuais / valorAtual) * 100)}
                 </td>
-                <td className="py-1.5 text-right">
+                <td className="py-1.5 pl-3 text-right">
                   {tributosDepois == null || precoAno === 0
                     ? "—"
                     : pct((tributosDepois / precoAno) * 100)}
@@ -448,16 +422,16 @@ export function ParecerPrecoVenda({
               </tr>
               <tr className="border-t border-border/60">
                 <td className="py-1.5 text-muted-foreground">Crédito na compra</td>
-                <td className="py-1.5 text-right">—</td>
-                <td className="py-1.5 text-right">
+                <td className="py-1.5 pl-3 text-right">—</td>
+                <td className="py-1.5 pl-3 text-right">
                   {custoAntes === 0 ? "—" : pct((sec4.creditoTotal / custoAntes) * 100)}
                 </td>
               </tr>
               <tr className="border-t border-border/60">
                 <td className="py-1.5 text-muted-foreground">Alíquota plena aplicada</td>
-                <td className="py-1.5 text-right">—</td>
-                <td className="py-1.5 text-right">
-                  {derivado == null ? "—" : pct(derivado.aliquotaPlena * 100)}
+                <td className="py-1.5 pl-3 text-right">—</td>
+                <td className="py-1.5 pl-3 text-right">
+                  {valorAtual === 0 ? "—" : pct(sec5.aliquotaPlenaMedia * 100)}
                 </td>
               </tr>
             </tbody>

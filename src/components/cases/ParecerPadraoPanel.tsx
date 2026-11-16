@@ -296,6 +296,7 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
         snapshot={snap}
         edicoes={edicoes}
         versao={atual.versao}
+        geradoEm={atual.gerado_em}
         onSair={() => setDashboard(false)}
         onPdf={() => void handlePdf()}
         onApresentar={() => {
@@ -648,6 +649,7 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
           {/* 8 */}
           <article id="secao-8" className="scroll-mt-6 space-y-2 border-t border-border pt-4">
             <h3 className="text-sm font-semibold text-foreground">8. {SECOES[7]!.titulo}</h3>
+            {snap.avisoRegimeSped ? <Notice tone="warning">{snap.avisoRegimeSped}</Notice> : null}
             <Bloco titulo="Comparativo do motor de regime">
               {snap.sec8.cenarios.length === 0 ? (
                 <p className="text-muted-foreground">Comparativo indisponível (lacuna documentada).</p>
@@ -755,6 +757,130 @@ export function ParecerPadraoPanel({ caseItem }: { caseItem: CaseRecord }) {
                     </li>
                   ))}
                 </ul>
+              </div>
+            ) : null}
+
+            {snap.secSaldoCredor ? (
+              <div className="space-y-2 rounded-md border border-navy/30 bg-navy/5 p-3">
+                <p className="text-sm font-semibold text-foreground">Saldo credor acumulado</p>
+                <p className="text-xs text-muted-foreground">
+                  Saldo de ICMS: <strong className="tabular-nums">{brl(snap.secSaldoCredor.saldoIcmsAtual)}</strong>{" "}
+                  · Saldo de PIS/COFINS:{" "}
+                  <strong className="tabular-nums">{brl(snap.secSaldoCredor.saldoPisCofinsAtual)}</strong> (do
+                  último SPED importado).
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Premissas da comparação "esperar x ceder a terceiro" do saldo de ICMS (240 parcelas, art.
+                  134 do ADCT). O índice de correção das parcelas é o IPCA, fixado pela EC 132/2023 — não é
+                  editável.
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <label className="block text-xs font-medium text-muted-foreground">
+                    Deságio na cessão a terceiro (%)
+                    <TextInput
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={edicoes.secSaldoCredor?.desagioCessaoPct ?? 30}
+                      onChange={(e) =>
+                        setEdicoes((prev) => ({
+                          ...prev,
+                          secSaldoCredor: {
+                            ...(prev.secSaldoCredor ?? {}),
+                            desagioCessaoPct: Number(e.target.value) || 0,
+                          },
+                        }))
+                      }
+                      className="mt-1"
+                    />
+                  </label>
+                  <label className="block text-xs font-medium text-muted-foreground">
+                    Custo de oportunidade do capital (% a.a.)
+                    <TextInput
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={edicoes.secSaldoCredor?.custoOportunidadeAaPct ?? 12}
+                      onChange={(e) =>
+                        setEdicoes((prev) => ({
+                          ...prev,
+                          secSaldoCredor: {
+                            ...(prev.secSaldoCredor ?? {}),
+                            custoOportunidadeAaPct: Number(e.target.value) || 0,
+                          },
+                        }))
+                      }
+                      className="mt-1"
+                    />
+                  </label>
+                </div>
+                {snap.secSaldoCredor.saldoPisCofinsAtual > 0 ? (
+                  <div className="space-y-2 border-t border-navy/20 pt-2">
+                    <p className="text-xs text-muted-foreground">
+                      PIS/COFINS (art. 378 da LC 214/2025): o sistema só lista as três possibilidades de
+                      uso do saldo — "quando faz sentido" e "prazo e risco" são sua análise, não cálculo.
+                    </p>
+                    {(
+                      [
+                        { key: "compensacaoCbs", titulo: "Opção 1 — Compensar com a CBS devida" },
+                        { key: "outrosTributos", titulo: "Opção 2 — Compensar com outros tributos federais" },
+                        { key: "ressarcimento", titulo: "Opção 3 — Ressarcimento em dinheiro (PER/DCOMP)" },
+                      ] as const
+                    ).map((opcao) => (
+                      <div key={opcao.key} className="rounded-md border border-border p-2">
+                        <p className="text-xs font-semibold text-foreground">{opcao.titulo}</p>
+                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                          <label className="block text-xs font-medium text-muted-foreground">
+                            Quando faz sentido
+                            <textarea
+                              rows={2}
+                              value={edicoes.secSaldoCredor?.pisCofins?.[opcao.key]?.quandoFazSentido ?? ""}
+                              onChange={(e) =>
+                                setEdicoes((prev) => ({
+                                  ...prev,
+                                  secSaldoCredor: {
+                                    ...(prev.secSaldoCredor ?? {}),
+                                    pisCofins: {
+                                      ...(prev.secSaldoCredor?.pisCofins ?? {}),
+                                      [opcao.key]: {
+                                        ...(prev.secSaldoCredor?.pisCofins?.[opcao.key] ?? {}),
+                                        quandoFazSentido: e.target.value,
+                                      },
+                                    },
+                                  },
+                                }))
+                              }
+                              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                            />
+                          </label>
+                          <label className="block text-xs font-medium text-muted-foreground">
+                            Prazo e risco
+                            <textarea
+                              rows={2}
+                              value={edicoes.secSaldoCredor?.pisCofins?.[opcao.key]?.prazoRisco ?? ""}
+                              onChange={(e) =>
+                                setEdicoes((prev) => ({
+                                  ...prev,
+                                  secSaldoCredor: {
+                                    ...(prev.secSaldoCredor ?? {}),
+                                    pisCofins: {
+                                      ...(prev.secSaldoCredor?.pisCofins ?? {}),
+                                      [opcao.key]: {
+                                        ...(prev.secSaldoCredor?.pisCofins?.[opcao.key] ?? {}),
+                                        prazoRisco: e.target.value,
+                                      },
+                                    },
+                                  },
+                                }))
+                              }
+                              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ) : null}
 

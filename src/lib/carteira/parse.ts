@@ -166,6 +166,10 @@ const TIPO_FROM_TEXT = (value: string): CarteiraTipo | null => {
 export interface AggregateOptions {
   /** Tipo declarado para o arquivo inteiro (quando não há coluna de tipo). */
   tipoFixo?: CarteiraTipo | null;
+  /** Pré-marca cada fornecedor como serviço tomado (vindo do atalho dedicado
+   * "planilha de contas a pagar"); no upload geral fica desmarcado e o
+   * usuário decide linha a linha na conferência. */
+  servicoTomadoFixo?: boolean;
 }
 
 /** Aplica o mapeamento e soma as linhas repetidas do mesmo CNPJ. */
@@ -205,6 +209,7 @@ export function aggregate(
         nomesDivergentes: [],
         linhas: 1,
         invalido: "cnpj",
+        servicoTomado: Boolean(options.servicoTomadoFixo) && (tipo ?? "cliente") === "fornecedor",
       });
       return;
     }
@@ -234,6 +239,7 @@ export function aggregate(
       nomesDivergentes: ordered.slice(1).map(([n]) => n),
       linhas: entry.linhas,
       invalido: entry.valor > 0 ? null : "valor",
+      servicoTomado: Boolean(options.servicoTomadoFixo) && entry.tipo === "fornecedor",
     };
   });
 

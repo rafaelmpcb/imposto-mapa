@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.18"
   }
   public: {
     Tables: {
@@ -474,6 +474,7 @@ export type Database = {
           nome: string
           percentual_carteira: number
           regime: Database["public"]["Enums"]["carteira_regime"]
+          servico_tomado: boolean
           status_consulta: Database["public"]["Enums"]["carteira_status"]
           tentativas_consulta: number
           tipo: Database["public"]["Enums"]["carteira_tipo"]
@@ -491,6 +492,7 @@ export type Database = {
           nome?: string
           percentual_carteira?: number
           regime?: Database["public"]["Enums"]["carteira_regime"]
+          servico_tomado?: boolean
           status_consulta?: Database["public"]["Enums"]["carteira_status"]
           tentativas_consulta?: number
           tipo: Database["public"]["Enums"]["carteira_tipo"]
@@ -508,6 +510,7 @@ export type Database = {
           nome?: string
           percentual_carteira?: number
           regime?: Database["public"]["Enums"]["carteira_regime"]
+          servico_tomado?: boolean
           status_consulta?: Database["public"]["Enums"]["carteira_status"]
           tentativas_consulta?: number
           tipo?: Database["public"]["Enums"]["carteira_tipo"]
@@ -868,6 +871,65 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "estudo_capex_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      estudo_equiparacao: {
+        Row: {
+          case_id: string | null
+          created_at: string
+          created_by: string | null
+          exito_pct: number
+          fracao_procedimentos: number
+          id: string
+          meses_retroativos: number
+          observacao: string | null
+          origem_segregacao: string
+          receita_mensal: number
+          resultado_json: Json
+          segregacao_json: Json
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          case_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          exito_pct?: number
+          fracao_procedimentos?: number
+          id?: string
+          meses_retroativos?: number
+          observacao?: string | null
+          origem_segregacao?: string
+          receita_mensal?: number
+          resultado_json?: Json
+          segregacao_json?: Json
+          titulo?: string
+          updated_at?: string
+        }
+        Update: {
+          case_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          exito_pct?: number
+          fracao_procedimentos?: number
+          id?: string
+          meses_retroativos?: number
+          observacao?: string | null
+          origem_segregacao?: string
+          receita_mensal?: number
+          resultado_json?: Json
+          segregacao_json?: Json
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estudo_equiparacao_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
             referencedRelation: "cases"
@@ -1364,8 +1426,12 @@ export type Database = {
           tem_ibscbs: boolean
           updated_at: string
           valor_base_calculo: number
+          valor_cofins: number
           valor_credito_ibs_cbs: number
+          valor_icms: number
+          valor_ipi: number
           valor_item: number
+          valor_pis: number
         }
         Insert: {
           case_id: string
@@ -1383,8 +1449,12 @@ export type Database = {
           tem_ibscbs?: boolean
           updated_at?: string
           valor_base_calculo?: number
+          valor_cofins?: number
           valor_credito_ibs_cbs?: number
+          valor_icms?: number
+          valor_ipi?: number
           valor_item?: number
+          valor_pis?: number
         }
         Update: {
           case_id?: string
@@ -1402,8 +1472,12 @@ export type Database = {
           tem_ibscbs?: boolean
           updated_at?: string
           valor_base_calculo?: number
+          valor_cofins?: number
           valor_credito_ibs_cbs?: number
+          valor_icms?: number
+          valor_ipi?: number
           valor_item?: number
+          valor_pis?: number
         }
         Relationships: [
           {
@@ -1715,7 +1789,10 @@ export type Database = {
           tem_classificacao_documento: boolean
           updated_at: string
           valor_base_calculo: number
+          valor_cofins: number
           valor_credito_ibs_cbs: number
+          valor_iss: number
+          valor_pis: number
           valor_servico: number
         }
         Insert: {
@@ -1733,7 +1810,10 @@ export type Database = {
           tem_classificacao_documento?: boolean
           updated_at?: string
           valor_base_calculo?: number
+          valor_cofins?: number
           valor_credito_ibs_cbs?: number
+          valor_iss?: number
+          valor_pis?: number
           valor_servico?: number
         }
         Update: {
@@ -1751,7 +1831,10 @@ export type Database = {
           tem_classificacao_documento?: boolean
           updated_at?: string
           valor_base_calculo?: number
+          valor_cofins?: number
           valor_credito_ibs_cbs?: number
+          valor_iss?: number
+          valor_pis?: number
           valor_servico?: number
         }
         Relationships: [
@@ -1787,8 +1870,10 @@ export type Database = {
           tem_classificacao_documento: boolean
           updated_at: string
           valor_base_calculo: number
+          valor_cofins: number
           valor_debito_ibs_cbs: number
           valor_iss: number
+          valor_pis: number
           valor_servico: number
         }
         Insert: {
@@ -1806,8 +1891,10 @@ export type Database = {
           tem_classificacao_documento?: boolean
           updated_at?: string
           valor_base_calculo?: number
+          valor_cofins?: number
           valor_debito_ibs_cbs?: number
           valor_iss?: number
+          valor_pis?: number
           valor_servico?: number
         }
         Update: {
@@ -1825,8 +1912,10 @@ export type Database = {
           tem_classificacao_documento?: boolean
           updated_at?: string
           valor_base_calculo?: number
+          valor_cofins?: number
           valor_debito_ibs_cbs?: number
           valor_iss?: number
+          valor_pis?: number
           valor_servico?: number
         }
         Relationships: [

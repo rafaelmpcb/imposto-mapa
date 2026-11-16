@@ -184,7 +184,7 @@ export function parseSped(arquivo: string, conteudo: string): SpedLeitura {
           t.contribuicaoNaoCumulativa += n(p[2]);
           t.creditoDescontado += n(p[3]) + n(p[4]);
           t.contribuicaoCumulativa += n(p[9]);
-          t.totalARecolher += n(p[13]);
+          t.totalARecolher += n(p[9]);
           break;
         }
         case "M100":

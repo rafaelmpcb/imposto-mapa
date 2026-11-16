@@ -22,6 +22,7 @@ import { LocacaoHubPanel } from "@/components/hub/LocacaoHubPanel";
 import { CapexHubPanel } from "@/components/hub/CapexHubPanel";
 import { MonofasicoHubPanel } from "@/components/hub/MonofasicoHubPanel";
 import { SaldosHubPanel } from "@/components/hub/SaldosHubPanel";
+import { EquiparacaoHubPanel } from "@/components/hub/EquiparacaoHubPanel";
 
 import type { CnpjData } from "@/lib/cnpj/types";
 import {
@@ -479,8 +480,9 @@ function MyCalculations() {
     if (tab === "contratos") return <ContratosHubPanel caseNames={caseNames} />;
     if (tab === "creditos") return <SaldosHubPanel caseNames={caseNames} />;
     if (tab === "monofasico") return <MonofasicoHubPanel caseNames={caseNames} />;
+    if (tab === "capex") return <CapexHubPanel caseNames={caseNames} />;
 
-    return <CapexHubPanel caseNames={caseNames} />;
+    return <EquiparacaoHubPanel caseNames={caseNames} />;
   };
 
 

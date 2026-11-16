@@ -3,7 +3,6 @@ import {
   ANEXOS_CPP_FORA_DAS,
   TYPICAL_SIMPLES_ANEXO,
   CBS_SHARE,
-
   CBS_TEST_RATE,
   COFINS_CUMULATIVO,
   COFINS_NAO_CUMULATIVO,
@@ -215,7 +214,10 @@ function scenario(lines: TaxLine[], base: number): Scenario {
 
 /**
  * Peso da transição do novo sistema por ano de referência.
- * 2026: alíquotas de teste (CBS 0,9% compensável + IBS 0,1%).
+ * 2026: alíquotas de teste (CBS 0,9% + IBS 0,1%). Pelo art. 348 da LC 214/2025,
+ * o valor pago de CBS é integralmente compensado com PIS/COFINS (sem acréscimo
+ * de ônus) — por isso CBS_TEST_RATE não entra em testRate, só o IBS 0,1%
+ * (que ainda não tem tributo equivalente do qual se compensar).
  * 2027: CBS cheia substitui PIS/COFINS; ICMS/ISS permanecem; IBS em teste.
  * 2033: regime pleno — IBS+CBS substituem PIS/COFINS/ICMS/ISS.
  */
@@ -226,7 +228,7 @@ function transition(year: YearId) {
       keepPisCofins: true,
       icmsIssFactor: 1,
       ibsRamp: 0,
-      testRate: IBS_TEST_RATE + CBS_TEST_RATE * 0,
+      testRate: IBS_TEST_RATE,
     };
   }
   if (year === 2033) {
@@ -242,6 +244,23 @@ function transition(year: YearId) {
     ibsRamp: ramp,
     testRate: ramp > 0 ? 0 : IBS_TEST_RATE,
   };
+}
+
+/**
+ * CBS e IBS separados, em pontos percentuais, para o crédito de IBS/CBS
+ * destacado numa nota — mesma rampa de transição do motor de regimes
+ * (IBS_RAMP), mas sem a exclusão do CBS de 2026 que `transition()` faz para
+ * o impacto de preço (lá o CBS de 2026 é compensável com PIS/COFINS e por
+ * isso não soma ônus; aqui o que importa é o que é destacado e creditável
+ * na nota, que inclui o CBS de 2026).
+ */
+export function cbsIbsCreditoPctPorAno(year: number): { cbsPct: number; ibsPct: number } {
+  if (year <= 2026) return { cbsPct: CBS_TEST_RATE * 100, ibsPct: IBS_TEST_RATE * 100 };
+  if (year >= 2033) return { cbsPct: CBS_SHARE * 100, ibsPct: IBS_SHARE * 100 };
+  // 2027/2028: IBS ainda em teste (0,1%). 2029-2032: rampa oficial do IBS_RAMP.
+  const ramp = IBS_RAMP[year] ?? 0;
+  const ibsPct = (ramp > 0 ? IBS_SHARE * ramp : IBS_TEST_RATE) * 100;
+  return { cbsPct: CBS_SHARE * 100, ibsPct };
 }
 
 export type BusinessRegime = "simples" | "simples_hibrido" | "presumido" | "real";
@@ -470,6 +489,20 @@ export function compareRegimes(
         estimateNote: SIMPLES_2033_UNAVAILABLE_NOTE,
       } satisfies RegimeComparisonItem;
     }
+    if (id === "simples" && !compareSimplesEligible(input)) {
+      return {
+        regime: id,
+        label,
+        total: null,
+        rate: null,
+        lines: [],
+        isCurrent,
+        isBest: false,
+        isAvailable: false,
+        estimateNote: "Faturamento acima de R$ 4,8 milhões/ano — fora do limite do Simples Nacional.",
+      } satisfies RegimeComparisonItem;
+    }
+
     let variant: SimulationInput = { ...input, taxpayerType: id };
     let estimateNote: string | undefined;
 

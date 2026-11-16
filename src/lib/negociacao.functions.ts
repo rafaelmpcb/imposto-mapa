@@ -3,7 +3,7 @@
  * Recebe o retrato já compilado de uma contraparte (fornecedor ou cliente)
  * e produz um argumentário tático. Não recalcula nada: apenas interpreta.
  */
-import { createOpenAI } from "@ai-sdk/openai";
+import { createGoogle } from "@ai-sdk/google";
 import { createServerFn } from "@tanstack/react-start";
 import { streamText } from "ai";
 import { z } from "zod";
@@ -41,7 +41,7 @@ export const gerarFichaNegociacao = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => Entrada.parse(input))
   .handler(async ({ data }) => {
-    const key = process.env["LOVABLE_API_KEY"];
+    const key = process.env["GOOGLE_GENERATIVE_AI_API_KEY"];
     if (!key) throw new Error("Serviço de IA indisponível: chave não configurada.");
 
     const fornecedor = data.relacao === "fornecedor";
@@ -85,29 +85,13 @@ export const gerarFichaNegociacao = createServerFn({ method: "POST" })
       "Tom: técnico, direto, sem floreio. Máximo aproximado de 900 palavras.",
     ].join("\n");
 
-    const { createLovableAiGatewayRunIdFetch } = await import("@/lib/ai-gateway.server");
-    const runIdFetch = createLovableAiGatewayRunIdFetch();
-    const lovable = createOpenAI({
-      baseURL: "https://ai.gateway.lovable.dev/v1",
-      apiKey: key,
-      headers: { "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
-      fetch: runIdFetch.fetch,
-    });
+    const google = createGoogle({ apiKey: key });
 
     try {
       const result = streamText({
-        model: lovable.responses("openai/gpt-6-astra"),
+        model: google("gemini-flash-latest"),
         system,
         prompt: contexto,
-        providerOptions: {
-          openai: {
-            forceReasoning: true,
-            reasoningEffort: "low",
-            reasoningSummary: "auto",
-            store: false,
-            include: ["reasoning.encrypted_content"],
-          },
-        },
       });
       const texto = await result.text;
       if (!texto.trim()) {
@@ -116,11 +100,8 @@ export const gerarFichaNegociacao = createServerFn({ method: "POST" })
       return { ficha: texto };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      if (msg.includes("402")) {
-        throw new Error("Créditos de IA esgotados. Adicione créditos ao workspace para continuar.");
-      }
-      if (msg.includes("429")) {
-        throw new Error("Muitas solicitações em sequência. Aguarde alguns instantes e tente de novo.");
+      if (msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED")) {
+        throw new Error("Cota ou limite de requisições da IA atingido. Aguarde alguns instantes e tente de novo.");
       }
       throw new Error(`Não foi possível gerar a ficha: ${msg}`);
     }

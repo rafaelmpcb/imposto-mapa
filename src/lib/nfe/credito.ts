@@ -157,6 +157,23 @@ export function creditoPorNcm(
     };
   }
 
+  if (linhas.some((l) => l.requer_revisao_humana)) {
+    const opcoes: OpcaoCandidata[] = linhas.map((l) => ({
+      anexo: l.anexo,
+      anexo_desc: l.anexo_desc,
+      cclasstrib: l.cclasstrib,
+      reducao_pct: Number(l.reducao_pct),
+    }));
+    return {
+      cclasstrib: linhas.length === 1 ? linhas[0]!.cclasstrib : null,
+      baseCalculo: valorItem,
+      credito: 0,
+      fonte: "classificação marcada pelo catálogo como pendente de revisão",
+      status: "ambiguo_revisao_pendente",
+      opcoes,
+    };
+  }
+
   const reducao = percentuais[0] ?? 0;
   const fator = 1 - reducao / 100;
   return {

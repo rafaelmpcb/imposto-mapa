@@ -21,7 +21,7 @@ import {
 } from "recharts";
 
 import { CenariosCliente } from "@/components/cases/CenariosCliente";
-import { FichaNegociacaoDialog } from "@/components/cases/FichaNegociacaoDialog";
+import { FichaNegociacaoCliente } from "@/components/cases/FichaNegociacaoCliente";
 import { brl } from "@/lib/tax/calc";
 import type { ClienteDetalheSnap } from "@/lib/parecer/tipos";
 
@@ -31,6 +31,12 @@ const COR_OUTRO = "#c7cbd6";
 const CORES_COMPARA = ["#7c6cf5", "#12234a", "#2ec4a6", "#f97316"];
 
 const pct = (v: number) => `${v.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
+
+/** Alguns prestadores gravam "\s"/"\n" como texto literal (não espaço/quebra
+ * de linha de verdade) na descrição do serviço, direto no XML da nota — não
+ * é bug nosso de concatenar campos, é o documento de origem mesmo. */
+const limparDescricao = (s: string | null) =>
+  (s ?? "").replace(/\\[sn]/g, " ").replace(/\s+/g, " ").trim();
 
 const competenciaLabel = (c: string) => {
   if (!/^\d{4}-\d{2}$/.test(c)) return c;
@@ -70,10 +76,12 @@ function DetalheCliente({
   d,
   totalBase,
   onVoltar,
+  regimeAtualCaso,
 }: {
   d: ClienteDetalheSnap;
   totalBase: number;
   onVoltar: () => void;
+  regimeAtualCaso?: string | null | undefined;
 }) {
   const serie = d.meses.map((m) => ({
     mes: competenciaLabel(m.competencia),
@@ -112,12 +120,12 @@ function DetalheCliente({
         </button>
       </div>
 
-      <FichaNegociacaoDialog
+      <FichaNegociacaoCliente
         aberto={ficha}
         onOpenChange={setFicha}
-        relacao="cliente"
-        detalhe={d}
+        d={d}
         totalBase={totalBase}
+        regimeAtualCaso={regimeAtualCaso}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -149,6 +157,7 @@ function DetalheCliente({
         faturamentoTotal={d.valorBase}
         meses={d.meses.length}
         regimeCliente={d.regime}
+        regimeAtualCaso={regimeAtualCaso}
       />
 
       <Box titulo="Faturamento, crédito transferido e participação">
@@ -216,7 +225,7 @@ function DetalheCliente({
                     <td className="py-2">
                       <p className="text-foreground">{n.ncm}</p>
                       <p className="truncate text-[11px] text-muted-foreground">
-                        {n.descricao ?? "sem descrição"}
+                        {n.descricao ? limparDescricao(n.descricao) : "sem descrição"}
                       </p>
                     </td>
                     <td className="py-2 text-right tabular-nums text-muted-foreground">
@@ -411,7 +420,15 @@ function CompararClientes({
   );
 }
 
-export function ParecerClientes({ clientes }: { clientes: ClienteDetalheSnap[] }) {
+export function ParecerClientes({
+  clientes,
+  regimeAtualCaso,
+}: {
+  clientes: ClienteDetalheSnap[];
+  /** Regime tributário atual do Caso (sec1.regimeAtual), repassado ao
+   * comparador de cenários para já abrir no regime certo do prestador. */
+  regimeAtualCaso?: string | null | undefined;
+}) {
   const [filtro, setFiltro] = useState<"todos" | "simples" | "regular">("todos");
   const [busca, setBusca] = useState("");
   const [selecionado, setSelecionado] = useState<string | null>(null);
@@ -493,7 +510,14 @@ export function ParecerClientes({ clientes }: { clientes: ClienteDetalheSnap[] }
 
   const aberto = selecionado ? clientes.find((c) => c.chave === selecionado) : undefined;
   if (aberto) {
-    return <DetalheCliente d={aberto} totalBase={abc.total} onVoltar={() => setSelecionado(null)} />;
+    return (
+      <DetalheCliente
+        d={aberto}
+        totalBase={abc.total}
+        onVoltar={() => setSelecionado(null)}
+        regimeAtualCaso={regimeAtualCaso}
+      />
+    );
   }
 
   const selecionados = clientes.filter((c) => comparar.includes(c.chave));

@@ -20,6 +20,15 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Supabase CLI
+supabase/.temp/
+
+# Scratch / mockups
+.scratch/
+
+.env.local
+.env.*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

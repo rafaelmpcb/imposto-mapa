@@ -61,6 +61,24 @@ const SCHEMA = {
   },
 };
 
+/** Converte o JSON Schema (estilo OpenAI) acima para o formato que a API do Gemini aceita em generationConfig.responseSchema. */
+function toGeminiSchema(schema: unknown): unknown {
+  if (schema === null || typeof schema !== "object") return schema;
+  if (Array.isArray(schema)) return schema.map(toGeminiSchema);
+  const s = schema as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  if (typeof s["type"] === "string") out["type"] = (s["type"] as string).toUpperCase();
+  if (s["required"]) out["required"] = s["required"];
+  if (s["enum"]) out["enum"] = s["enum"];
+  if (s["items"]) out["items"] = toGeminiSchema(s["items"]);
+  if (s["properties"]) {
+    out["properties"] = Object.fromEntries(
+      Object.entries(s["properties"] as Record<string, unknown>).map(([k, v]) => [k, toGeminiSchema(v)]),
+    );
+  }
+  return out;
+}
+
 /** Remove listas longas (notas, meses) para caber no contexto sem perder os totais. */
 function resumir(s: ParecerSnapshot) {
   const corta = <T,>(l: T[] | undefined, n: number) => (l ?? []).slice(0, n);
@@ -105,7 +123,7 @@ export const gerarAnaliseIa = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error || !row) return { ok: false, motivo: "Parecer não encontrado." };
 
-    const key = process.env["LOVABLE_API_KEY"];
+    const key = process.env["GOOGLE_GENERATIVE_AI_API_KEY"];
     if (!key) return { ok: false, motivo: "A IA não está configurada no servidor." };
 
     const snap = row.dados_compilados_json as unknown as ParecerSnapshot;
@@ -142,64 +160,43 @@ export const gerarAnaliseIa = createServerFn({ method: "POST" })
           : { tipo: "EFD Contribuições", mes: s.periodo_ini.slice(0, 7), regime: r["regime"], receitaBruta: r["receitaBruta"], pis: r["pis"], cofins: r["cofins"] };
       },
     );
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/json",
-        "X-Lovable-AIG-SDK": "fetch",
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${key}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: INSTRUCOES }] },
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: JSON.stringify({ premissas, escrituracaoSped: escrituracao, diagnostico: resumir(snap) }) }],
+            },
+          ],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: toGeminiSchema(SCHEMA),
+          },
+        }),
       },
-      body: JSON.stringify({
-        model: "openai/gpt-6-astra",
-        stream: true,
-        store: false,
-        reasoning: { effort: "medium" },
-        instructions: INSTRUCOES,
-        input: [{ role: "user", content: JSON.stringify({ premissas, escrituracaoSped: escrituracao, diagnostico: resumir(snap) }) }],
-        text: { format: { type: "json_schema", name: "analise_parecer", strict: true, schema: SCHEMA } },
-      }),
-    });
+    );
 
-    if (!res.ok || !res.body) {
+    if (!res.ok) {
       const corpo = await res.text().catch(() => "");
       console.error("IA parecer", res.status, corpo.slice(0, 500));
-      if (res.status === 402)
-        return { ok: false, motivo: "Créditos de IA esgotados. Adicione créditos em Configurações → Planos e créditos." };
-      if (res.status === 429)
-        return { ok: false, motivo: "Muitas solicitações à IA agora. Tente de novo em alguns instantes." };
-      if (res.status === 403) return { ok: false, motivo: "O uso de IA está bloqueado neste espaço de trabalho." };
+      if (res.status === 429) return { ok: false, motivo: "Cota ou limite de requisições da IA atingido. Tente de novo em alguns instantes." };
+      if (res.status === 403) return { ok: false, motivo: "A chave de IA é inválida ou não tem acesso a este modelo." };
       return { ok: false, motivo: "A IA não respondeu. Tente novamente." };
     }
 
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = "";
-    let texto = "";
-    let recusa = false;
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      let i: number;
-      while ((i = buf.indexOf("\n")) >= 0) {
-        const linha = buf.slice(0, i).trim();
-        buf = buf.slice(i + 1);
-        if (!linha.startsWith("data:")) continue;
-        const json = linha.slice(5).trim();
-        if (!json || json === "[DONE]") continue;
-        try {
-          const ev = JSON.parse(json) as { type?: string; delta?: string };
-          if (ev.type === "response.output_text.delta" && ev.delta) texto += ev.delta;
-          if (ev.type === "response.refusal.delta") recusa = true;
-          if (ev.type === "response.failed" || ev.type === "error") {
-            return { ok: false, motivo: "A IA não conseguiu concluir a análise." };
-          }
-        } catch {
-          /* fragmento parcial */
-        }
-      }
+    const corpo = (await res.json()) as {
+      candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
+    };
+    const candidato = corpo.candidates?.[0];
+    if (candidato?.finishReason === "SAFETY" || candidato?.finishReason === "PROHIBITED_CONTENT") {
+      return { ok: false, motivo: "A IA recusou gerar esta análise." };
     }
-    if (recusa) return { ok: false, motivo: "A IA recusou gerar esta análise." };
+    const texto = candidato?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
     try {
       return { ok: true, analise: JSON.parse(texto) as AnaliseIa };
     } catch {

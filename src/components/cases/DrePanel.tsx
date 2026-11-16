@@ -233,12 +233,20 @@ export function DrePanel({ caseId, reloadKey = 0 }: { caseId: string; reloadKey?
           Despesas operacionais por ano (informadas manualmente)
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Não há documento no sistema que traga esse valor. Informe o total anual de despesas de
-          cada ano.
+          Não há documento no sistema que traga esse valor sozinho. Informe o total anual de
+          despesas de cada ano.
           {dados.sugestaoDespesaAnual
             ? ` Sugestão a partir da folha informada na simulação: ${brl(dados.sugestaoDespesaAnual)} por ano.`
             : ""}
         </p>
+        {dados.sugestaoDespesaCarteira ? (
+          <p className="mt-1 text-xs text-muted-foreground">
+            A composição de carteira enviada tem {brl(dados.sugestaoDespesaCarteira)} em
+            fornecedores sem NF-e/NFS-e de compra correspondente no Caso — despesa real, mas sem
+            documento fiscal para gerar crédito de IBS/CBS. Esse total não está anualizado:
+            ajuste conforme o período que a planilha enviada realmente cobre antes de aplicar.
+          </p>
+        ) : null}
         <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
           Valores digitados são:
           <select
@@ -294,6 +302,22 @@ export function DrePanel({ caseId, reloadKey = 0 }: { caseId: string; reloadKey?
               }}
             >
               Usar a folha como estimativa
+            </Button>
+          ) : null}
+          {dados.sugestaoDespesaCarteira ? (
+            <Button
+              variant="ghost"
+              disabled={busy}
+              onClick={() => {
+                setPeriodo("anual");
+                setRascunho(
+                  Object.fromEntries(
+                    dados.anos.map((a) => [a.ano, String(dados.sugestaoDespesaCarteira ?? 0)]),
+                  ),
+                );
+              }}
+            >
+              Preencher com a composição de carteira ({brl(dados.sugestaoDespesaCarteira)})
             </Button>
           ) : null}
         </div>

@@ -31,10 +31,12 @@ const toNum = (v: string) => {
 export function PgdasdPanel({
   caseItem,
   onStatus,
+  onCount,
   incoming,
 }: {
   caseItem: CaseRecord;
   onStatus?: (status: string) => void;
+  onCount?: (n: number) => void;
   incoming?: { id: number; file: File } | null;
 }) {
   const navigate = useNavigate();
@@ -63,6 +65,7 @@ export function PgdasdPanel({
       const res = await withAuthRetry(() => load({ data: { caseId: caseItem.id } }));
       setItems(res.items);
       onStatus?.(res.items.length > 0 ? "processado" : "nao_enviado");
+      onCount?.(res.items.length);
     } catch {
       /* silencioso: o painel principal já reporta falha de carregamento */
     }

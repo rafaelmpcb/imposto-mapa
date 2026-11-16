@@ -14,6 +14,8 @@ interface DraftInput {
   cnpj: string;
   tipo: CarteiraTipo;
   valor: number;
+  /** Por linha; cai no flag do lote (compat com o atalho antigo) quando ausente. */
+  servicoTomado?: boolean;
 }
 
 /** Recalcula o % da carteira de cada linha, por tipo, dentro do Caso. */
@@ -106,16 +108,34 @@ export const saveCarteira = createServerFn({ method: "POST" })
       rows: DraftInput[];
       replace: boolean;
       mapping: SavedMapping | null;
+      /** Veio da planilha dedicada de serviços tomados, não da composição
+       * geral — "substituir" só afeta as linhas do mesmo tipo de envio. */
+      servicoTomado?: boolean;
     }) => input,
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const servicoTomado = data.servicoTomado === true;
+    // Cada linha pode ter sua própria marcação (o usuário decide na
+    // conferência quem é serviço tomado); sem marcação, cai no flag do lote
+    // inteiro — mantém o atalho antigo "planilha de contas a pagar" funcionando.
+    const servicoTomadoDaLinha = (r: DraftInput) => r.servicoTomado ?? servicoTomado;
 
-    if (data.replace) {
+    // "Substituir" só pode apagar os tipos e as marcações servico_tomado que
+    // de fato vieram neste envio — uma planilha só de fornecedores não pode
+    // apagar clientes já gravados (e vice-versa), e um envio com fornecedor
+    // comum e fornecedor de serviço misturados não apaga só um dos dois.
+    // Envio vazio não apaga nada: não há com o que substituir.
+    const tiposNoEnvio = [...new Set(data.rows.map((r) => r.tipo))];
+    const servicoTomadoValoresNoEnvio = [...new Set(data.rows.map(servicoTomadoDaLinha))];
+
+    if (data.replace && tiposNoEnvio.length > 0) {
       const del = await supabaseAdmin
         .from("composicao_carteira")
         .delete()
-        .eq("case_id", data.caseId);
+        .eq("case_id", data.caseId)
+        .in("tipo", tiposNoEnvio)
+        .in("servico_tomado", servicoTomadoValoresNoEnvio);
       if (del.error) throw new Error(del.error.message);
     }
 
@@ -130,6 +150,7 @@ export const saveCarteira = createServerFn({ method: "POST" })
         regime: "pendente" as const,
         status_consulta: "pendente" as const,
         fonte_classificacao: FONTE,
+        servico_tomado: servicoTomadoDaLinha(r),
       }));
 
     if (payload.length > 0) {
@@ -138,14 +159,26 @@ export const saveCarteira = createServerFn({ method: "POST" })
     }
 
     await recalcPercentuals(supabaseAdmin as never, data.caseId);
-    await setDocStatus(supabaseAdmin as never, data.caseId, "composicao_carteira", "enviado");
-    await supabaseAdmin
-      .from("cases")
-      .update({
-        carteira_column_mapping: (data.mapping ?? null) as never,
-        carteira_uploaded_at: new Date().toISOString(),
-      } as never)
-      .eq("id", data.caseId);
+    // O envio geral pode trazer os dois tipos de linha misturados (fornecedor
+    // comum e fornecedor de serviço marcado como "serviço tomado") — os dois
+    // checklists do Caso refletem o que de fato veio neste envio.
+    const temServicoTomado = data.rows.some(servicoTomadoDaLinha);
+    const temComposicaoGeral = data.rows.some((r) => !servicoTomadoDaLinha(r));
+    if (temServicoTomado) {
+      await setDocStatus(supabaseAdmin as never, data.caseId, "servicos_tomados", "enviado");
+    }
+    if (temComposicaoGeral) {
+      await setDocStatus(supabaseAdmin as never, data.caseId, "composicao_carteira", "enviado");
+    }
+    if (!servicoTomado) {
+      await supabaseAdmin
+        .from("cases")
+        .update({
+          carteira_column_mapping: (data.mapping ?? null) as never,
+          carteira_uploaded_at: new Date().toISOString(),
+        } as never)
+        .eq("id", data.caseId);
+    }
 
     return { ok: true as const, inserted: payload.length };
   });
@@ -274,6 +307,35 @@ export const processCarteiraBatch = createServerFn({ method: "POST" })
     }
 
     return { ok: true as const, finalized, transient, usedFallback, remaining };
+  });
+
+/**
+ * Classifica manualmente uma contraparte cuja consulta automática (BrasilAPI
+ * + CNPJá) falhou ou não encontrou o CNPJ — o analista já sabe o regime
+ * (contrato, cartão CNPJ, contato direto) e não precisa ficar bloqueado
+ * esperando a API acertar.
+ */
+export const classifyCarteiraRowManually = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { caseId: string; id: string; regime: "simples" | "regular" }) => input,
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("composicao_carteira")
+      .update({
+        regime: data.regime,
+        status_consulta: "ok",
+        fonte_classificacao: "Classificação manual",
+        data_classificacao: new Date().toISOString(),
+        motivo_erro: null,
+        tentativas_consulta: 0,
+      } as never)
+      .eq("id", data.id)
+      .eq("case_id", data.caseId);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
   });
 
 /** Remove uma contraparte da composição e recalcula os percentuais. */

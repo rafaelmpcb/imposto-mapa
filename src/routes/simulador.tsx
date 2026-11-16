@@ -318,6 +318,8 @@ function Simulator() {
 
   return (
     <main className="min-h-screen bg-background">
+      {!(step === 5 && presentationMode) ? <SimuladorTabs active="/simulador" /> : null}
+
       {!(step === 5 && presentationMode) ? <header className="bg-navy text-navy-foreground">
         <div className="mx-auto max-w-4xl px-5 py-10 sm:py-14">
           <div className="flex items-start justify-between gap-4">
@@ -335,8 +337,6 @@ function Simulator() {
           </p>
         </div>
       </header> : null}
-
-      {!(step === 5 && presentationMode) ? <SimuladorTabs active="/simulador" /> : null}
 
       <div
         className={
@@ -809,6 +809,7 @@ function Simulator() {
               presentationMode={presentationMode}
               onPresentationModeChange={setPresentationMode}
               cnpjData={cnpjData}
+              onProfitMarginChange={(v) => set("profitMargin", v)}
             />
           )}
 

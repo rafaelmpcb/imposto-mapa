@@ -14,7 +14,9 @@ export type NfseStatus =
   /** Lido, mas sem chave/número de NFS-e Nacional (layout municipal legado, por exemplo). */
   | "nao_e_nfse_nacional"
   /** DPS (declaração prévia de serviço): não é nota. A NFS-e Nacional gerada a partir dela é o documento válido. */
-  | "dps";
+  | "dps"
+  /** Nota cancelada (confirmação de cancelamento com sucesso) ou substituída por outra: não entra na receita. */
+  | "cancelada";
 
 /**
  * Detecta DPS (declaração prévia) ainda não convertida em NFS-e.
@@ -46,6 +48,9 @@ export interface NfseServicoItem {
   vIBSMun: number;
   /** ISS destacado no documento (leitura defensiva: ausência = 0). */
   vISS: number;
+  /** PIS e COFINS destacados no documento (leitura defensiva: ausência = 0). */
+  vPIS: number;
+  vCOFINS: number;
 }
 
 export interface NfseNota {
@@ -65,6 +70,12 @@ export interface NfseNota {
   dataEmissao: string | null;
   status: NfseStatus;
   itens: NfseServicoItem[];
+  /**
+   * true quando o documento é a NFS-e Nacional em si (embute o bloco <DPS>
+   * gerado pelo Ambiente de Dados Nacional) — não um layout municipal legado
+   * que antecede a adesão do município ao padrão nacional.
+   */
+  formatoNacional: boolean;
 }
 
 const text = (node: Element | null | undefined) => (node?.textContent ?? "").trim();
@@ -121,6 +132,20 @@ export function parseServicos(root: Element, valorTotal: number): NfseServicoIte
   const blocos = findAll(root, ["serv", "Servico"]);
   const alvos = blocos.length > 0 ? blocos : [root];
 
+  // Na NFS-e Nacional o total de ISS (vISSQN) fica em <infNFSe><valores>,
+  // fora do <DPS><infDPS><serv> onde cada item vive — buscar só dentro do
+  // bloco do item nunca encontra essa tag, e o ISS real do documento vira
+  // 0 silenciosamente. Serve de reserva quando o item não traz o próprio
+  // valor (layouts municipais costumam trazer por item), rateado pela
+  // quantidade de serviços da nota quando há mais de um.
+  const vIssRaiz = num(findTag(root, ["vISS", "ValorIss", "valorIss", "vISSQN"]));
+  // Mesmo caso do ISS: PIS/COFINS da NFS-e Nacional ficam em
+  // <infDPS><valores><trib><tribFed><piscofins>, irmão do <serv>, não dentro
+  // dele — sem essa busca na raiz, o PIS/COFINS "de hoje" de uma empresa de
+  // serviços nunca aparece (ficava 0 silenciosamente, igual o ISS estava).
+  const vPisRaiz = num(findTag(root, ["vPis"]));
+  const vCofinsRaiz = num(findTag(root, ["vCofins"]));
+
   return alvos.map((bloco) => {
     const ibscbs = findTag(bloco, ["IBSCBS", "gIBSCBS", "tribIBSCBS"]);
     const cclasstribNode = findTag(ibscbs ?? bloco, ["cClassTrib", "CClassTrib"]);
@@ -134,9 +159,16 @@ export function parseServicos(root: Element, valorTotal: number): NfseServicoIte
     return {
       nbs: text(findTag(bloco, ["cNBS", "CodigoNBS", "codigoNbs"])) || null,
       itemLc116:
-        text(findTag(bloco, ["cTribNac", "ItemListaServico", "cServico", "CodigoTributacaoMunicipio"])) ||
-        null,
-      descricao: text(findTag(bloco, ["xDescServ", "Discriminacao", "xDescricao"])) || null,
+        text(
+          findTag(bloco, [
+            "cTribNac",
+            "ItemListaServico",
+            "cServico",
+            "CodigoTributacaoMunicipio",
+            "cLCServ",
+          ]),
+        ) || null,
+      descricao: text(findTag(bloco, ["xDescServ", "Discriminacao", "xDescricao", "xServ"])) || null,
       valorServico: valor,
       temClassificacaoDocumento: Boolean(cclasstrib),
       cclasstrib,
@@ -144,7 +176,9 @@ export function parseServicos(root: Element, valorTotal: number): NfseServicoIte
       vCBS: gCbs ? num(findTag(gCbs, ["vCBS"])) : 0,
       vIBSUF: gUf ? num(findTag(gUf, ["vIBSUF"])) : 0,
       vIBSMun: gMun ? num(findTag(gMun, ["vIBSMun"])) : 0,
-      vISS: num(findTag(bloco, ["vISS", "ValorIss", "valorIss", "vISSQN"])),
+      vISS: num(findTag(bloco, ["vISS", "ValorIss", "valorIss", "vISSQN"])) || vIssRaiz / alvos.length,
+      vPIS: num(findTag(bloco, ["vPis"])) || vPisRaiz / alvos.length,
+      vCOFINS: num(findTag(bloco, ["vCofins"])) || vCofinsRaiz / alvos.length,
     };
   });
 }
@@ -165,6 +199,7 @@ export function parseNfseXml(xml: string, arquivo: string): NfseNota {
     dataEmissao: null,
     status: "xml_invalido",
     itens: [],
+    formatoNacional: false,
   };
 
   let doc: Document;
@@ -178,16 +213,35 @@ export function parseNfseXml(xml: string, arquivo: string): NfseNota {
   // DPS ainda não convertida em NFS-e: não é nota e não entra no cálculo.
   if (isDpsDocumento(xml)) return { ...base, status: "dps" };
 
+  // Nota cancelada: no lote do ginfes, a confirmação de cancelamento vem como
+  // irmã da nota dentro do mesmo item do lote (splitNotaBlocks mantém as duas
+  // juntas). Uma nota substituída por outra (<NfseSubstituida>) também é
+  // cancelada pelo próprio município como parte da substituição — confirmado
+  // em dados reais, o cancelamento cobre os dois casos. Sem essa checagem a
+  // nota cancelada entrava na receita como se fosse uma venda válida.
+  const cancelamento = findTag(doc, ["Cancelamento"]);
+  const cancelada = cancelamento
+    ? text(findTag(cancelamento, ["Sucesso"])).toLowerCase() === "true"
+    : false;
+  if (cancelada) return { ...base, status: "cancelada" };
+
   const root =
     findTag(doc, ["infNFSe", "InfNfse", "Nfse", "infDPS"]) ?? (doc.documentElement as Element | null);
   if (!root) return { ...base, status: "nao_e_nfse" };
   if (findTag(doc, ["infNFe"])) return { ...base, status: "nao_e_nfse" };
 
-  const prestScope = findTag(root, ["prest", "PrestadorServico", "Prestador", "emit"]);
+  // "emit" primeiro: na NFS-e Nacional, o <DPS> embutido também tem um <prest>
+  // (só com CNPJ, sem nome) — buscando "prest" antes, esse acharia esse <prest>
+  // aninhado em vez do <emit> de topo, que é o único com xNome preenchido.
+  const prestScope = findTag(root, ["emit", "prest", "PrestadorServico", "Prestador"]);
   const tomaScope = findTag(root, ["toma", "TomS", "TomadorServico", "Tomador", "dest"]);
 
+  // Receita é sempre o valor bruto faturado (base de cálculo legal do ISS,
+  // PIS/COFINS, IRPJ/CSLL e Simples) — retenção na fonte (ISS retido,
+  // IRRF/PIS/COFINS/CSLL) só muda quem recolhe, não reduz a receita.
+  // vLiq/ValorLiquidoNfse é só o valor líquido recebido em caixa.
   const valorTotal =
-    num(findTag(root, ["vLiq", "vServ", "ValorLiquidoNfse", "ValorServicos"])) || 0;
+    num(findTag(root, ["vServ", "ValorServicos", "vServPrest", "vLiq", "ValorLiquidoNfse"])) || 0;
   const emissao =
     text(findTag(root, ["dhEmi", "dEmi", "DataEmissao", "dhProc", "dCompet"])) || "";
   const chaveAttr = root.getAttribute("Id") ?? "";
@@ -197,14 +251,20 @@ export function parseNfseXml(xml: string, arquivo: string): NfseNota {
   const serieDoc = text(findTag(root, ["serie", "Serie"])) || "";
   // Layouts municipais (ex.: Caxias do Sul) não têm chave nacional: usa
   // referência do documento ou CNPJ+série+número como identificador único.
+  // ChaveAcesso (quando existe) é o identificador oficial do documento — mais
+  // robusto para deduplicação do que CodigoVerificacao, que é só o código de
+  // consulta pública da nota.
   const chave =
-    onlyDigits(text(findTag(root, ["chNFSe", "CodigoVerificacao"])) || chaveAttr) ||
+    onlyDigits(text(findTag(root, ["chNFSe", "ChaveAcesso", "CodigoVerificacao"])) || chaveAttr) ||
     text(findTag(root, ["refNF"])) ||
     (cnpjPrestador && numero ? `${cnpjPrestador}-${serieDoc}-${numero}` : "") ||
     null;
 
   // Aceita NFS-e nacional e municipal, desde que tenha número.
   const nacional = Boolean(numero);
+  // A NFS-e Nacional embute o bloco <DPS> gerado pelo Ambiente de Dados
+  // Nacional; layouts municipais legados (pré-adesão ao padrão nacional) não têm.
+  const formatoNacional = Boolean(findTag(root, ["DPS"]));
 
   return {
     arquivo,
@@ -221,6 +281,7 @@ export function parseNfseXml(xml: string, arquivo: string): NfseNota {
     dataEmissao: toIso(emissao),
     status: !nacional ? "nao_e_nfse_nacional" : cnpjPrestador ? "ok" : "sem_cnpj",
     itens,
+    formatoNacional,
   };
 }
 
@@ -369,6 +430,7 @@ export function parseNfseJson(raw: string, arquivo: string): NfseNota {
     dataEmissao: null,
     status: "xml_invalido",
     itens: [],
+    formatoNacional: false,
   };
 
   let json: unknown;
@@ -393,8 +455,10 @@ export function parseNfseJson(raw: string, arquivo: string): NfseNota {
 
   const chave = onlyDigits(deepText(json, ["chNFSe", "chaveAcesso", "chave"])) || null;
   const numero = deepText(json, ["nNFSe", "numero", "nDPS"]) || null;
+  // Mesma correção do leitor de XML: receita é o valor bruto faturado, não o
+  // líquido após retenção na fonte.
   const valorTotal = numeroBr(
-    deepText(json, ["vLiq", "vServ", "valorServicos", "valorLiquidoNfse"]),
+    deepText(json, ["vServ", "valorServicos", "vLiq", "valorLiquidoNfse"]),
   );
   const cnpjPrestador = cnpjDe(prest);
   const opSimpNac = deepText(json, ["opSimpNac"]);
@@ -425,12 +489,52 @@ export function parseNfseJson(raw: string, arquivo: string): NfseNota {
     dataEmissao: toIso(deepText(json, ["dhEmi", "dataEmissao", "dhProc", "dCompet"])),
     status: !(chave && numero) ? "nao_e_nfse_nacional" : cnpjPrestador ? "ok" : "sem_cnpj",
     itens: [],
+    formatoNacional: true,
   };
 }
 
-/** Lê o documento conforme o formato do arquivo. */
-export function parseNfseArquivo(item: NfseArquivo): NfseNota {
-  return item.formato === "json"
-    ? parseNfseJson(item.conteudo, item.arquivo)
-    : parseNfseXml(item.conteudo, item.arquivo);
+/**
+ * Prefeituras costumam exportar um "lote" com várias notas no mesmo arquivo
+ * XML (confirmado em notas reais de Fortaleza/ginfes: um único .xml chega a
+ * trazer mais de 80 <Nfse> diferentes). <InfNfse>/<infNFSe> é o envelope de
+ * uma nota completa em qualquer leiaute (municipal ou Nacional), então cada
+ * ocorrência é recortada como um documento próprio antes de aplicar a mesma
+ * leitura de nota única — sem isso, só a primeira nota do lote era lida e o
+ * resto do arquivo era descartado em silêncio.
+ *
+ * No lote do ginfes cada item vem num wrapper com prefixo de namespace (ex.:
+ * <ns2:Nfse>), contendo a nota (<Nfse><InfNfse>) e, quando existe, a
+ * confirmação de cancelamento (<Cancelamento>) como irmã dela — splitar por
+ * esse wrapper (não só pelo <InfNfse>) mantém as duas juntas, senão a
+ * confirmação de cancelamento fica para trás e a nota cancelada é lida como
+ * se fosse uma venda válida. Formatos sem esse wrapper (ex.: um único
+ * <infNFSe> solto) caem no fallback de sempre.
+ */
+/**
+ * O prefixo de namespace de um fragmento recortado (ex.: "ns2:") só é válido
+ * junto da declaração xmlns que o define — essa declaração vive no elemento
+ * raiz do arquivo original, que fica para trás no recorte. Sem isso o
+ * DOMParser rejeita o fragmento inteiro como XML inválido (prefixo não
+ * declarado). O parsing daqui em diante só procura por nome local da tag
+ * (findTag), então remover o prefixo não perde nenhuma informação.
+ */
+const removerPrefixosDeNamespace = (fragmento: string) =>
+  fragmento.replace(/<(\/?)[A-Za-z][\w.-]*:/g, "<$1");
+
+function splitNotaBlocks(xml: string): string[] {
+  const comWrapperPrefixado = xml.match(/<([A-Za-z][\w-]*):Nfse\b[^]*?<\/\1:Nfse>/g);
+  const blocos =
+    comWrapperPrefixado && comWrapperPrefixado.length > 0
+      ? comWrapperPrefixado
+      : (xml.match(/<(?:\w+:)?infnfse\b[^]*?<\/(?:\w+:)?infnfse>/gi) ?? [xml]);
+  return blocos.map(removerPrefixosDeNamespace);
+}
+
+/** Lê o documento conforme o formato do arquivo; um arquivo pode trazer mais de uma nota. */
+export function parseNfseArquivo(item: NfseArquivo): NfseNota[] {
+  if (item.formato === "json") return [parseNfseJson(item.conteudo, item.arquivo)];
+  const blocos = splitNotaBlocks(item.conteudo);
+  return blocos.map((bloco, i) =>
+    parseNfseXml(bloco, blocos.length > 1 ? `${item.arquivo}#${i + 1}` : item.arquivo),
+  );
 }

@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ParecerDashboard } from "@/components/cases/ParecerDashboard";
 import { ParecerApresentacao } from "@/components/cases/ParecerApresentacao";
 import { OfficeContactCta } from "@/components/contact/OfficeContactCta";
-import { Button, Notice } from "@/components/simulator/ui";
+import { Notice } from "@/components/simulator/ui";
 import { getParecerCompartilhado } from "@/lib/parecer.functions";
 import { useState } from "react";
 
@@ -72,32 +72,14 @@ function RelatorioDedicado() {
 
   return (
     <main className="min-h-screen bg-background">
-      <header className="bg-navy text-navy-foreground">
-        <div className="mx-auto max-w-6xl px-5 py-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-navy-foreground/70">
-            Relatório executivo · diagnóstico com documentos fiscais
-          </p>
-          <h1 className="mt-3 font-presentation-display text-3xl leading-tight sm:text-4xl">
-            {parecer.dados.sec1.cliente ?? "Diagnóstico da Reforma Tributária"}
-          </h1>
-          <p className="mt-3 text-sm text-navy-foreground/80">
-            Versão {parecer.versao} · gerado em{" "}
-            {new Date(parecer.gerado_em).toLocaleDateString("pt-BR")}
-          </p>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-6xl space-y-6 px-5 py-8">
-        <div className="flex justify-end">
-          <Button variant="ghost" onClick={() => setSlides(true)}>
-            Apresentação guiada
-          </Button>
-        </div>
-
+      <div className="mx-auto max-w-6xl space-y-6 px-5 py-5">
         <ParecerDashboard
           snapshot={parecer.dados}
           edicoes={parecer.edicoes}
           versao={parecer.versao}
+          geradoEm={parecer.gerado_em}
+          syncUrl
+          onApresentar={() => setSlides(true)}
         />
 
         <Notice>

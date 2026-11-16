@@ -92,6 +92,8 @@ export const LIMITACOES = {
     "Nos contratos de locação, o redutor aplicável, a rampa de transição e a condição do locador (contribuinte ou não) são premissas editáveis; contratos antigos registrados podem seguir regra específica de transição.",
   contratos:
     "Nos contratos de prestação continuada, a alíquota plena, a redução setorial, o custo direto e o aproveitamento de crédito do contratante são premissas informadas pelo analista.",
+  saldoCredor:
+    "O saldo credor de ICMS e de PIS/COFINS vem do último SPED importado no Caso — se houver período mais recente ainda não entregue, o saldo real pode ser outro. O cronograma de 240 parcelas do ICMS, a correção pelo IPCA e o deságio de cessão são estimativas sujeitas à homologação do saldo pela SEFAZ e à regulamentação da EC 132/2023.",
 } as const;
 
 export interface CargaLinhaSnap {
@@ -120,6 +122,23 @@ export interface ConcentracaoSnap {
   pendentes: number;
   /** Regime do fornecedor quando classificado na composição de carteira. */
   regime?: string | null;
+}
+
+/**
+ * Fornecedor de serviço tomado (aba "Serviços tomados"): só valor, regime e
+ * proveniência. O crédito de IBS/CBS não é guardado aqui — é calculado na
+ * tela, ano a ano, pela mesma alíquota de IBS/CBS do motor de regimes
+ * (Simples Nacional não gera crédito; os demais, alíquota cheia do ano).
+ */
+export interface ServicoTomadoSnap {
+  cnpj: string | null;
+  nome: string | null;
+  valorBase: number;
+  /** Regime do fornecedor quando classificado na composição de carteira. */
+  regime?: string | null;
+  /** "xml" = apurado nota a nota (NFS-e); "planilha" = valor informado pela
+   * planilha de contas a pagar, sem XML. */
+  fonte: "xml" | "planilha";
 }
 
 /** Nota de compra individual de um fornecedor (retrato, sem recálculo). */
@@ -258,10 +277,24 @@ export interface ParecerSnapshot {
     /** Detalhamento por fornecedor: notas, histórico mensal e participação. */
     detalhes?: FornecedorDetalheSnap[];
   };
+  /** Serviços tomados: junta o que foi apurado por XML de NFS-e com o que
+   * foi informado na planilha de contas a pagar, quando não há nota. O
+   * crédito (potencial/aproveitado/deixado na mesa) é calculado na tela,
+   * ano a ano — não fica guardado aqui. */
+  sec4b: {
+    baseTotal: number;
+    fornecedores: ServicoTomadoSnap[];
+  };
   sec5: {
     valorAtual: number;
     precoNecessario: number;
     variacaoMediaPct: number;
+    /** Valor líquido (sem os tributos atuais), somado direto dos itens — não derivado da rampa. */
+    desonerado: number;
+    /** Tributos atuais (PIS/COFINS/ICMS/ISS do item), somado direto dos itens. */
+    tributosAtuais: number;
+    /** Alíquota plena média aplicada, ponderada pelo valor líquido de cada item. */
+    aliquotaPlenaMedia: number;
     porPerfil: { perfil: string; valorAtual: number; precoNecessario: number; itens: number }[];
     porAno: { ano: number; precoNecessario: number; variacaoPct: number }[];
     /** Clientes atendidos: volume vendido e crédito de IBS/CBS transferido. */
@@ -272,9 +305,12 @@ export interface ParecerSnapshot {
       ano: number;
       cenario: string;
       receitaBruta: number;
+      deducoes: number;
+      receitaLiquida: number;
       custo: number;
       lucroBruto: number;
       despesas: number;
+      resultadoAntesIrcs: number;
       ircs: number | null;
       resultadoLiquido: number | null;
     }[];
@@ -291,13 +327,104 @@ export interface ParecerSnapshot {
   sec8: {
     regimeAtual: string | null;
     anoBase: number | null;
-    cenarios: { label: string; total: number | null; rate: number | null; atual: boolean; nota?: string }[];
+    cenarios: {
+      label: string;
+      total: number | null;
+      rate: number | null;
+      atual: boolean;
+      nota?: string;
+      /** Abertura por imposto (PIS, COFINS, ISS/ICMS, IBS+CBS, IRPJ, CSLL, CPP)
+       * do valor pós-reforma deste regime no ano — base da tabela e das
+       * barras empilhadas por imposto da aba Regimes. */
+      porImposto?: { categoria: string; valor: number }[];
+    }[];
+    /** Mesma comparação de regimes, recalculada para cada ano da transição —
+     * a aba "Regimes" do relatório reage à esteira de anos usando isto. */
+    porAno: {
+      ano: number;
+      cenarios: {
+        label: string;
+        total: number | null;
+        rate: number | null;
+        atual: boolean;
+        nota?: string;
+        porImposto?: { categoria: string; valor: number }[];
+      }[];
+    }[];
+    /** Comparação "hoje x reforma" do regime atual da empresa — mesmo cálculo
+     * do simulador simples (simulate().current / .reform), não uma nova
+     * conta: dá o ponto de partida antes de comparar com outros regimes. */
+    atualHojeXReforma: { hoje: { total: number; rate: number }; reforma: { total: number; rate: number } } | null;
+    /** Mesma comparação acima, recalculada para cada ano da transição. */
+    atualHojeXReformaPorAno: {
+      ano: number;
+      hoje: { total: number; rate: number };
+      reforma: { total: number; rate: number };
+    }[];
+    /** Ponte "hoje x com a reforma" do Lucro Real especificamente (mesmo
+     * quando o regime atual da empresa não é o Real), abalizada por imposto
+     * — alimenta o gráfico de cascata: de onde sai o custo de hoje (PIS,
+     * COFINS, ISS/ICMS), o que entra (IBS+CBS) e o que muda (IRPJ/CSLL/CPP)
+     * até chegar no custo com a reforma. Recalculada para cada ano. */
+    ponteLucroRealPorAno: {
+      ano: number;
+      hojeTotal: number;
+      reformaTotal: number;
+      hoje: { categoria: string; valor: number }[];
+      reforma: { categoria: string; valor: number }[];
+    }[];
     resultadoLiquido: number | null;
   };
   /** Submódulo Contratos e Aluguéis (opcional: só existe se houver contrato no Caso). */
   secAluguel?: AluguelSnap;
   /** Submódulo Gestão de Contratos e Reequilíbrio (opcional). */
   secContratos?: ReequilibrioSnap;
+  /** Submódulo Saldo credor acumulado de ICMS e PIS/COFINS (opcional: só
+   * existe se houver SPED importado no Caso). Traz apenas o saldo declarado
+   * — o cronograma das 240 parcelas do ICMS e a comparação com cessão a
+   * terceiro são recalculados no cliente (src/lib/saldos/calculo.ts), a
+   * partir deste saldo e das premissas editáveis em
+   * ParecerEdicoes.secSaldoCredor, para reagir sem precisar gerar nova
+   * versão. */
+  secSaldoCredor?: {
+    /** Saldo do SPED mais recente de cada tipo (ICMS-IPI e Contribuições,
+     * que podem ter períodos diferentes entre si). */
+    saldoIcmsAtual: number;
+    saldoPisCofinsAtual: number;
+    /** Competência (YYYY-MM) do SPED mais recente de cada tipo. */
+    competenciaIcms: string | null;
+    competenciaPisCofins: string | null;
+    /** Evolução mês a mês dos saldos declarados, ao longo de todos os SPEDs
+     * importados no Caso. */
+    porPeriodo: { periodo: string; saldoIcms: number | null; saldoPisCofins: number | null }[];
+    /** Débito mensal de CBS projetado, aproximado pela fatia CBS_SHARE do
+     * débito combinado de IBS+CBS que o fluxo de caixa (Seção 7) já projeta
+     * — o motor de cálculo nunca separa CBS de IBS, então isto é uma
+     * estimativa, não um valor exato. Alimenta o simulador de consumo do
+     * saldo de PIS/COFINS. */
+    cbsMensal: { periodo: string; valor: number }[];
+  };
+  /** Aviso quando o regime de PIS/COFINS declarado no SPED de Contribuições
+   * (cumulativo/não-cumulativo) diverge do que a simulação assumiu pelo
+   * `taxpayerType` (Presumido → cumulativo, Real → não-cumulativo) — indica
+   * possível erro de enquadramento na simulação. Ausente quando não há SPED
+   * de Contribuições, quando o regime é misto, ou quando bate. */
+  avisoRegimeSped?: string;
+  /** Carga por tributo individual (ICMS, IPI, PIS/COFINS, ISS x IBS/CBS),
+   * separada em compras e vendas — abre a mesma conta da DRE (Seção 6)
+   * imposto a imposto: "depois" usa a mesma fração de transição do ano
+   * selecionado, então a soma das linhas bate com a dedução/custo da DRE
+   * daquele ano, e não com o regime pleno (2033) fixo. */
+  secCargaTributaria: {
+    compras: { tributo: string; antes: number; depois: number }[];
+    vendas: { tributo: string; antes: number; depois: number }[];
+    /** Mesma comparação acima, recalculada para cada ano da transição. */
+    porAno: {
+      ano: number;
+      compras: { tributo: string; antes: number; depois: number }[];
+      vendas: { tributo: string; antes: number; depois: number }[];
+    }[];
+  };
   sec9: { sugestoes: Record<string, string> };
   sec10: { limitacoes: string[] };
 }
@@ -321,6 +448,23 @@ export interface ParecerEdicoes {
   sec8?: { recomendacao?: string };
   sec9?: Record<string, PlanoAcaoEdicao>;
   sec10?: { sintese?: string; proximaRevisao?: string };
+  /** Premissas do saldo credor acumulado (cessão a terceiro do ICMS) —
+   * editáveis para recalcular sem gerar nova versão. Padrão quando ausente:
+   * 30% de deságio, 12% a.a. de custo de oportunidade (mesmos da calculadora
+   * standalone de saldos credores). O IPCA não é editável aqui — é o índice
+   * fixado pela EC 132/2023 para a correção das parcelas de ICMS. */
+  secSaldoCredor?: {
+    desagioCessaoPct?: number;
+    custoOportunidadeAaPct?: number;
+    /** Texto livre do analista para cada uma das três possibilidades de uso
+     * do saldo de PIS/COFINS (art. 378 da LC 214/2025) — o sistema não
+     * calcula "quando faz sentido" nem "prazo e risco", só lista as opções. */
+    pisCofins?: {
+      compensacaoCbs?: { quandoFazSentido?: string; prazoRisco?: string };
+      outrosTributos?: { quandoFazSentido?: string; prazoRisco?: string };
+      ressarcimento?: { quandoFazSentido?: string; prazoRisco?: string };
+    };
+  };
 }
 
 export interface ParecerVersao {

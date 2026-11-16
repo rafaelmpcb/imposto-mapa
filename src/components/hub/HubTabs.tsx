@@ -5,6 +5,7 @@ import {
   FileText,
   Factory,
   PiggyBank,
+  Stethoscope,
   Wallet,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -17,7 +18,8 @@ export type HubTabId =
   | "contratos"
   | "creditos"
   | "monofasico"
-  | "capex";
+  | "capex"
+  | "equiparacao";
 
 export interface HubTab {
   id: HubTabId;
@@ -76,6 +78,13 @@ export const HUB_TABS: HubTab[] = [
     hint: "Crédito imediato x 1/48 avos",
     ativo: true,
     icon: Factory,
+  },
+  {
+    id: "equiparacao",
+    label: "Equiparação Hospitalar",
+    hint: "IRPJ/CSLL de clínicas: 8% e 12% sobre procedimentos",
+    ativo: true,
+    icon: Stethoscope,
   },
 ];
 

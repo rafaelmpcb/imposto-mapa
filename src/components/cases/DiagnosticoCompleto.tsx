@@ -12,8 +12,6 @@ import { PainelCargaPanel } from "@/components/cases/PainelCargaPanel";
 import { SpedPanel } from "@/components/cases/SpedPanel";
 import { CreditoNcmPanel } from "@/components/cases/CreditoNcmPanel";
 import { DebitoNcmPanel } from "@/components/cases/DebitoNcmPanel";
-
-import { NfseServicoPanel } from "@/components/cases/NfseServicoPanel";
 import { CreditoNbsPanel } from "@/components/cases/CreditoNbsPanel";
 import { DebitoNbsPanel } from "@/components/cases/DebitoNbsPanel";
 import { PrecoNecessarioPanel } from "@/components/cases/PrecoNecessarioPanel";
@@ -26,6 +24,7 @@ import { SplitPaymentPanel } from "@/components/cases/SplitPaymentPanel";
 import { ContratosAlugueisPanel } from "@/components/cases/ContratosAlugueisPanel";
 import { withAuthRetry } from "@/lib/auth-retry";
 import {
+  classifyCarteiraRowManually,
   deleteCarteiraRow,
   getCarteira,
   processCarteiraBatch,
@@ -41,8 +40,6 @@ import {
   type ParsedSheet,
 } from "@/lib/carteira/parse";
 import {
-  DIAGNOSTIC_DOCS,
-  DOC_STATUS_LABELS,
   onlyDigits,
   summarize,
   type CarteiraDraftRow,
@@ -79,6 +76,7 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
   const process = useServerFn(processCarteiraBatch);
   const removeRow = useServerFn(deleteCarteiraRow);
   const resetRows = useServerFn(resetCarteiraRows);
+  const classifyManually = useServerFn(classifyCarteiraRowManually);
 
   const [rows, setRows] = useState<CarteiraRow[]>([]);
   const [docs, setDocs] = useState<Record<string, string>>({});
@@ -120,8 +118,15 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
 
   const carteiraStatus = docs["composicao_carteira"] ?? "nao_enviado";
   const [regimeStatus, setRegimeStatus] = useState("nao_enviado");
-  const [servicosStatus, setServicosStatus] = useState("nao_enviado");
+  const [tomadosStatus, setTomadosStatus] = useState("nao_enviado");
+  const [prestadosStatus, setPrestadosStatus] = useState("nao_enviado");
+  const [pgdasCount, setPgdasCount] = useState(0);
+  const [spedStatus, setSpedStatus] = useState({ icmsMeses: 0, contribMeses: 0 });
+  // Lista de contrapartes fica fechada por padrão e só abre sozinha quando
+  // chega um envio novo nesta sessão — fora isso, o analista decide.
+  const [listaAberta, setListaAberta] = useState(false);
   const [nbsReload, setNbsReload] = useState(0);
+  const docsDialogRef = useRef<HTMLDialogElement>(null);
   // O PGDAS-D só existe no Simples Nacional.
   const isSimples = (caseItem.simulations[0]?.input as { taxpayerType?: string } | undefined)?.taxpayerType ===
     "simples";
@@ -129,10 +134,15 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
   /* ---------------- upload e mapeamento ---------------- */
 
   const [pacote, setPacote] = useState<PacoteTriado | null>(null);
+  // Planilha de contas a pagar de serviços tomados (sem XML): mesmo fluxo de
+  // mapeamento/conferência da composição geral, mas sempre "fornecedor" e
+  // marcada à parte (servico_tomado) para alimentar a aba "Serviços tomados".
+  const [servicoTomadoUpload, setServicoTomadoUpload] = useState(false);
 
-  const handleFiles = async (files: FileList | File[] | null) => {
+  const handleFiles = async (files: FileList | File[] | null, opts?: { servicoTomado?: boolean }) => {
     if (!files || files.length === 0) return;
     setError("");
+    const servicoTomado = opts?.servicoTomado === true;
     try {
       const parsed: Upload[] = [];
       for (const file of Array.from(files)) {
@@ -140,10 +150,11 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
         parsed.push({
           id: `${file.name}-${parsed.length}`,
           sheet,
-          tipo: "coluna",
-          mapping: guessMapping(sheet.headers, savedMapping),
+          tipo: servicoTomado ? "fornecedor" : "coluna",
+          mapping: guessMapping(sheet.headers, servicoTomado ? null : savedMapping),
         });
       }
+      setServicoTomadoUpload(servicoTomado);
       setUploads(parsed);
       setStep("mapping");
     } catch {
@@ -155,7 +166,9 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
     const all: CarteiraDraftRow[] = [];
     for (const upload of uploads) {
       const tipoFixo = upload.tipo === "coluna" ? null : upload.tipo;
-      all.push(...aggregate(upload.sheet, upload.mapping, { tipoFixo }));
+      all.push(
+        ...aggregate(upload.sheet, upload.mapping, { tipoFixo, servicoTomadoFixo: servicoTomadoUpload }),
+      );
     }
     // soma o mesmo CNPJ que apareça em mais de um arquivo, por tipo
     const merged = new Map<string, CarteiraDraftRow>();
@@ -171,6 +184,7 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
         found.valor = Math.round((found.valor + row.valor) * 100) / 100;
         found.linhas += row.linhas;
         found.nomesDivergentes = [...new Set([...found.nomesDivergentes, ...row.nomesDivergentes])];
+        found.servicoTomado = found.servicoTomado || row.servicoTomado;
       } else {
         merged.set(key, { ...row });
       }
@@ -214,20 +228,26 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
             caseId: caseItem.id,
             replace,
             mapping,
+            servicoTomado: servicoTomadoUpload,
             rows: validDrafts.map((d) => ({
               nome: d.nome,
               cnpj: onlyDigits(d.cnpj),
               tipo: d.tipo,
               valor: d.valor,
+              servicoTomado: d.servicoTomado,
             })),
           },
         }),
       );
       if (!res.ok) throw new Error("fail");
+      if (servicoTomadoUpload) setTomadosStatus("processado");
       setUploads([]);
       setDrafts([]);
+      setServicoTomadoUpload(false);
       setStep("docs");
+      setListaAberta(true);
       await refresh();
+      if (servicoTomadoUpload) void runDiagnostic();
     } catch {
       setError("Não foi possível gravar a composição de carteira.");
     } finally {
@@ -303,6 +323,11 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
 
   const handleDeleteRow = async (id: string) => {
     await withAuthRetry(() => removeRow({ data: { caseId: caseItem.id, id } }));
+    await refresh();
+  };
+
+  const handleClassifyManually = async (id: string, regime: "simples" | "regular") => {
+    await withAuthRetry(() => classifyManually({ data: { caseId: caseItem.id, id, regime } }));
     await refresh();
   };
 
@@ -468,6 +493,7 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
                 <th className="px-3 py-2">CNPJ</th>
                 <th className="px-3 py-2">Tipo</th>
                 <th className="px-3 py-2 text-right">Valor total</th>
+                <th className="px-3 py-2">Serviço tomado?</th>
                 <th className="px-3 py-2" />
               </tr>
             </thead>
@@ -506,9 +532,13 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
                   <td className="px-3 py-2">
                     <select
                       value={row.tipo}
-                      onChange={(e) =>
-                        patchDraft(index, { tipo: e.target.value as CarteiraTipo })
-                      }
+                      onChange={(e) => {
+                        const tipo = e.target.value as CarteiraTipo;
+                        patchDraft(index, {
+                          tipo,
+                          servicoTomado: tipo === "fornecedor" ? row.servicoTomado : false,
+                        });
+                      }}
                       className="rounded border border-input bg-card px-2 py-1 text-sm"
                     >
                       <option value="cliente">Cliente</option>
@@ -525,6 +555,20 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
                         row.invalido === "valor" ? "border-danger" : "border-input"
                       } bg-card`}
                     />
+                  </td>
+                  <td className="px-3 py-2">
+                    {row.tipo === "fornecedor" ? (
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          checked={row.servicoTomado}
+                          onChange={(e) => patchDraft(index, { servicoTomado: e.target.checked })}
+                        />
+                        Entra em "Serviços tomados"
+                      </label>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </td>
                   <td className="px-3 py-2">
                     <Button
@@ -558,146 +602,357 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
     );
   }
 
+  const carteiraCount = rows.filter((r) => !r.servico_tomado).length;
+  const servicoTomadoCount = rows.filter((r) => r.servico_tomado).length;
+  const carteiraEnviado = carteiraStatus !== "nao_enviado" || carteiraCount > 0;
+  const tomadosEnviado = tomadosStatus === "processado" || servicoTomadoCount > 0;
+  const prestadosEnviado = prestadosStatus === "processado";
+  const pgdasEnviado = (docs["dados_regime"] ?? regimeStatus) !== "nao_enviado";
+  const icmsEnviado = spedStatus.icmsMeses > 0;
+  const contribEnviado = spedStatus.contribMeses > 0;
+  const spedEnviado = icmsEnviado || contribEnviado;
+
+  type DocKey = "carteira" | "tomadas" | "prestadas" | "pgdas" | "icms" | "contrib";
+  const docsTipos: {
+    key: DocKey;
+    chip: string;
+    titulo: string;
+    descricao: string;
+    enviado: boolean;
+    statusTexto: string;
+  }[] = [
+    {
+      key: "carteira",
+      chip: "Carteira",
+      titulo: "Carteira de clientes e fornecedores",
+      descricao:
+        "Relatório de contas a receber/pagar ou razão analítico (.xlsx/.csv). Alternativa: NF-e em XML, compra e venda juntas.",
+      enviado: carteiraEnviado,
+      statusTexto: carteiraEnviado
+        ? `✓ ${carteiraCount} contraparte${carteiraCount === 1 ? "" : "s"} na composição`
+        : "Não enviado",
+    },
+    {
+      key: "tomadas",
+      chip: "NFS-e tomadas",
+      titulo: "NFS-e tomadas",
+      descricao:
+        "Serviços contratados pelo cliente (.xml, .json ou .zip do Portal Nacional). Sem XML, dá para enviar a planilha de contas a pagar.",
+      enviado: tomadosEnviado,
+      statusTexto:
+        tomadosStatus === "processado"
+          ? "✓ Enviado"
+          : servicoTomadoCount > 0
+            ? `✓ ${servicoTomadoCount} fornecedor${servicoTomadoCount === 1 ? "" : "es"} (planilha)`
+            : "Não enviado",
+    },
+    {
+      key: "prestadas",
+      chip: "NFS-e prestadas",
+      titulo: "NFS-e prestadas",
+      descricao: "Serviços prestados pelo cliente (.xml, .json ou .zip do Portal Nacional).",
+      enviado: prestadosEnviado,
+      statusTexto: prestadosEnviado ? "✓ Enviado" : "Não enviado",
+    },
+    ...(isSimples
+      ? [
+          {
+            key: "pgdas" as const,
+            chip: "PGDAS-D",
+            titulo: "Extrato do PGDAS-D",
+            descricao: "Apuração mensal do Simples Nacional (.pdf).",
+            enviado: pgdasEnviado,
+            statusTexto:
+              pgdasCount > 0 ? `✓ ${pgdasCount} mês(es)` : pgdasEnviado ? "✓ Enviado" : "Não enviado",
+          },
+        ]
+      : []),
+    {
+      key: "icms",
+      chip: "SPED ICMS-IPI",
+      titulo: "SPED EFD ICMS-IPI",
+      descricao: "Escrituração fiscal de ICMS e IPI (.txt). Por enquanto, só pelo pacote único.",
+      enviado: icmsEnviado,
+      statusTexto: icmsEnviado ? `✓ ${spedStatus.icmsMeses} mês(es)` : "Não enviado",
+    },
+    {
+      key: "contrib",
+      chip: "SPED Contribuições",
+      titulo: "SPED EFD Contribuições",
+      descricao: "Escrituração de PIS/COFINS (.txt). Por enquanto, só pelo pacote único.",
+      enviado: contribEnviado,
+      statusTexto: contribEnviado ? `✓ ${spedStatus.contribMeses} mês(es)` : "Não enviado",
+    },
+  ];
+  const totalTipos = docsTipos.length;
+  const enviadosCount = docsTipos.filter((d) => d.enviado).length;
+  const footTxt =
+    rows.length === 0
+      ? "Envie ao menos um documento para rodar o diagnóstico."
+      : enviadosCount === totalTipos
+        ? "Todos os tipos enviados. Confirme e rode o diagnóstico."
+        : `Faltam ${totalTipos - enviadosCount} tipo(s). Você pode rodar o diagnóstico mesmo assim; a análise fica mais completa com todos.`;
+
   return (
     <div className="space-y-5">
-      <div>
-        <h3 className="text-lg font-semibold text-foreground">
-          Documentos do Diagnóstico Completo
-        </h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Anexe os documentos do cliente. A verificação só roda depois que os anexos forem
-          confirmados.
-        </p>
-      </div>
-
       {error ? <Notice tone="warning">{error}</Notice> : null}
 
-      <UploadUnicoPanel
-        caseCnpj={caseItem.cnpj}
-        onTriado={(p) => {
-          setPacote(p);
-          if (p.resultado.planilhas.length > 0) void handleFiles(p.resultado.planilhas);
-        }}
-      />
-      <SpedPanel caseId={caseItem.id} pacote={pacote} />
-      <ul className="space-y-3">
-        {DIAGNOSTIC_DOCS.filter((doc) => doc.key !== "dados_regime" || isSimples).map((doc) => {
-          const status =
-            doc.key === "composicao_carteira"
-              ? carteiraStatus
-              : doc.key === "dados_regime"
-                ? (docs["dados_regime"] ?? regimeStatus)
-                : doc.key === "servicos_tomados"
-                  ? servicosStatus
-                  : "nao_enviado";
-          return (
-            <li
-              key={doc.key}
-              className={`rounded-xl border border-border bg-card p-4 ${doc.active ? "" : "opacity-60"}`}
-            >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-foreground">{doc.title}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{doc.description}</p>
-                </div>
-                <span className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-muted-foreground">
-                  {DOC_STATUS_LABELS[status]}
-                </span>
-              </div>
+      <section className="space-y-4 rounded-xl border border-border bg-card p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">Documentos do diagnóstico</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Envie tudo de uma vez: o sistema separa por tipo. Depois confira abaixo e reenvie só
+              o que faltar.
+            </p>
+          </div>
+          <div className="min-w-[150px] text-right">
+            <p className="text-xs font-semibold text-foreground">
+              {enviadosCount} de {totalTipos} tipos enviados
+            </p>
+            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-secondary sm:w-40">
+              <div
+                className="h-full rounded-full bg-mint transition-all"
+                style={{ width: `${totalTipos > 0 ? (enviadosCount / totalTipos) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+        </div>
 
-              {doc.key === "dados_regime" ? (
-                <div className="mt-3">
-                  <PgdasdPanel
-                    caseItem={caseItem}
-                    onStatus={setRegimeStatus}
-                    incoming={
-                      pacote?.resultado.pgdasd[0]
-                        ? { id: pacote.id, file: pacote.resultado.pgdasd[0] }
-                        : null
-                    }
-                  />
-                </div>
-              ) : doc.key === "servicos_tomados" ? (
-                <NfseServicoPanel
-                  caseId={caseItem.id}
-                  caseCnpj={caseItem.cnpj}
-                  onSaved={() => {
-                    setServicosStatus("processado");
-                    setNbsReload((v) => v + 1);
-                  }}
+        <UploadUnicoPanel
+          caseCnpj={caseItem.cnpj}
+          onTriado={(p) => {
+            setPacote(p);
+            if (p.resultado.planilhas.length > 0) void handleFiles(p.resultado.planilhas);
+          }}
+        />
+
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3">
+          <div className="flex flex-wrap gap-2" aria-label="Situação por tipo de documento">
+            {docsTipos.map((d) => (
+              <span
+                key={d.key}
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ${
+                  d.enviado
+                    ? "bg-mint-soft text-foreground"
+                    : "bg-secondary text-muted-foreground"
+                }`}
+              >
+                <i
+                  className={`inline-block h-2 w-2 rounded-full border ${
+                    d.enviado ? "border-mint bg-mint" : "border-muted-foreground bg-transparent"
+                  }`}
+                  aria-hidden
                 />
-              ) : doc.active ? (
-                <>
-                  <div className="mt-3 flex flex-wrap items-center gap-3">
-                    <label className="cursor-pointer rounded-md border border-dashed border-input px-3 py-2 text-sm font-semibold text-navy hover:bg-secondary">
-                      Anexar relatório (.xlsx ou .csv)
-                      <input
-                        type="file"
-                        multiple
-                        accept=".xlsx,.csv,.xls"
-                        className="hidden"
-                        onChange={(e) => void handleFiles(e.target.files)}
-                      />
-                    </label>
-                    <Button variant="ghost" onClick={() => downloadModel()}>
-                      Baixar modelo sugerido
-                    </Button>
-                    {rows.length > 0 ? (
-                      <span className="text-xs text-muted-foreground">
-                        {rows.length} contrapartes na composição atual
-                      </span>
-                    ) : null}
-                  </div>
-                  {doc.key === "composicao_carteira" ? (
-                    <>
-                      <NfeUnificadoPanel
-                        caseId={caseItem.id}
-                        caseCnpj={caseItem.cnpj}
-                        onApplied={refresh}
-                        incoming={pacote ? { id: pacote.id, files: pacote.resultado.nfe } : null}
-                      />
-                      <NfseCarteiraPanel
-                        caseId={caseItem.id}
-                        incoming={
-                          pacote
-                            ? {
-                                id: pacote.id,
-                                tomado: pacote.resultado.nfseTomado,
-                                prestado: pacote.resultado.nfsePrestado,
-                              }
-                            : null
-                        }
-                        onApplied={async () => {
-                          await refresh();
-                          setNbsReload((v) => v + 1);
-                        }}
-                      />
-                    </>
-                  ) : null}
-                </>
-              ) : null}
-            </li>
-          );
-        })}
-      </ul>
+                {d.chip}
+              </span>
+            ))}
+          </div>
+          <Button
+            variant="ghost"
+            onClick={() => docsDialogRef.current?.showModal()}
+            aria-haspopup="dialog"
+          >
+            {enviadosCount === totalTipos ? "Ver ou substituir documentos" : "Enviar por tipo de documento"}
+          </Button>
+        </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          disabled={running || rows.length === 0}
-          onClick={() => void runDiagnostic()}
-        >
-          {running ? "Processando..." : "Rodar Diagnóstico"}
-        </Button>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+          <p className="text-sm text-muted-foreground">{footTxt}</p>
+          <Button disabled={running || rows.length === 0} onClick={() => void runDiagnostic()}>
+            {running ? "Processando..." : "Rodar Diagnóstico"}
+          </Button>
+        </div>
         {progress ? (
           <span className="text-sm text-muted-foreground">
             Consultando {progress.done} de {progress.total} CNPJs...
           </span>
-        ) : rows.length === 0 ? (
-          <span className="text-sm text-muted-foreground">
-            Anexe e confirme a composição de carteira para liberar o processamento.
-          </span>
         ) : null}
+      </section>
+
+      {/* O wrapper fica sempre no DOM (só a visibilidade é alternada com
+       * "hidden") para o SpedPanel continuar montado e poder carregar e
+       * avisar, via onStatus, se há SPED gravado — se fosse removido do DOM
+       * enquanto "spedEnviado" é false, ele nunca chegaria a carregar e essa
+       * variável nunca sairia de false, mesmo com SPED já enviado numa
+       * sessão anterior. */}
+      <div hidden={!spedEnviado} className="rounded-xl border border-border bg-card p-4">
+        <details>
+          <summary className="cursor-pointer text-sm font-semibold text-foreground">
+            Conferência do SPED{" "}
+            <span className="ml-1 text-xs font-normal text-muted-foreground">Ver conferência</span>
+          </summary>
+          <div className="mt-3">
+            <SpedPanel caseId={caseItem.id} pacote={pacote} onStatus={setSpedStatus} />
+          </div>
+        </details>
       </div>
+
+      <dialog
+        ref={docsDialogRef}
+        aria-labelledby="docs-modal-title"
+        className="w-[min(720px,calc(100vw-24px))] max-h-[calc(100vh-40px)] rounded-2xl border border-border bg-card p-0 text-foreground shadow-2xl backdrop:bg-black/50"
+        onClick={(e) => {
+          if (e.target === docsDialogRef.current) docsDialogRef.current?.close();
+        }}
+      >
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-border bg-card p-4">
+          <div>
+            <h2 id="docs-modal-title" className="text-base font-semibold text-foreground">
+              Envio por tipo de documento
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Use para enviar, reenviar ou corrigir um tipo específico. O pacote único continua
+              valendo para tudo de uma vez.
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label="Fechar"
+            onClick={() => docsDialogRef.current?.close()}
+            className="rounded-full p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="max-h-[calc(100vh-170px)] overflow-y-auto p-4">
+          <div className="divide-y divide-border rounded-xl border border-border">
+            {docsTipos.map((d) => (
+              <div
+                key={d.key}
+                className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between"
+              >
+                <div className="flex gap-3">
+                  <span
+                    className={`mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full border text-[10px] ${
+                      d.enviado
+                        ? "border-mint bg-mint text-navy-foreground"
+                        : "border-border text-transparent"
+                    }`}
+                    aria-hidden
+                  >
+                    ✓
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{d.titulo}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{d.descricao}</p>
+                    <span
+                      className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-xs ${
+                        d.enviado ? "bg-mint-soft text-foreground" : "bg-secondary text-muted-foreground"
+                      }`}
+                    >
+                      {d.statusTexto}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-start gap-2 sm:items-end">
+                  {d.key === "carteira" ? (
+                    <>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <label className="cursor-pointer rounded-md border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary">
+                          {carteiraEnviado ? "Substituir relatório" : "Anexar relatório (.xlsx/.csv)"}
+                          <input
+                            type="file"
+                            multiple
+                            accept=".xlsx,.csv,.xls"
+                            className="hidden"
+                            onChange={(e) => void handleFiles(e.target.files)}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => downloadModel()}
+                          className="text-xs text-accent underline underline-offset-2 hover:opacity-80"
+                        >
+                          Baixar modelo sugerido
+                        </button>
+                      </div>
+                      <NfeUnificadoPanel
+                        caseId={caseItem.id}
+                        caseCnpj={caseItem.cnpj}
+                        onApplied={async () => {
+                          setListaAberta(true);
+                          await refresh();
+                          void runDiagnostic();
+                        }}
+                        incoming={pacote ? { id: pacote.id, files: pacote.resultado.nfe } : null}
+                      />
+                    </>
+                  ) : d.key === "tomadas" ? (
+                    <>
+                      <NfseCarteiraPanel
+                        caseId={caseItem.id}
+                        ladoFixo="tomado"
+                        incoming={
+                          pacote
+                            ? { id: pacote.id, tomado: pacote.resultado.nfseTomado, prestado: [] }
+                            : null
+                        }
+                        onApplied={async () => {
+                          setTomadosStatus("processado");
+                          setListaAberta(true);
+                          await refresh();
+                          setNbsReload((v) => v + 1);
+                          void runDiagnostic();
+                        }}
+                      />
+                      <label className="cursor-pointer text-xs text-accent underline underline-offset-2 hover:opacity-80">
+                        Sem XML? Enviar planilha de contas a pagar
+                        <input
+                          type="file"
+                          multiple
+                          accept=".xlsx,.csv,.xls"
+                          className="hidden"
+                          onChange={(e) => void handleFiles(e.target.files, { servicoTomado: true })}
+                        />
+                      </label>
+                    </>
+                  ) : d.key === "prestadas" ? (
+                    <NfseCarteiraPanel
+                      caseId={caseItem.id}
+                      ladoFixo="prestado"
+                      incoming={
+                        pacote
+                          ? { id: pacote.id, tomado: [], prestado: pacote.resultado.nfsePrestado }
+                          : null
+                      }
+                      onApplied={async () => {
+                        setPrestadosStatus("processado");
+                        setListaAberta(true);
+                        await refresh();
+                        setNbsReload((v) => v + 1);
+                        void runDiagnostic();
+                      }}
+                    />
+                  ) : d.key === "pgdas" ? (
+                    <PgdasdPanel
+                      caseItem={caseItem}
+                      onStatus={setRegimeStatus}
+                      onCount={setPgdasCount}
+                      incoming={
+                        pacote?.resultado.pgdasd[0]
+                          ? { id: pacote.id, file: pacote.resultado.pgdasd[0] }
+                          : null
+                      }
+                    />
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Enviado pelo pacote único.</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 flex items-center justify-between gap-3 border-t border-border bg-card p-4">
+          <span className="text-xs text-muted-foreground">
+            {enviadosCount} de {totalTipos} tipos enviados
+          </span>
+          <Button onClick={() => docsDialogRef.current?.close()}>Concluir</Button>
+        </div>
+      </dialog>
 
       {running ? (
         <Notice>
@@ -713,6 +968,9 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
         onRefreshRows={(ids) => void handleRefreshRows(ids)}
         onRetryErrors={() => void handleRetryErrors()}
         onDeleteRow={(id) => void handleDeleteRow(id)}
+        onClassifyManually={(id, regime) => void handleClassifyManually(id, regime)}
+        listaAberta={listaAberta}
+        onToggleLista={setListaAberta}
       />
 
       <PainelCargaPanel caseId={caseItem.id} reloadKey={nbsReload} />

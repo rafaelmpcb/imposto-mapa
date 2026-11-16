@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { Notice } from "@/components/simulator/ui";
 import { triarPacote, type TriagemResultado } from "@/lib/carga/triagem";
@@ -23,6 +23,7 @@ export function UploadUnicoPanel({
   const [drag, setDrag] = useState(false);
   const [resumo, setResumo] = useState<TriagemResultado | null>(null);
   const [error, setError] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const processar = async (list: FileList | null) => {
     if (!list || list.length === 0) return;
@@ -40,23 +41,30 @@ export function UploadUnicoPanel({
   };
 
   const semCnpj = (caseCnpj ?? "").replace(/\D/g, "").length !== 14;
+  const tiposReconhecidos = resumo
+    ? [
+        resumo.nfe.length > 0,
+        resumo.nfseTomado.length > 0,
+        resumo.nfsePrestado.length > 0,
+        resumo.pgdasd.length > 0,
+        resumo.planilhas.length > 0,
+        resumo.sped.length > 0,
+      ].filter(Boolean).length
+    : 0;
 
   return (
-    <div className="mb-4 rounded-xl border border-border bg-card p-4">
-      <p className="text-sm font-semibold text-foreground">Envio único do pacote</p>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Solte aqui o .zip ou os arquivos do jeito que vieram (ReceitaNetBX, contador ou ERP). O
-        sistema separa sozinho: NF-e de compra e venda, NFS-e tomadas e prestadas, extrato do
-        PGDAS-D, planilha de carteira e SPED (EFD ICMS-IPI e EFD Contribuições). Depois é só conferir cada bloco abaixo.
-      </p>
+    <div>
       {semCnpj ? (
-        <div className="mt-2">
+        <div className="mb-2">
           <Notice tone="warning">
             Cadastre o CNPJ do Caso: é ele que define o que é compra/venda e tomado/prestado.
           </Notice>
         </div>
       ) : null}
       <label
+        role="button"
+        tabIndex={0}
+        aria-label="Enviar pacote de documentos"
         onDragOver={(e) => {
           e.preventDefault();
           setDrag(true);
@@ -67,15 +75,23 @@ export function UploadUnicoPanel({
           setDrag(false);
           void processar(e.dataTransfer.files);
         }}
-        className={`mt-3 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-8 text-center text-sm font-semibold text-navy hover:bg-secondary ${
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
+        className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-8 text-center text-sm font-semibold text-navy hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
           drag ? "border-primary bg-secondary" : "border-input"
         }`}
       >
         {busy ? "Separando os arquivos…" : "Arraste o pacote aqui ou clique para escolher"}
         <span className="mt-1 text-xs font-normal text-muted-foreground">
-          .zip, .xml, .json, .txt (SPED), .pdf, .xlsx, .csv — vários de uma vez
+          .zip, .xml, .json, .txt (SPED), .pdf, .xlsx, .csv — vários de uma vez, do jeito que vieram
+          (ReceitaNetBX, contador ou ERP)
         </span>
         <input
+          ref={inputRef}
           type="file"
           multiple
           accept=".zip,.xml,.json,.pdf,.xlsx,.xls,.csv,.txt"
@@ -95,6 +111,10 @@ export function UploadUnicoPanel({
 
       {resumo ? (
         <div className="mt-3 space-y-2 text-sm">
+          <div className="rounded-lg bg-mint-soft px-3 py-2 text-sm text-foreground">
+            Pacote lido: o sistema reconheceu e separou {tiposReconhecidos} tipo
+            {tiposReconhecidos === 1 ? "" : "s"} de documento. Confira a lista abaixo.
+          </div>
           <Notice>
             {resumo.nfe.length} NF-e (compra/venda) · {resumo.nfseTomado.length} NFS-e tomada(s) ·{" "}
             {resumo.nfsePrestado.length} NFS-e prestada(s) · {resumo.pgdasd.length} PDF do PGDAS-D ·{" "}
@@ -111,7 +131,7 @@ export function UploadUnicoPanel({
               {resumo.sped.length} arquivo(s) do SPED identificado(s). (
               {resumo.sped.filter((x) => x.tipo === "icms_ipi").length} EFD ICMS-IPI ·{" "}
               {resumo.sped.filter((x) => x.tipo === "contribuicoes").length} EFD Contribuições) lido(s)
-              — veja o bloco "Escrituração fiscal (SPED)" abaixo.
+              — veja a "Conferência do SPED" abaixo.
             </p>
           ) : null}
           {resumo.naoReconhecidos.length > 0 ? (

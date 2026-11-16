@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { fetchAllRows } from "@/lib/supabase-paginate";
 import {
   ALIQUOTA_PLENA_PADRAO_PCT,
   CRONOGRAMA_PADRAO,
@@ -177,21 +178,34 @@ export const calcularPrecoNecessario = createServerFn({ method: "POST" })
     }
 
     // ---- mercadorias
-    const { data: itensMerc } = await supabaseAdmin
-      .from("nota_fiscal_venda_xml_item")
-      .select("*")
-      .eq("case_id", data.caseId)
-      .eq("status_classificacao", "ok");
-    const merc = (itensMerc ?? []) as Record<string, unknown>[];
+    // Paginado: o PostgREST limita toda resposta a 1000 linhas por padrão
+    // (config. do projeto), mesmo sem .limit() explícito — um caso real com
+    // 1000+ itens perderia os itens além do corte, silenciosamente.
+    const merc = await fetchAllRows<Record<string, unknown>>((from, to) =>
+      supabaseAdmin
+        .from("nota_fiscal_venda_xml_item")
+        .select("*")
+        .eq("case_id", data.caseId)
+        .eq("status_classificacao", "ok")
+        .order("id")
+        .range(from, to),
+    );
 
     const notaIds = [...new Set(merc.map((i) => String(i["nota_fiscal_venda_xml_id"])))];
     const notas = new Map<string, { nome: string | null; cnpj: string | null }>();
     if (notaIds.length > 0) {
-      const { data: cabecalhos } = await supabaseAdmin
-        .from("nota_fiscal_venda_xml")
-        .select("id,razao_social_destinatario,cnpj_destinatario")
-        .in("id", notaIds);
-      for (const n of (cabecalhos ?? []) as {
+      // Escopado por case_id e paginado: .in("id",[...]) estoura o limite de
+      // headers HTTP do PostgREST, e a resposta sem paginar vem truncada em
+      // 1000 linhas mesmo assim.
+      const cabecalhos = await fetchAllRows<Record<string, unknown>>((from, to) =>
+        supabaseAdmin
+          .from("nota_fiscal_venda_xml")
+          .select("id,razao_social_destinatario,cnpj_destinatario")
+          .eq("case_id", data.caseId)
+          .order("id")
+          .range(from, to),
+      );
+      for (const n of cabecalhos as {
         id: string;
         razao_social_destinatario: string | null;
         cnpj_destinatario: string | null;
@@ -215,22 +229,30 @@ export const calcularPrecoNecessario = createServerFn({ method: "POST" })
       }
     }
 
-    // ---- serviços prestados
-    const { data: itensServ } = await supabaseAdmin
-      .from("nota_servico_nfse_item_prestado")
-      .select("*")
-      .eq("case_id", data.caseId)
-      .eq("status_classificacao", "ok");
-    const serv = (itensServ ?? []) as Record<string, unknown>[];
+    // ---- serviços prestados (paginado, mesmo motivo acima)
+    const serv = await fetchAllRows<Record<string, unknown>>((from, to) =>
+      supabaseAdmin
+        .from("nota_servico_nfse_item_prestado")
+        .select("*")
+        .eq("case_id", data.caseId)
+        .eq("status_classificacao", "ok")
+        .order("id")
+        .range(from, to),
+    );
 
     const servNotaIds = [...new Set(serv.map((i) => String(i["nota_servico_id"])))];
     const servNotas = new Map<string, { nome: string | null; cnpj: string | null }>();
     if (servNotaIds.length > 0) {
-      const { data: cabecalhos } = await supabaseAdmin
-        .from("nota_servico_nfse")
-        .select("id,razao_social_tomador,cnpj_tomador")
-        .in("id", servNotaIds);
-      for (const n of (cabecalhos ?? []) as {
+      // Mesmo motivo acima: escopa por case_id e pagina.
+      const cabecalhos = await fetchAllRows<Record<string, unknown>>((from, to) =>
+        supabaseAdmin
+          .from("nota_servico_nfse")
+          .select("id,razao_social_tomador,cnpj_tomador")
+          .eq("case_id", data.caseId)
+          .order("id")
+          .range(from, to),
+      );
+      for (const n of cabecalhos as {
         id: string;
         razao_social_tomador: string | null;
         cnpj_tomador: string | null;
@@ -382,16 +404,36 @@ export const getPrecoNecessario = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const [{ data: precoMerc }, { data: precoServ }, { data: projecao }] = await Promise.all([
-      supabaseAdmin.from("nota_fiscal_venda_xml_item_preco").select("*").eq("case_id", data.caseId),
-      supabaseAdmin
-        .from("nota_servico_nfse_item_prestado_preco")
-        .select("*")
-        .eq("case_id", data.caseId),
-      supabaseAdmin
-        .from("preco_necessario_projecao_anual")
-        .select("ano,preco_necessario_ano,item_id,tipo_item")
-        .eq("case_id", data.caseId),
+    // O PostgREST limita toda resposta a 1000 linhas mesmo com .limit() maior
+    // (config. do projeto) — um caso real com centenas de itens × vários anos
+    // de projeção passa disso fácil (ex.: 505 itens × 7 anos = 3.535 linhas),
+    // então pagina de verdade em vez de só pedir um limite maior. Antes disso,
+    // sumiam os anos finais da rampa (2029-2033) do gráfico em silêncio.
+    const [precoMerc, precoServ, projecao] = await Promise.all([
+      fetchAllRows<Record<string, unknown>>((from, to) =>
+        supabaseAdmin
+          .from("nota_fiscal_venda_xml_item_preco")
+          .select("*")
+          .eq("case_id", data.caseId)
+          .order("id")
+          .range(from, to),
+      ),
+      fetchAllRows<Record<string, unknown>>((from, to) =>
+        supabaseAdmin
+          .from("nota_servico_nfse_item_prestado_preco")
+          .select("*")
+          .eq("case_id", data.caseId)
+          .order("id")
+          .range(from, to),
+      ),
+      fetchAllRows<Record<string, unknown>>((from, to) =>
+        supabaseAdmin
+          .from("preco_necessario_projecao_anual")
+          .select("ano,preco_necessario_ano,item_id,tipo_item,id")
+          .eq("case_id", data.caseId)
+          .order("id")
+          .range(from, to),
+      ),
     ]);
 
     const linhasMerc = (precoMerc ?? []) as Record<string, unknown>[];
@@ -413,30 +455,41 @@ export const getPrecoNecessario = createServerFn({ method: "POST" })
     const itens: PrecoItemRow[] = [];
 
     if (linhasMerc.length > 0) {
-      const ids = linhasMerc.map((l) => String(l["item_id"]));
-      const { data: origem } = await supabaseAdmin
-        .from("nota_fiscal_venda_xml_item")
-        .select("id,ncm,descricao,valor_item,nota_fiscal_venda_xml_id")
-        .in("id", ids);
-      const origemRows = (origem ?? []) as {
+      // Escopado por case_id e paginado: .in("id",[...centenas de item
+      // ids...]) estoura o limite de headers HTTP do PostgREST, e mesmo sem
+      // isso a resposta vem truncada em 1000 linhas — em ambos os casos os
+      // itens somem da tela mesmo já calculados (porId fica vazio, e o loop
+      // abaixo pula todas as linhas).
+      const origemRows = await fetchAllRows<{
         id: string;
         ncm: string | null;
         descricao: string | null;
         valor_item: number;
         nota_fiscal_venda_xml_id: string;
-      }[];
+      }>((from, to) =>
+        supabaseAdmin
+          .from("nota_fiscal_venda_xml_item")
+          .select("id,ncm,descricao,valor_item,nota_fiscal_venda_xml_id")
+          .eq("case_id", data.caseId)
+          .order("id")
+          .range(from, to),
+      );
       const notaIds = [...new Set(origemRows.map((o) => o.nota_fiscal_venda_xml_id))];
       const notas = new Map<string, { nome: string | null; cnpj: string | null }>();
       if (notaIds.length > 0) {
-        const { data: cab } = await supabaseAdmin
-          .from("nota_fiscal_venda_xml")
-          .select("id,razao_social_destinatario,cnpj_destinatario")
-          .in("id", notaIds);
-        for (const n of (cab ?? []) as {
+        const cab = await fetchAllRows<{
           id: string;
           razao_social_destinatario: string | null;
           cnpj_destinatario: string | null;
-        }[]) {
+        }>((from, to) =>
+          supabaseAdmin
+            .from("nota_fiscal_venda_xml")
+            .select("id,razao_social_destinatario,cnpj_destinatario")
+            .eq("case_id", data.caseId)
+            .order("id")
+            .range(from, to),
+        );
+        for (const n of cab) {
           notas.set(n.id, { nome: n.razao_social_destinatario, cnpj: n.cnpj_destinatario });
         }
       }
@@ -465,30 +518,38 @@ export const getPrecoNecessario = createServerFn({ method: "POST" })
     }
 
     if (linhasServ.length > 0) {
-      const ids = linhasServ.map((l) => String(l["item_id"]));
-      const { data: origem } = await supabaseAdmin
-        .from("nota_servico_nfse_item_prestado")
-        .select("id,nbs,descricao,valor_servico,nota_servico_id")
-        .in("id", ids);
-      const origemRows = (origem ?? []) as {
+      // Mesmo motivo do bloco de mercadorias acima: escopa por case_id e
+      // pagina.
+      const origemRows = await fetchAllRows<{
         id: string;
         nbs: string | null;
         descricao: string | null;
         valor_servico: number;
         nota_servico_id: string;
-      }[];
+      }>((from, to) =>
+        supabaseAdmin
+          .from("nota_servico_nfse_item_prestado")
+          .select("id,nbs,descricao,valor_servico,nota_servico_id")
+          .eq("case_id", data.caseId)
+          .order("id")
+          .range(from, to),
+      );
       const notaIds = [...new Set(origemRows.map((o) => o.nota_servico_id))];
       const notas = new Map<string, { nome: string | null; cnpj: string | null }>();
       if (notaIds.length > 0) {
-        const { data: cab } = await supabaseAdmin
-          .from("nota_servico_nfse")
-          .select("id,razao_social_tomador,cnpj_tomador")
-          .in("id", notaIds);
-        for (const n of (cab ?? []) as {
+        const cab = await fetchAllRows<{
           id: string;
           razao_social_tomador: string | null;
           cnpj_tomador: string | null;
-        }[]) {
+        }>((from, to) =>
+          supabaseAdmin
+            .from("nota_servico_nfse")
+            .select("id,razao_social_tomador,cnpj_tomador")
+            .eq("case_id", data.caseId)
+            .order("id")
+            .range(from, to),
+        );
+        for (const n of cab) {
           notas.set(n.id, { nome: n.razao_social_tomador, cnpj: n.cnpj_tomador });
         }
       }

@@ -129,11 +129,19 @@ function RegimeComparison({
   input,
   year,
   presentationMode,
+  readOnly = false,
+  onProfitMarginChange,
 }: {
   input: SimulationInput;
   year: YearId;
   presentationMode: boolean;
+  readOnly?: boolean;
+  onProfitMarginChange?: ((v: number) => void) | undefined;
 }) {
+  const isBusiness =
+    input.taxpayerType === "simples" ||
+    input.taxpayerType === "presumido" ||
+    input.taxpayerType === "real";
   const yearOptions: YearId[] = year === 2033 ? [2033] : [year, 2033];
   const [comparisonYear, setComparisonYear] = useState<YearId>(year);
   useEffect(() => {
@@ -221,7 +229,7 @@ function RegimeComparison({
                 </>
               ) : (
                 <p className="mt-3 text-sm font-semibold text-muted-foreground">
-                  Valor não exibido — fonte pendente de validação
+                  Não disponível para este cenário
                 </p>
               )}
               {item.isBest ? (
@@ -276,7 +284,30 @@ function RegimeComparison({
             ))
         : null}
 
-      {input.profitMargin === DEFAULT_PROFIT_MARGIN ? (
+      {isBusiness && !presentationMode && !readOnly && onProfitMarginChange ? (
+        <div className="mt-4 rounded-md border border-border bg-secondary px-4 py-3">
+          <label className="block text-xs font-medium text-muted-foreground">
+            Margem de lucro estimada (usada no Lucro Real)
+            <div className="mt-1 flex items-center gap-2">
+              <TextInput
+                type="number"
+                min={0}
+                max={100}
+                step="0.5"
+                value={input.profitMargin}
+                onChange={(e) => onProfitMarginChange(Number(e.target.value) || 0)}
+                className="w-24"
+              />
+              <span className="text-sm text-foreground">%</span>
+            </div>
+          </label>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            {input.profitMargin === DEFAULT_PROFIT_MARGIN
+              ? "Este comparativo usa o valor padrão de 20%. Se você souber a margem real da empresa (lucro líquido ÷ faturamento), ajuste aqui para um comparativo mais preciso."
+              : "Percentual do faturamento que sobra como lucro antes de IRPJ/CSLL — é o que define IRPJ e CSLL no Lucro Real."}
+          </p>
+        </div>
+      ) : input.profitMargin === DEFAULT_PROFIT_MARGIN ? (
         <p className="mt-4 rounded-md border border-border bg-secondary px-4 py-3 text-xs leading-relaxed text-muted-foreground">
           Este comparativo usa uma margem de lucro estimada em 20%, valor padrão. Se você souber a
           margem real da empresa (lucro líquido ÷ faturamento), informe-a nos Ajustes opcionais para
@@ -359,6 +390,7 @@ export function ResultView({
   onPresentationModeChange,
   cnpjData,
   readOnly = false,
+  onProfitMarginChange,
 }: {
   input: SimulationInput;
   year: YearId;
@@ -369,6 +401,10 @@ export function ResultView({
   onPresentationModeChange: (active: boolean) => void;
   cnpjData?: CnpjData | null;
   readOnly?: boolean;
+  /** Permite ajustar a margem de lucro estimada direto na tela de
+   * resultado — sem isso, o único jeito de mudar esse valor é voltar até a
+   * Etapa 2 do assistente, o que não é óbvio ao reabrir um cálculo salvo. */
+  onProfitMarginChange?: ((v: number) => void) | undefined;
 }) {
   const loadOfficeContact = useServerFn(getOfficeContact);
   const loadParameters = useServerFn(getParameters);
@@ -698,7 +734,13 @@ export function ResultView({
       <ImpactChart input={input} year={year} />
 
       {isBusiness ? (
-        <RegimeComparison input={input} year={year} presentationMode={presentationMode} />
+        <RegimeComparison
+          input={input}
+          year={year}
+          presentationMode={presentationMode}
+          readOnly={readOnly}
+          onProfitMarginChange={onProfitMarginChange}
+        />
       ) : null}
 
       {!presentationMode && !readOnly ? (

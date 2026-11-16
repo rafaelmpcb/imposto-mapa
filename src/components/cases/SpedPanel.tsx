@@ -28,7 +28,15 @@ function Diferenca({ sped, xml }: { sped: number; xml: number }) {
  * Escrituração (EFD ICMS-IPI e EFD Contribuições): apuração declarada, saldos
  * credores e conferência mês a mês contra os XMLs do Caso.
  */
-export function SpedPanel({ caseId, pacote }: { caseId: string; pacote: PacoteTriado | null }) {
+export function SpedPanel({
+  caseId,
+  pacote,
+  onStatus,
+}: {
+  caseId: string;
+  pacote: PacoteTriado | null;
+  onStatus?: (s: { icmsMeses: number; contribMeses: number }) => void;
+}) {
   const list = useServerFn(listSped);
   const save = useServerFn(saveSped);
   const remove = useServerFn(removeSped);
@@ -42,6 +50,11 @@ export function SpedPanel({ caseId, pacote }: { caseId: string; pacote: PacoteTr
     const r = await list({ data: { caseId } });
     setItens(r.itens);
     setConf(r.conferencia);
+    onStatus?.({
+      icmsMeses: r.itens.filter((i) => i.tipo === "icms_ipi").length,
+      contribMeses: r.itens.filter((i) => i.tipo === "contribuicoes").length,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseId, list]);
 
   useEffect(() => {

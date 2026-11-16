@@ -3,6 +3,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { filtrarNotasDuplicadas } from "@/lib/carga/dedup";
 import { registrarDuplicados } from "@/lib/carga/duplicados";
+import { aggregateNotas } from "@/lib/nfe/parse";
+import { fetchAllRows } from "@/lib/supabase-paginate";
 import type { NfeNota } from "@/lib/nfe/parse";
 import {
   FONTE_XML,
@@ -156,6 +158,10 @@ export const saveNotasCompra = createServerFn({ method: "POST" })
           quantidade: item.quantidade,
           valor_item: item.valorItem,
           tem_ibscbs: item.temIbscbs,
+          valor_icms: item.vICMS,
+          valor_ipi: item.vIPI,
+          valor_pis: item.vPIS,
+          valor_cofins: item.vCOFINS,
         };
         if (item.temIbscbs) {
           itensPayload.push({
@@ -202,11 +208,47 @@ export const saveNotasCompra = createServerFn({ method: "POST" })
       if (insItens.error) throw new Error(insItens.error.message);
     }
 
+    // Alimenta automaticamente a composição de carteira com os fornecedores
+    // desta leva, sem exigir o upload manual separado — mesmo princípio já
+    // aplicado às NFS-e em saveNotasServico. Quando o próprio XML já traz o
+    // CRT do emitente, usa direto; senão fica "pendente" para a consulta
+    // via BrasilAPI/CNPJá resolver.
+    const agregadosFornecedor = aggregateNotas(novas);
+    let novosPendentesCarteira = 0;
+    if (agregadosFornecedor.length > 0) {
+      const { data: existentesCarteira } = await supabaseAdmin
+        .from("composicao_carteira")
+        .select("cnpj")
+        .eq("case_id", data.caseId)
+        .eq("tipo", "fornecedor");
+      const cnpjsExistentes = new Set(
+        ((existentesCarteira ?? []) as { cnpj: string }[]).map((r) => r.cnpj),
+      );
+      const novosFornecedores = agregadosFornecedor.filter((a) => !cnpjsExistentes.has(a.cnpj));
+      novosPendentesCarteira = novosFornecedores.filter((a) => a.regime === "erro").length;
+      if (novosFornecedores.length > 0) {
+        const insCarteira = await supabaseAdmin.from("composicao_carteira").insert(
+          novosFornecedores.map((a) => ({
+            case_id: data.caseId,
+            nome: a.nome.slice(0, 200),
+            cnpj: a.cnpj,
+            tipo: "fornecedor",
+            valor_movimentado: a.valor,
+            regime: a.regime === "erro" ? "pendente" : a.regime,
+            status_consulta: a.regime === "erro" ? "pendente" : "ok",
+            fonte_classificacao: a.regime === "erro" ? "CNPJá — API Pública" : "NF-e — CRT do emitente",
+          })) as never,
+        );
+        if (insCarteira.error) throw new Error(insCarteira.error.message);
+      }
+    }
+
     return {
       ok: true as const,
       inserted: payload.length,
       itens: itensPayload.length,
       duplicados,
+      pendentesCarteira: novosPendentesCarteira,
     };
   });
 
@@ -235,26 +277,39 @@ export const getCreditoItens = createServerFn({ method: "POST" })
   .inputValidator((input: { caseId: string }) => input)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: itens } = await supabaseAdmin
-      .from("nota_fiscal_compra_xml_item")
-      .select("*")
-      .eq("case_id", data.caseId);
-    const lista = (itens ?? []) as Record<string, unknown>[];
+    // Paginado: o PostgREST limita toda resposta a 1000 linhas por padrão,
+    // mesmo sem .limit() — um caso real com 1000+ itens perderia os itens
+    // além do corte, silenciosamente.
+    const lista = await fetchAllRows<Record<string, unknown>>((from, to) =>
+      supabaseAdmin
+        .from("nota_fiscal_compra_xml_item")
+        .select("*")
+        .eq("case_id", data.caseId)
+        .order("id")
+        .range(from, to),
+    );
     const notaIds = [
       ...new Set(lista.map((i) => String(i["nota_fiscal_compra_xml_id"]))),
     ];
     const notas = new Map<string, { nome: string | null; cnpj: string | null; numero: string | null }>();
     if (notaIds.length > 0) {
-      const { data: notasData } = await supabaseAdmin
-        .from("nota_fiscal_compra_xml")
-        .select("id,razao_social_emitente,cnpj_emitente,numero_nota")
-        .in("id", notaIds);
-      for (const n of (notasData ?? []) as {
+      // Escopado por case_id e paginado, não por lista de ids: .in("id", [...])
+      // com centenas de UUIDs estoura o limite de headers HTTP do PostgREST,
+      // e mesmo sem isso a resposta sem paginar vem truncada em 1000 linhas.
+      const notasData = await fetchAllRows<{
         id: string;
         razao_social_emitente: string | null;
         cnpj_emitente: string | null;
         numero_nota: string | null;
-      }[]) {
+      }>((from, to) =>
+        supabaseAdmin
+          .from("nota_fiscal_compra_xml")
+          .select("id,razao_social_emitente,cnpj_emitente,numero_nota")
+          .eq("case_id", data.caseId)
+          .order("id")
+          .range(from, to),
+      );
+      for (const n of notasData) {
         notas.set(n.id, {
           nome: n.razao_social_emitente,
           cnpj: n.cnpj_emitente,

@@ -54,54 +54,60 @@ export const gerarContratosPdf = createServerFn({ method: "POST" })
     return { ok: true as const, arquivos: await montar(data) };
   });
 
-/** Gera, envia para a Clicksign e registra no caso. */
-export const enviarContratosClicksign = createServerFn({ method: "POST" })
+/** Gera, envia para a Assinafy e registra no caso. */
+export const enviarContratosAssinafy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: Entrada) => i)
   .handler(async ({ data, context }) => {
     if (!data.kinds.length) throw new Error("Selecione ao menos um contrato.");
     if (!data.contratante.email.trim() || !data.contratante.representante.trim())
       throw new Error("Informe nome e e-mail do representante do cliente para a assinatura.");
-    const { lerConfigClicksign } = await import("@/lib/integracao.functions");
-    const cfgRaw = await lerConfigClicksign();
-    const token = cfgRaw["clicksign_token"] ?? "";
-    if (!token) throw new Error("SEM_TOKEN");
-    const cs = await import("@/lib/clicksign/api.server");
-    const cfg = { token, ambiente: cfgRaw["clicksign_ambiente"] === "producao" ? "producao" : "sandbox" } as const;
+    const { lerConfigAssinafy } = await import("@/lib/integracao.functions");
+    const cfgRaw = await lerConfigAssinafy();
+    const apiKey = cfgRaw["assinafy_api_key"] ?? "";
+    const accountId = cfgRaw["assinafy_account_id"] ?? "";
+    if (!apiKey || !accountId) throw new Error("SEM_TOKEN");
+    const as = await import("@/lib/assinafy/api.server");
+    const cfg = {
+      apiKey,
+      accountId,
+      ambiente: cfgRaw["assinafy_ambiente"] === "producao" ? "producao" : "sandbox",
+    } as const;
 
     const arquivos = await montar(data);
-    const envelopeId = await cs.criarEnvelope(cfg, `${arquivos.map((a) => a.titulo).join(" + ")} — ${data.contratante.razaoSocial ?? ""}`);
-    const docs: { a: (typeof arquivos)[number]; id: string }[] = [];
-    for (const a of arquivos) docs.push({ a, id: await cs.adicionarDocumento(cfg, envelopeId, a.arquivo, a.base64) });
+    const documentosEnviados: { a: (typeof arquivos)[number]; documentId: string }[] = [];
+    for (const a of arquivos) {
+      const documentId = await as.uploadDocumento(cfg, a.arquivo, a.base64);
+      await as.aguardarDocumentoPronto(cfg, documentId);
+      documentosEnviados.push({ a, documentId });
+    }
 
-    const cliente = await cs.adicionarSignatario(cfg, envelopeId, {
+    const cliente = await as.criarSignatario(cfg, {
       nome: data.contratante.representante,
       email: data.contratante.email,
       celular: data.contratante.telefone,
       cpf: data.contratante.cpf,
     });
-    const advEmail = cfgRaw["clicksign_signatario_email"] || "leonardo@azevedoeadvogados.adv.br";
-    const advogado = await cs.adicionarSignatario(cfg, envelopeId, {
-      nome: cfgRaw["clicksign_signatario_nome"] || "Leonardo Azevedo Pinheiro Borges",
+    const advEmail = cfgRaw["assinafy_signatario_email"] || "leonardo@azevedoeadvogados.adv.br";
+    const advogado = await as.criarSignatario(cfg, {
+      nome: cfgRaw["assinafy_signatario_nome"] || "Leonardo Azevedo Pinheiro Borges",
       email: advEmail,
-      celular: cfgRaw["clicksign_signatario_celular"] ?? "",
-      cpf: cfgRaw["clicksign_signatario_cpf"] ?? "",
+      celular: cfgRaw["assinafy_signatario_celular"] ?? "",
+      cpf: cfgRaw["assinafy_signatario_cpf"] ?? "",
     });
-    for (const d of docs) {
-      await cs.vincularSignatario(cfg, envelopeId, d.id, cliente, "contractor");
-      await cs.vincularSignatario(cfg, envelopeId, d.id, advogado, "contractee");
-    }
-    await cs.ativarEnvelope(cfg, envelopeId);
-    try {
-      await cs.notificar(cfg, envelopeId, `Olá, ${data.contratante.representante.split(" ")[0]}. Segue a proposta para assinatura eletrônica.`);
-    } catch {
-      /* a ativação já envia o e-mail de solicitação */
-    }
-    const url = cs.linkEnvelope(cfg.ambiente, envelopeId);
+
+    const envelopeId = await as.criarEnvelope(
+      cfg,
+      `${arquivos.map((a) => a.titulo).join(" + ")} — ${data.contratante.razaoSocial ?? ""}`,
+      `Olá, ${data.contratante.representante.split(" ")[0]}. Segue a proposta para assinatura eletrônica.`,
+      [cliente, advogado],
+      documentosEnviados.map((d) => ({ documentId: d.documentId, signerIds: [cliente, advogado] })),
+    );
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const registros: ContratoCaso[] = [];
-    for (const { a, id: docKey } of docs) {
+    for (const { a, documentId } of documentosEnviados) {
+      const doc = await as.getDocumento(cfg, documentId);
       const { data: row, error } = await supabaseAdmin
         .from("case_contracts")
         .insert({
@@ -109,9 +115,9 @@ export const enviarContratosClicksign = createServerFn({ method: "POST" })
           kind: a.kind,
           titulo: a.titulo,
           status: "enviado",
-          document_key: docKey,
+          document_key: documentId,
           request_signature_key: envelopeId,
-          sign_url: url,
+          sign_url: as.linkDocumento(doc),
           ambiente: cfg.ambiente,
           params: { contratante: data.contratante, [a.kind]: a.kind === "diagnostico" ? data.diagnostico : data.assessoria } as never,
         })

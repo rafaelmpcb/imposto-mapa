@@ -3,16 +3,17 @@ import { useEffect, useState } from "react";
 
 import { Button, Field, Notice, Select, TextInput } from "@/components/simulator/ui";
 import { withAuthRetry } from "@/lib/auth-retry";
-import { getClicksignConfig, saveClicksignConfig, type ClicksignPublico } from "@/lib/integracao.functions";
+import { getAssinafyConfig, saveAssinafyConfig, type AssinafyPublico } from "@/lib/integracao.functions";
 
-const WEBHOOK_URL = "https://imposto-mapa.lovable.app/api/public/clicksign-webhook";
+const WEBHOOK_URL = "https://rcbinteligenciatributaria.com.br/api/public/assinafy-webhook";
 
-export function ClicksignPanel() {
-  const ler = useServerFn(getClicksignConfig);
-  const salvar = useServerFn(saveClicksignConfig);
-  const [cfg, setCfg] = useState<ClicksignPublico | null>(null);
-  const [token, setToken] = useState("");
-  const [hmac, setHmac] = useState("");
+export function AssinafyPanel() {
+  const ler = useServerFn(getAssinafyConfig);
+  const salvar = useServerFn(saveAssinafyConfig);
+  const [cfg, setCfg] = useState<AssinafyPublico | null>(null);
+  const [apiKey, setApiKey] = useState("");
+  const [accountId, setAccountId] = useState("");
+  const [webhookSecret, setWebhookSecret] = useState("");
   const [msg, setMsg] = useState("");
   const [erro, setErro] = useState("");
   const [busy, setBusy] = useState(false);
@@ -25,7 +26,7 @@ export function ClicksignPanel() {
 
   if (!cfg) return <p className="text-sm text-muted-foreground">Carregando integração...</p>;
 
-  const handleSalvar = async (removerToken = false) => {
+  const handleSalvar = async (removerApiKey = false) => {
     setBusy(true);
     setErro("");
     setMsg("");
@@ -33,9 +34,10 @@ export function ClicksignPanel() {
       await withAuthRetry(() =>
         salvar({
           data: {
-            token,
-            hmac,
-            removerToken,
+            apiKey,
+            accountId,
+            webhookSecret,
+            removerApiKey,
             ambiente: cfg.ambiente,
             signatarioNome: cfg.signatarioNome,
             signatarioEmail: cfg.signatarioEmail,
@@ -44,8 +46,9 @@ export function ClicksignPanel() {
           },
         }),
       );
-      setToken("");
-      setHmac("");
+      setApiKey("");
+      setAccountId("");
+      setWebhookSecret("");
       await carregar();
       setMsg("Integração salva.");
     } catch {
@@ -58,7 +61,7 @@ export function ClicksignPanel() {
   return (
     <section className="space-y-4 rounded-xl border border-border bg-card p-5">
       <div>
-        <h2 className="text-lg">Assinatura digital — Clicksign</h2>
+        <h2 className="text-lg">Assinatura digital — Assinafy</h2>
         <p className="text-sm text-muted-foreground">
           Cole aqui a chave de acesso quando tiver acesso à conta. Até lá, os contratos podem ser gerados e baixados normalmente.
         </p>
@@ -72,10 +75,16 @@ export function ClicksignPanel() {
           </Select>
         </Field>
         <Field
-          label="Chave de acesso (Access Token)"
-          hint={cfg.temToken ? `Cadastrada (termina em ${cfg.tokenFinal}). Deixe vazio para manter.` : "Ainda não cadastrada."}
+          label="Chave de API (X-Api-Key)"
+          hint={cfg.temApiKey ? `Cadastrada (termina em ${cfg.apiKeyFinal}). Deixe vazio para manter.` : "Ainda não cadastrada."}
         >
-          <TextInput type="password" value={token} onChange={(e) => setToken(e.target.value)} placeholder="Cole o token da Clicksign" autoComplete="off" />
+          <TextInput type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="Cole a chave da Assinafy" autoComplete="off" />
+        </Field>
+        <Field
+          label="ID da conta (Workspace)"
+          hint={cfg.temAccountId ? "Cadastrado. Deixe vazio para manter." : "Em My Account → Workspaces, na Assinafy."}
+        >
+          <TextInput value={accountId} onChange={(e) => setAccountId(e.target.value)} placeholder="Cole o ID da conta/workspace" autoComplete="off" />
         </Field>
         <Field label="Signatário do escritório — nome"><TextInput value={cfg.signatarioNome} onChange={(e) => setCfg({ ...cfg, signatarioNome: e.target.value })} /></Field>
         <Field label="E-mail do signatário"><TextInput type="email" value={cfg.signatarioEmail} onChange={(e) => setCfg({ ...cfg, signatarioEmail: e.target.value })} /></Field>
@@ -86,9 +95,9 @@ export function ClicksignPanel() {
       <div className="space-y-2 rounded-lg border border-border bg-secondary p-4 text-sm">
         <p className="font-semibold">Atualização automática do CRM (webhook)</p>
         <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
-          <li>Na Clicksign, abra Configurações → Webhooks → Adicionar.</li>
-          <li>Cole o endereço abaixo e marque os eventos de assinatura e de documento finalizado.</li>
-          <li>Copie a "chave HMAC SHA256" que a Clicksign mostrar e cole no campo abaixo.</li>
+          <li>Na Assinafy, abra Configurações → Webhooks → Adicionar endpoint.</li>
+          <li>Cole o endereço abaixo, informe um e-mail de contato e marque os eventos: document_ready, signer_signed_document e signer_rejected_document.</li>
+          <li>Ative "Standard Webhooks signature" e copie o segredo (começa com "whsec_") no campo abaixo.</li>
         </ol>
         <div className="flex flex-wrap items-center gap-2">
           <code className="rounded bg-card px-2 py-1 text-xs">{WEBHOOK_URL}</code>
@@ -96,8 +105,8 @@ export function ClicksignPanel() {
             Copiar endereço
           </Button>
         </div>
-        <Field label="Chave HMAC do webhook" hint={cfg.temHmac ? "Cadastrada. Deixe vazio para manter." : "Ainda não cadastrada — sem ela o CRM não é atualizado sozinho."}>
-          <TextInput type="password" value={hmac} onChange={(e) => setHmac(e.target.value)} autoComplete="off" />
+        <Field label="Segredo do webhook (whsec_...)" hint={cfg.temWebhookSecret ? "Cadastrado. Deixe vazio para manter." : "Ainda não cadastrado — sem ele o CRM não é atualizado sozinho."}>
+          <TextInput type="password" value={webhookSecret} onChange={(e) => setWebhookSecret(e.target.value)} autoComplete="off" />
         </Field>
       </div>
 
@@ -105,7 +114,7 @@ export function ClicksignPanel() {
       {msg ? <Notice>{msg}</Notice> : null}
       <div className="flex flex-wrap gap-2">
         <Button disabled={busy} onClick={() => void handleSalvar()}>{busy ? "Salvando..." : "Salvar integração"}</Button>
-        {cfg.temToken ? <Button variant="ghost" disabled={busy} onClick={() => void handleSalvar(true)}>Remover chave</Button> : null}
+        {cfg.temApiKey ? <Button variant="ghost" disabled={busy} onClick={() => void handleSalvar(true)}>Remover chave</Button> : null}
       </div>
     </section>
   );

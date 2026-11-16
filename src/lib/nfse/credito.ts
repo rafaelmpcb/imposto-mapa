@@ -101,20 +101,30 @@ export function creditoPorNbs(
     };
   }
 
-  if (linhas.length > 1 || linhas.some((l) => l.requer_revisao_humana)) {
-    if (linhas.length > 1) {
-      return {
-        cclasstrib: null,
-        baseCalculo: valorServico,
-        credito: 0,
-        fonte: "classificação tributária ambígua — requer revisão do analista",
-        status: "ambiguo_revisao_pendente",
-        opcoes: linhas.map(asOpcao),
-      };
-    }
+  if (linhas.length > 1) {
+    return {
+      cclasstrib: null,
+      baseCalculo: valorServico,
+      credito: 0,
+      fonte: "classificação tributária ambígua — requer revisão do analista",
+      status: "ambiguo_revisao_pendente",
+      opcoes: linhas.map(asOpcao),
+    };
   }
 
   const linha = linhas[0]!;
+
+  if (linha.requer_revisao_humana) {
+    return {
+      cclasstrib: linha.cclasstrib,
+      baseCalculo: valorServico,
+      credito: 0,
+      fonte: "classificação marcada pelo catálogo como pendente de revisão",
+      status: "ambiguo_revisao_pendente",
+      opcoes: [asOpcao(linha)],
+    };
+  }
+
   return {
     cclasstrib: linha.cclasstrib,
     baseCalculo: valorServico,

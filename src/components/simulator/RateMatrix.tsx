@@ -54,13 +54,6 @@ const ROWS: MatrixRow[] = [
     years: { 2026: "base", 2027: "base", 2033: "none" },
   },
   {
-    key: "CBS_TEST_RATE",
-    label: "CBS — alíquota de teste",
-    regimes: "Todos",
-    years: { 2026: "base", 2027: "none", 2033: "none" },
-    note: "Compensável com PIS/COFINS em 2026.",
-  },
-  {
     key: "IBS_TEST_RATE",
     label: "IBS — alíquota de teste",
     regimes: "Todos",

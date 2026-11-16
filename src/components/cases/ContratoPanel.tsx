@@ -15,12 +15,12 @@ import {
   type Segmento,
 } from "@/lib/contrato/tipos";
 import {
-  enviarContratosClicksign,
+  enviarContratosAssinafy,
   gerarContratosPdf,
   listarContratosCaso,
   type ContratoCaso,
 } from "@/lib/contratos-cliente.functions";
-import { getClicksignConfig } from "@/lib/integracao.functions";
+import { getAssinafyConfig } from "@/lib/integracao.functions";
 import { lookupCnpj, type CnpjData } from "@/lib/cnpj.functions";
 
 const STATUS: Record<string, string> = {
@@ -61,9 +61,9 @@ export function ContratoPanel({
   contatoEmail: string;
 }) {
   const gerar = useServerFn(gerarContratosPdf);
-  const enviar = useServerFn(enviarContratosClicksign);
+  const enviar = useServerFn(enviarContratosAssinafy);
   const listar = useServerFn(listarContratosCaso);
-  const lerCfg = useServerFn(getClicksignConfig);
+  const lerCfg = useServerFn(getAssinafyConfig);
   const consultarCnpj = useServerFn(lookupCnpj);
 
   const cnpjSalvo = cnpjDataDoCaso(caseItem);
@@ -89,7 +89,9 @@ export function ContratoPanel({
   const [ok, setOk] = useState("");
 
   useEffect(() => {
-    void withAuthRetry(() => lerCfg()).then((c) => setTemToken(c.temToken)).catch(() => setTemToken(false));
+    void withAuthRetry(() => lerCfg())
+      .then((c) => setTemToken(c.temApiKey && c.temAccountId))
+      .catch(() => setTemToken(false));
     void withAuthRetry(() => listar({ data: { caseId: caseItem.id } })).then((r) => setLista(r.items)).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseItem.id]);
@@ -154,7 +156,7 @@ export function ContratoPanel({
       setOk("Enviado! O cliente recebeu o pedido de assinatura por e-mail. Copie o link abaixo para mandar pelo WhatsApp.");
     } catch (e) {
       const m = e instanceof Error ? e.message : "";
-      setErro(m === "SEM_TOKEN" ? "A chave da Clicksign ainda não foi cadastrada nas configurações." : m || "Falha ao enviar.");
+      setErro(m === "SEM_TOKEN" ? "A chave da Assinafy ainda não foi cadastrada nas configurações." : m || "Falha ao enviar.");
     } finally {
       setBusy(false);
     }
@@ -175,7 +177,7 @@ export function ContratoPanel({
 
       {temToken === false ? (
         <Notice tone="warning">
-          A Clicksign ainda não está conectada. Você já pode gerar e baixar o PDF; para enviar, cadastre a chave em{" "}
+          A Assinafy ainda não está conectada. Você já pode gerar e baixar o PDF; para enviar, cadastre a chave em{" "}
           <Link to="/config-aliquotas" className="font-semibold underline">Configurações</Link>.
         </Notice>
       ) : null}

@@ -32,6 +32,7 @@ export async function registrarDuplicados(
   caseId: string,
   tipo: TipoDocumentoCarga,
   duplicados: { chave: string; arquivo: string }[],
+  motivo = "chave_acesso_ja_processada",
 ): Promise<number> {
   if (duplicados.length === 0) return 0;
   const porChave = new Map<string, { chave: string; arquivo: string }>();
@@ -41,7 +42,7 @@ export async function registrarDuplicados(
     tipo_documento: tipo,
     chave_acesso: d.chave,
     arquivo_original: d.arquivo.slice(0, 200),
-    motivo: "chave_acesso_ja_processada",
+    motivo,
   }));
   await (db as MinimalClient).from("case_documento_duplicado").insert(rows);
   return rows.length;

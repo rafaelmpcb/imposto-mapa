@@ -21,6 +21,9 @@ export interface CarteiraRow {
   status_consulta: CarteiraStatus;
   motivo_erro?: string | null;
   tentativas_consulta?: number;
+  /** Veio da planilha dedicada de serviços tomados (contas a pagar), não da
+   * composição geral — alimenta a aba "Serviços tomados" do parecer. */
+  servico_tomado?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -36,6 +39,10 @@ export interface CarteiraDraftRow {
   /** Quantas linhas do arquivo foram somadas nesta contraparte. */
   linhas: number;
   invalido: null | "cnpj" | "valor";
+  /** Fornecedor de serviço (NFS-e) sem XML: alimenta a aba "Serviços tomados"
+   * do parecer, além da composição geral. Só faz sentido para fornecedor —
+   * clientes não entram nesse cálculo. */
+  servicoTomado: boolean;
 }
 
 /** Mapeamento coluna do arquivo → campo do sistema (índice da coluna, -1 = não mapeado). */

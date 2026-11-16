@@ -57,10 +57,14 @@ export function NfseCarteiraPanel({
   caseId,
   onApplied,
   incoming,
+  ladoFixo,
 }: {
   caseId: string;
   onApplied: () => void | Promise<void>;
   incoming?: { id: number; tomado: File[]; prestado: File[] } | null;
+  /** Restringe o painel a um só lado (botão único, só processa esse lado do
+   * pacote) — usado quando "tomadas" e "prestadas" viram linhas separadas. */
+  ladoFixo?: Lado;
 }) {
   const salvarNotas = useServerFn(saveNotasServico);
   const classificar = useServerFn(classifyContrapartesServico);
@@ -116,10 +120,14 @@ export function NfseCarteiraPanel({
   useEffect(() => {
     if (!incoming) return;
     const novos: { files: File[]; lado: Lado }[] = [];
-    if (incoming.tomado.length) novos.push({ files: incoming.tomado, lado: "tomado" });
-    if (incoming.prestado.length) novos.push({ files: incoming.prestado, lado: "prestado" });
+    if ((!ladoFixo || ladoFixo === "tomado") && incoming.tomado.length) {
+      novos.push({ files: incoming.tomado, lado: "tomado" });
+    }
+    if ((!ladoFixo || ladoFixo === "prestado") && incoming.prestado.length) {
+      novos.push({ files: incoming.prestado, lado: "prestado" });
+    }
     if (novos.length) setFila(novos);
-  }, [incoming?.id]);
+  }, [incoming?.id, ladoFixo]);
 
   useEffect(() => {
     if (busy || drafts.length > 0 || fila.length === 0) return;
@@ -152,14 +160,21 @@ export function NfseCarteiraPanel({
       const validas: NfseNota[] = [];
       const recusadas: NaoProcessada[] = [];
       for (const bruto of brutos) {
-        const nota = parseNfseArquivo(bruto);
-        if (nota.status === "ok" || nota.status === "sem_cnpj") {
-          validas.push(nota);
-        } else {
-          recusadas.push({
-            arquivo: bruto.arquivo,
-            motivo: "não processado — não é NFS-e Nacional reconhecida",
-          });
+        // Um arquivo pode trazer várias notas (lote da prefeitura).
+        for (const nota of parseNfseArquivo(bruto)) {
+          if (nota.status === "ok" || nota.status === "sem_cnpj") {
+            validas.push(nota);
+          } else {
+            recusadas.push({
+              arquivo: nota.arquivo,
+              motivo:
+                nota.status === "cancelada"
+                  ? "nota cancelada — não entra na receita"
+                  : nota.status === "dps"
+                    ? "DPS (declaração prévia) — não é nota emitida"
+                    : "não processado — não é NFS-e Nacional reconhecida",
+            });
+          }
         }
       }
       setNaoProcessadas(recusadas);
@@ -253,36 +268,44 @@ export function NfseCarteiraPanel({
     }
   };
 
-  return (
-    <div className="mt-3 rounded-lg border border-dashed border-input p-3">
-      <p className="text-sm font-semibold text-foreground">Notas de serviço (NFS-e Nacional)</p>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Envie os arquivos do Portal Nacional da NFS-e (.xml, .json ou um .zip com vários). Use o
-        botão da direção certa: o serviço tomado entra como fornecedor, o serviço prestado entra como
-        cliente. Leiautes municipais antigos não são reconhecidos e ficam listados à parte.
-      </p>
+  const conteudo = (
+    <>
+      {!ladoFixo ? (
+        <>
+          <p className="text-sm font-semibold text-foreground">Notas de serviço (NFS-e Nacional)</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Envie os arquivos do Portal Nacional da NFS-e (.xml, .json ou um .zip com vários). Use o
+            botão da direção certa: o serviço tomado entra como fornecedor, o serviço prestado entra como
+            cliente. Leiautes municipais antigos não são reconhecidos e ficam listados à parte.
+          </p>
+        </>
+      ) : null}
 
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <label className="cursor-pointer rounded-md border border-dashed border-input px-3 py-2 text-sm font-semibold text-navy hover:bg-secondary">
-          Notas de serviço tomado
-          <input
-            type="file"
-            multiple
-            accept=".xml,.json,.zip"
-            className="hidden"
-            onChange={(e) => void handleFiles(e.target.files, "tomado")}
-          />
-        </label>
-        <label className="cursor-pointer rounded-md border border-dashed border-input px-3 py-2 text-sm font-semibold text-navy hover:bg-secondary">
-          Notas de serviço prestado
-          <input
-            type="file"
-            multiple
-            accept=".xml,.json,.zip"
-            className="hidden"
-            onChange={(e) => void handleFiles(e.target.files, "prestado")}
-          />
-        </label>
+        {!ladoFixo || ladoFixo === "tomado" ? (
+          <label className="cursor-pointer rounded-md border border-dashed border-input px-3 py-2 text-sm font-semibold text-navy hover:bg-secondary">
+            Notas de serviço tomado
+            <input
+              type="file"
+              multiple
+              accept=".xml,.json,.zip"
+              className="hidden"
+              onChange={(e) => void handleFiles(e.target.files, "tomado")}
+            />
+          </label>
+        ) : null}
+        {!ladoFixo || ladoFixo === "prestado" ? (
+          <label className="cursor-pointer rounded-md border border-dashed border-input px-3 py-2 text-sm font-semibold text-navy hover:bg-secondary">
+            Notas de serviço prestado
+            <input
+              type="file"
+              multiple
+              accept=".xml,.json,.zip"
+              className="hidden"
+              onChange={(e) => void handleFiles(e.target.files, "prestado")}
+            />
+          </label>
+        ) : null}
         {busy ? <span className="text-xs text-muted-foreground">Processando…</span> : null}
       </div>
 
@@ -438,6 +461,9 @@ export function NfseCarteiraPanel({
           </ul>
         </div>
       ) : null}
-    </div>
+    </>
   );
+
+  if (ladoFixo) return conteudo;
+  return <div className="mt-3 rounded-lg border border-dashed border-input p-3">{conteudo}</div>;
 }

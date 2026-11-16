@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { filtrarNotasDuplicadas } from "@/lib/carga/dedup";
 import { registrarDuplicados } from "@/lib/carga/duplicados";
 import type { NfeVendaNota } from "@/lib/nfe/parse-venda";
+import { fetchAllRows } from "@/lib/supabase-paginate";
 import type { ItemStatus, NcmExcecao, OpcaoCandidata } from "@/lib/nfe/credito";
 import { FONTE_XML_VENDA, debitoComReducao, debitoPorNcm } from "@/lib/nfe/debito";
 
@@ -221,27 +222,40 @@ export const getDebitoItens = createServerFn({ method: "POST" })
   .inputValidator((input: { caseId: string }) => input)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: itens } = await supabaseAdmin
-      .from("nota_fiscal_venda_xml_item")
-      .select("*")
-      .eq("case_id", data.caseId);
-    const lista = (itens ?? []) as Record<string, unknown>[];
+    // Paginado: o PostgREST limita toda resposta a 1000 linhas por padrão,
+    // mesmo sem .limit() — um caso real com 1000+ itens perderia os itens
+    // além do corte, silenciosamente.
+    const lista = await fetchAllRows<Record<string, unknown>>((from, to) =>
+      supabaseAdmin
+        .from("nota_fiscal_venda_xml_item")
+        .select("*")
+        .eq("case_id", data.caseId)
+        .order("id")
+        .range(from, to),
+    );
     const notaIds = [...new Set(lista.map((i) => String(i["nota_fiscal_venda_xml_id"])))];
     const notas = new Map<
       string,
       { nome: string | null; cnpj: string | null; numero: string | null }
     >();
     if (notaIds.length > 0) {
-      const { data: notasData } = await supabaseAdmin
-        .from("nota_fiscal_venda_xml")
-        .select("id,razao_social_destinatario,cnpj_destinatario,numero_nota")
-        .in("id", notaIds);
-      for (const n of (notasData ?? []) as {
+      // Escopado por case_id e paginado, não por lista de ids: .in("id", [...])
+      // com centenas de UUIDs estoura o limite de headers HTTP do PostgREST,
+      // e mesmo sem isso a resposta sem paginar vem truncada em 1000 linhas.
+      const notasData = await fetchAllRows<{
         id: string;
         razao_social_destinatario: string | null;
         cnpj_destinatario: string | null;
         numero_nota: string | null;
-      }[]) {
+      }>((from, to) =>
+        supabaseAdmin
+          .from("nota_fiscal_venda_xml")
+          .select("id,razao_social_destinatario,cnpj_destinatario,numero_nota")
+          .eq("case_id", data.caseId)
+          .order("id")
+          .range(from, to),
+      );
+      for (const n of notasData) {
         notas.set(n.id, {
           nome: n.razao_social_destinatario,
           cnpj: n.cnpj_destinatario,

@@ -3,6 +3,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { filtrarNotasDuplicadas } from "@/lib/carga/dedup";
 import { registrarDuplicados } from "@/lib/carga/duplicados";
+import { aggregateNfse } from "@/lib/nfse/parse";
+import { fetchAllRows } from "@/lib/supabase-paginate";
 import type { NfseNota, NfseServicoItem } from "@/lib/nfse/parse";
 import {
   FONTE_DOCUMENTO,
@@ -24,6 +26,38 @@ function chaveCompostaServico(
 ): string | null {
   if (!numero) return null;
   return `${cnpjPrestador ?? ""}|${serie ?? ""}|${numero}`;
+}
+
+/** Agrupa por prestador + tomador + dia de emissão (sem hora). */
+function chaveCorrespondenciaServico(nota: NfseNota): string | null {
+  if (!nota.cnpjPrestador || !nota.cnpjTomador || !nota.dataEmissao) return null;
+  return `${nota.cnpjPrestador}|${nota.cnpjTomador}|${nota.dataEmissao.slice(0, 10)}`;
+}
+
+/**
+ * Quando a mesma nota existe em layout municipal legado e em NFS-e Nacional
+ * (mesmo prestador, tomador e dia de emissão), descarta a municipal: a
+ * nacional é o padrão que todos os municípios estão migrando para adotar, e
+ * os dois formatos nunca deveriam entrar como duas notas separadas — além de
+ * terem numeração interna que não bate entre si, trazem valores diferentes
+ * (bruto no municipal vs líquido na nacional) para a mesma operação.
+ * Uma nota municipal sem par nacional no lote é mantida normalmente.
+ */
+function preferirNacional(notas: NfseNota[]): { mantidas: NfseNota[]; descartadas: NfseNota[] } {
+  const gruposComNacional = new Set<string>();
+  for (const n of notas) {
+    if (!n.formatoNacional) continue;
+    const chave = chaveCorrespondenciaServico(n);
+    if (chave) gruposComNacional.add(chave);
+  }
+  const mantidas: NfseNota[] = [];
+  const descartadas: NfseNota[] = [];
+  for (const n of notas) {
+    const chave = !n.formatoNacional ? chaveCorrespondenciaServico(n) : null;
+    if (chave && gruposComNacional.has(chave)) descartadas.push(n);
+    else mantidas.push(n);
+  }
+  return { mantidas, descartadas };
 }
 
 const TABELA_ITEM: Record<DirecaoServico, string> = {
@@ -82,8 +116,23 @@ export const saveNotasServico = createServerFn({ method: "POST" })
         .filter((c): c is string => Boolean(c)),
     );
 
+    const tipoCarga = direcao === "prestado" ? "nfse_prestado" : "nfse_tomado";
+
+    // Dentro do próprio lote: se a mesma operação veio em layout municipal
+    // legado e em NFS-e Nacional, fica só a nacional.
+    const { mantidas: notasPreferidas, descartadas: municipaisSuperadas } = preferirNacional(
+      data.notas,
+    );
+    await registrarDuplicados(
+      supabaseAdmin,
+      data.caseId,
+      tipoCarga,
+      municipaisSuperadas.map((n) => ({ chave: n.chave ?? n.arquivo, arquivo: n.arquivo })),
+      "layout_municipal_superado_por_nfse_nacional",
+    );
+
     const { novas: notas, repetidas } = filtrarNotasDuplicadas(
-      data.notas.map((n) => ({
+      notasPreferidas.map((n) => ({
         ...n,
         composta: chaveCompostaServico(n.cnpjPrestador, n.serie, n.numero),
       })),
@@ -93,7 +142,7 @@ export const saveNotasServico = createServerFn({ method: "POST" })
     const duplicados = await registrarDuplicados(
       supabaseAdmin,
       data.caseId,
-      direcao === "prestado" ? "nfse_prestado" : "nfse_tomado",
+      tipoCarga,
       repetidas,
     );
 
@@ -192,6 +241,8 @@ export const saveNotasServico = createServerFn({ method: "POST" })
                   vIBSUF: 0,
                   vIBSMun: 0,
                   vISS: 0,
+                  vPIS: 0,
+                  vCOFINS: 0,
                 },
               ]
             : [];
@@ -211,7 +262,9 @@ export const saveNotasServico = createServerFn({ method: "POST" })
           descricao: item.descricao?.slice(0, 300) ?? null,
           valor_servico: item.valorServico,
           tem_classificacao_documento: item.temClassificacaoDocumento,
-          ...(direcao === "prestado" ? { valor_iss: item.vISS } : {}),
+          valor_iss: item.vISS,
+          valor_pis: item.vPIS,
+          valor_cofins: item.vCOFINS,
         };
         if (item.temClassificacaoDocumento) {
           itensPayload.push({
@@ -258,11 +311,51 @@ export const saveNotasServico = createServerFn({ method: "POST" })
       if (ins.error) throw new Error(ins.error.message);
     }
 
+    // Alimenta automaticamente a composição de carteira com as contrapartes
+    // desta leva, sem exigir um upload separado: entra como "pendente" e o
+    // processamento de regime (BrasilAPI/CNPJá, já existente para a carteira
+    // de NF-e) resolve na sequência. Quando o próprio documento já informa o
+    // regime do prestador (lado "tomado"), usa direto — sem precisar consultar.
+    const tipoCarteira: "cliente" | "fornecedor" = direcao === "prestado" ? "cliente" : "fornecedor";
+    const agregadosCarteira = aggregateNfse(notas, direcao);
+    let novasPendentesCarteira = 0;
+    if (agregadosCarteira.length > 0) {
+      const { data: existentesCarteira } = await supabaseAdmin
+        .from("composicao_carteira")
+        .select("cnpj")
+        .eq("case_id", data.caseId)
+        .eq("tipo", tipoCarteira);
+      const cnpjsExistentes = new Set(
+        ((existentesCarteira ?? []) as { cnpj: string }[]).map((r) => r.cnpj),
+      );
+      const novasContrapartes = agregadosCarteira.filter((a) => !cnpjsExistentes.has(a.cnpj));
+      novasPendentesCarteira = novasContrapartes.filter((a) => !a.regimeDocumento).length;
+      if (novasContrapartes.length > 0) {
+        const insCarteira = await supabaseAdmin.from("composicao_carteira").insert(
+          novasContrapartes.map((a) => ({
+            case_id: data.caseId,
+            nome: a.nome.slice(0, 200),
+            cnpj: a.cnpj,
+            tipo: tipoCarteira,
+            valor_movimentado: a.valor,
+            regime: a.regimeDocumento ?? "pendente",
+            status_consulta: a.regimeDocumento ? "ok" : "pendente",
+            fonte_classificacao: a.regimeDocumento
+              ? FONTE_NFSE_DOCUMENTO
+              : "CNPJá — API Pública",
+          })) as never,
+        );
+        if (insCarteira.error) throw new Error(insCarteira.error.message);
+      }
+    }
+
     return {
       ok: true as const,
       inserted: payload.length,
       itens: itensPayload.length,
       duplicados,
+      municipaisSuperadas: municipaisSuperadas.length,
+      pendentesCarteira: novasPendentesCarteira,
     };
   });
 
@@ -308,27 +401,41 @@ export const getCreditoServicoItens = createServerFn({ method: "POST" })
   .inputValidator((input: { caseId: string }) => input)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: itens } = await supabaseAdmin
-      .from("nota_servico_nfse_item")
-      .select("*")
-      .eq("case_id", data.caseId);
-    const lista = (itens ?? []) as Record<string, unknown>[];
+    // Paginado: o PostgREST limita toda resposta a 1000 linhas por padrão,
+    // mesmo sem .limit() — um caso real com 1000+ itens perderia os itens
+    // além do corte, silenciosamente.
+    const lista = await fetchAllRows<Record<string, unknown>>((from, to) =>
+      supabaseAdmin
+        .from("nota_servico_nfse_item")
+        .select("*")
+        .eq("case_id", data.caseId)
+        .order("id")
+        .range(from, to),
+    );
     const notaIds = [...new Set(lista.map((i) => String(i["nota_servico_id"])))];
     const notas = new Map<
       string,
       { nome: string | null; cnpj: string | null; numero: string | null }
     >();
     if (notaIds.length > 0) {
-      const { data: notasData } = await supabaseAdmin
-        .from("nota_servico_nfse")
-        .select("id,razao_social_prestador,cnpj_prestador,numero_nota")
-        .in("id", notaIds);
-      for (const n of (notasData ?? []) as {
+      // Escopado por case_id e paginado (não por lista de ids): um caso real
+      // pode ter centenas de notas, e .in("id", [...]) com tantos UUIDs
+      // estoura o limite de ~16KB de headers HTTP do PostgREST — e mesmo sem
+      // isso, a resposta sem paginar vem truncada em 1000 linhas.
+      const notasData = await fetchAllRows<{
         id: string;
         razao_social_prestador: string | null;
         cnpj_prestador: string | null;
         numero_nota: string | null;
-      }[]) {
+      }>((from, to) =>
+        supabaseAdmin
+          .from("nota_servico_nfse")
+          .select("id,razao_social_prestador,cnpj_prestador,numero_nota")
+          .eq("case_id", data.caseId)
+          .order("id")
+          .range(from, to),
+      );
+      for (const n of notasData) {
         notas.set(n.id, {
           nome: n.razao_social_prestador,
           cnpj: n.cnpj_prestador,
@@ -366,27 +473,37 @@ export const getDebitoServicoItens = createServerFn({ method: "POST" })
   .inputValidator((input: { caseId: string }) => input)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: itens } = await supabaseAdmin
-      .from("nota_servico_nfse_item_prestado" as "nota_servico_nfse_item")
-      .select("*")
-      .eq("case_id", data.caseId);
-    const lista = (itens ?? []) as Record<string, unknown>[];
+    // Paginado: mesmo motivo do getCreditoServicoItens acima.
+    const lista = await fetchAllRows<Record<string, unknown>>((from, to) =>
+      supabaseAdmin
+        .from("nota_servico_nfse_item_prestado" as "nota_servico_nfse_item")
+        .select("*")
+        .eq("case_id", data.caseId)
+        .order("id")
+        .range(from, to),
+    );
     const notaIds = [...new Set(lista.map((i) => String(i["nota_servico_id"])))];
     const notas = new Map<
       string,
       { nome: string | null; cnpj: string | null; numero: string | null }
     >();
     if (notaIds.length > 0) {
-      const { data: notasData } = await supabaseAdmin
-        .from("nota_servico_nfse")
-        .select("id,razao_social_tomador,cnpj_tomador,numero_nota")
-        .in("id", notaIds);
-      for (const n of (notasData ?? []) as {
+      // Mesmo motivo do getCreditoServicoItens acima: escopa por case_id e
+      // pagina, em vez de .in("id", [...centenas de UUIDs...]).
+      const notasData = await fetchAllRows<{
         id: string;
         razao_social_tomador: string | null;
         cnpj_tomador: string | null;
         numero_nota: string | null;
-      }[]) {
+      }>((from, to) =>
+        supabaseAdmin
+          .from("nota_servico_nfse")
+          .select("id,razao_social_tomador,cnpj_tomador,numero_nota")
+          .eq("case_id", data.caseId)
+          .order("id")
+          .range(from, to),
+      );
+      for (const n of notasData) {
         notas.set(n.id, {
           nome: n.razao_social_tomador,
           cnpj: n.cnpj_tomador,
