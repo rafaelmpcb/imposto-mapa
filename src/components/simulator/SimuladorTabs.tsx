@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 
-import logoNegativa from "@/assets/rcb-logo-negativa-crop.png";
+import { WhitelabelMark } from "@/components/brand/WhitelabelMark";
 
 type CalcRoute =
   | "/simulador"
@@ -12,18 +12,14 @@ type CalcRoute =
   | "/monofasico"
   | "/equiparacao-hospitalar";
 
-/** Barra de marca das calculadoras públicas: logo RCB e retorno ao portal. */
+/** Barra de marca das calculadoras públicas: logo e retorno ao portal. */
 export function SimuladorTabs({ active }: { active?: CalcRoute }) {
   void active;
   return (
     <nav className="border-b border-white/10 bg-navy">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3">
-        <Link to="/" aria-label="Página inicial da RCB Inteligência Tributária">
-          <img
-            src={logoNegativa}
-            alt="RCB Inteligência Tributária"
-            className="h-11 w-auto sm:h-12"
-          />
+        <Link to="/" aria-label="Página inicial" className="text-white">
+          <WhitelabelMark size="sm" />
         </Link>
         <Link
           to="/"

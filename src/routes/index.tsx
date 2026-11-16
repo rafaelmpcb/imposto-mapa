@@ -1,13 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { OfficeContactCta } from "@/components/contact/OfficeContactCta";
-
-import predioDados from "@/assets/rcb-predio-dados.jpg";
-import logoNegativa from "@/assets/rcb-logo-negativa-crop.png";
+import { WhitelabelMark } from "@/components/brand/WhitelabelMark";
 
 import { LEGAL_REFERENCE_DATE } from "@/lib/tax/constants";
 
-const TITLE = "RCB Inteligência Tributária — simuladores de impacto da Reforma (IBS e CBS)";
+const TITLE = "VÉRTICE Inteligência Tributária — simuladores de impacto da Reforma (IBS e CBS)";
 const DESCRIPTION =
   "Assessoria tributária orientada a dados: 7 simuladores proprietários de IBS/CBS, contratos, locação, CAPEX, saldos credores, PIS/COFINS monofásico e equiparação hospitalar para decisões de diretoria.";
 
@@ -42,8 +40,6 @@ type Modulo = {
   itens: string[];
   metricaValor: string;
   metricaRotulo: string;
-  /** Curva ilustrativa (8 pontos) só para dar textura visual ao card — não é dado real. */
-  grafico: number[];
   to: Rota;
   cta: string;
 };
@@ -62,7 +58,6 @@ const MODULOS: Modulo[] = [
     ],
     metricaValor: "2026 → 2033",
     metricaRotulo: "Curva completa da transição",
-    grafico: [15, 22, 30, 42, 55, 68, 80, 94],
     to: "/simulador",
     cta: "Simular impacto",
   },
@@ -79,7 +74,6 @@ const MODULOS: Modulo[] = [
     ],
     metricaValor: "70%",
     metricaRotulo: "Redutor imobiliário aplicado",
-    grafico: [52, 48, 60, 55, 70, 65, 78, 72],
     to: "/aluguel",
     cta: "Abrir calculadora",
   },
@@ -96,7 +90,6 @@ const MODULOS: Modulo[] = [
     ],
     metricaValor: "3 cenários",
     metricaRotulo: "Margem, custo líquido e equilíbrio",
-    grafico: [40, 55, 50, 65, 60, 75, 70, 85],
     to: "/contratos",
     cta: "Abrir calculadora",
   },
@@ -113,7 +106,6 @@ const MODULOS: Modulo[] = [
     ],
     metricaValor: "240 meses",
     metricaRotulo: "Horizonte de devolução projetado",
-    grafico: [20, 28, 35, 45, 55, 68, 80, 95],
     to: "/saldos-credores",
     cta: "Abrir calculadora",
   },
@@ -130,7 +122,6 @@ const MODULOS: Modulo[] = [
     ],
     metricaValor: "48 meses",
     metricaRotulo: "Crédito parcelado que deixa de existir",
-    grafico: [90, 70, 55, 40, 30, 22, 15, 10],
     to: "/capex",
     cta: "Abrir calculadora",
   },
@@ -147,7 +138,6 @@ const MODULOS: Modulo[] = [
     ],
     metricaValor: "5 anos",
     metricaRotulo: "Período passível de recuperação",
-    grafico: [30, 45, 42, 58, 55, 70, 68, 82],
     to: "/monofasico",
     cta: "Abrir calculadora",
   },
@@ -164,7 +154,6 @@ const MODULOS: Modulo[] = [
     ],
     metricaValor: "8% e 12%",
     metricaRotulo: "Nova base de IRPJ e CSLL sobre procedimentos",
-    grafico: [25, 38, 35, 50, 48, 62, 60, 76],
     to: "/equiparacao-hospitalar",
     cta: "Simular agora",
   },
@@ -253,117 +242,58 @@ const TIMELINE = [
   },
 ];
 
-/** Mini-gráfico de barras (decorativo), no mesmo estilo dos gráficos reais do sistema
- * (barras com topo arredondado, como os Recharts `Bar` do parecer). */
-function MiniBars({ data, tone = "green" }: { data: number[]; tone?: "green" | "navy" }) {
-  const max = Math.max(...data);
-  const min = Math.min(...data, 0);
-  const range = max - min || 1;
-  const fill =
-    tone === "green"
-      ? "bg-gradient-to-t from-rcb-green/40 to-rcb-green"
-      : "bg-gradient-to-t from-rcb-navy/60 to-[#1e3a5f]";
+function ModuloRow({ modulo }: { modulo: Modulo }) {
   return (
-    <div className="mt-6 flex h-16 items-end gap-1.5" aria-hidden>
-      {data.map((v, i) => {
-        const pct = ((v - min) / range) * 100;
-        return (
-          <span
-            key={i}
-            style={{ height: `${Math.max(10, pct)}%` }}
-            className={`flex-1 rounded-t-md ${fill}`}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-function ModuloShowcase({ modulo, index }: { modulo: Modulo; index: number }) {
-  const inverso = index % 2 === 1;
-  return (
-    <article className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-sm transition-colors duration-300 hover:border-rcb-green/40">
-      <span
-        aria-hidden
-        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-rcb-green to-transparent opacity-70"
-      />
-      <div
-        className={`flex flex-col gap-8 p-7 sm:p-9 lg:flex-row lg:items-center ${
-          inverso ? "lg:flex-row-reverse" : ""
-        }`}
-      >
-        <div className="lg:w-3/5">
-          <div className="flex items-center gap-3">
-            <span className="font-brand text-xs font-bold tracking-[0.3em] text-rcb-green">
-              {modulo.numero}
-            </span>
-            <span className="rounded-full border border-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/70">
-              {modulo.chamada}
-            </span>
+    <li className="group border-t border-white/10 py-8 first:border-t-0">
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex gap-5 sm:max-w-xl sm:gap-7">
+          <span className="font-brand shrink-0 text-sm font-bold tracking-[0.25em] text-brand-bronze">
+            {modulo.numero}
+          </span>
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <h3 className="font-brand text-xl font-bold text-white sm:text-2xl">{modulo.titulo}</h3>
+              <span className="rounded-full border border-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/60">
+                {modulo.chamada}
+              </span>
+            </div>
+            <p className="mt-3 text-sm leading-relaxed text-white/65">{modulo.resumo}</p>
+            <ul className="mt-4 flex flex-wrap gap-2">
+              {modulo.itens.map((item) => (
+                <li key={item} className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/55">
+                  {item}
+                </li>
+              ))}
+            </ul>
           </div>
+        </div>
 
-          <h3 className="font-brand mt-4 flex items-center gap-2 text-xl font-bold leading-snug text-white sm:text-2xl">
-            {modulo.titulo}
-            <span
-              aria-hidden
-              className="text-rcb-green transition-transform duration-300 group-hover:translate-x-1"
-            >
-              →
-            </span>
-          </h3>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/70">{modulo.resumo}</p>
-
-          <ul className="mt-5 flex flex-wrap gap-2">
-            {modulo.itens.map((item) => (
-              <li
-                key={item}
-                className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-white/65"
-              >
-                {item}
-              </li>
-            ))}
-          </ul>
-
+        <div className="flex shrink-0 flex-col items-start gap-3 pl-[52px] sm:items-end sm:pl-0 sm:text-right">
+          <div>
+            <p className="font-brand text-2xl font-extrabold text-brand-gold">{modulo.metricaValor}</p>
+            <p className="mt-1 max-w-[220px] text-xs text-white/55 sm:ml-auto">{modulo.metricaRotulo}</p>
+          </div>
           <Link
             to={modulo.to}
-            className="mt-7 inline-flex items-center gap-2 rounded-xl bg-rcb-green px-5 py-3 text-sm font-semibold text-rcb-deep shadow-[0_0_30px_-8px_#10b981] transition-transform duration-200 hover:-translate-y-0.5"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-white underline decoration-brand-gold/60 decoration-2 underline-offset-4 transition-colors hover:text-brand-gold"
           >
             {modulo.cta}
-            <span aria-hidden>→</span>
+            <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-1">
+              →
+            </span>
           </Link>
         </div>
-
-        <div className="lg:w-2/5">
-          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-transparent p-6">
-            <span
-              aria-hidden
-              className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-rcb-green/20 blur-3xl"
-            />
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/50">
-              Leitura do módulo
-            </p>
-            <p className="font-brand mt-3 text-3xl font-extrabold text-white sm:text-4xl">
-              {modulo.metricaValor}
-            </p>
-            <p className="mt-2 text-xs leading-relaxed text-white/60">{modulo.metricaRotulo}</p>
-            <MiniBars data={modulo.grafico} />
-          </div>
-        </div>
       </div>
-    </article>
+    </li>
   );
 }
 
 export default function Landing() {
   return (
-    <main className="min-h-screen bg-rcb-navy font-[Inter,sans-serif] text-white">
-      <header className="sticky top-0 z-30 border-b border-white/10 bg-rcb-navy/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3">
-          <img
-            src={logoNegativa}
-            alt="RCB Inteligência Tributária"
-            className="h-14 w-auto sm:h-16 lg:h-[72px]"
-          />
+    <main className="min-h-screen bg-brand-ink font-[Sora,sans-serif] text-white">
+      <header className="sticky top-0 z-30 border-b border-white/10 bg-brand-ink/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-3">
+          <WhitelabelMark size="sm" />
           <nav className="hidden items-center gap-6 text-sm text-white/70 md:flex">
             <a href="#solucoes" className="transition-colors hover:text-white">
               Soluções
@@ -381,13 +311,13 @@ export default function Landing() {
           <div className="flex items-center gap-2">
             <Link
               to="/auth"
-              className="rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold text-white/85 transition-colors hover:bg-white/10"
+              className="rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white/85 transition-colors hover:bg-white/10"
             >
               Área restrita
             </Link>
             <Link
               to="/simulador"
-              className="hidden rounded-xl bg-rcb-green px-4 py-2 text-sm font-semibold text-rcb-deep shadow-[0_0_28px_-8px_#10b981] transition-transform hover:-translate-y-0.5 sm:inline-flex"
+              className="hidden rounded-full bg-brand-gold px-4 py-2 text-sm font-semibold text-brand-ink transition-transform hover:-translate-y-0.5 sm:inline-flex"
             >
               Simular agora
             </Link>
@@ -395,134 +325,105 @@ export default function Landing() {
         </div>
       </header>
 
-      <section className="relative overflow-hidden">
-        <span
+      <section className="relative overflow-hidden border-b border-white/10">
+        <svg
           aria-hidden
-          className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[820px] -translate-x-1/2 rounded-full bg-rcb-green/15 blur-[140px]"
-        />
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -bottom-32 right-0 h-[360px] w-[520px] rounded-full bg-rcb-navy blur-[120px]"
-        />
-        <div className="relative mx-auto grid max-w-6xl gap-12 px-5 py-20 sm:py-28 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-          <div>
-            <p className="rcb-rise text-xs font-semibold uppercase tracking-[0.32em] text-rcb-green">
-              Inteligência tributária é vantagem competitiva
-            </p>
-            <h1 className="rcb-rise font-brand mt-6 max-w-3xl text-4xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-5xl">
-              Tecnologia e dados para decisões{" "}
-              <span className="bg-gradient-to-r from-rcb-green to-emerald-300 bg-clip-text text-transparent">
-                mais seguras
-              </span>{" "}
-              no cenário tributário
-            </h1>
-            <p className="rcb-rise mt-6 max-w-2xl text-base leading-relaxed text-white/70">
-              A RCB Inteligência Tributária antecipa o efeito da Reforma no caixa, na margem e nos
-              contratos da sua empresa. Sete simuladores proprietários para a diretoria decidir com
-              número, e um time técnico para conduzir a transição do começo ao fim.
-            </p>
-            <div className="rcb-rise mt-9 flex flex-wrap gap-3">
-              <Link
-                to="/simulador"
-                className="inline-flex items-center gap-2 rounded-xl bg-rcb-green px-7 py-3.5 text-sm font-semibold text-rcb-navy shadow-[0_0_40px_-10px_#10b981] transition-transform hover:-translate-y-0.5"
-              >
-                Simular o impacto na minha empresa
-                <span aria-hidden>→</span>
-              </Link>
-              <a
-                href="#solucoes"
-                className="inline-flex items-center rounded-xl border border-white/20 px-7 py-3.5 text-sm font-semibold text-white/85 transition-colors hover:bg-white/10"
-              >
-                Conhecer as soluções
-              </a>
-            </div>
+          className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 opacity-[0.14]"
+          width="900"
+          height="620"
+          viewBox="0 0 900 620"
+          fill="none"
+        >
+          {[110, 190, 270, 350, 430].map((r) => (
+            <circle key={r} cx="450" cy="40" r={r} stroke="#d9a94e" strokeWidth="1" />
+          ))}
+        </svg>
 
-            <dl className="mt-14 grid gap-4 sm:grid-cols-3">
-              {[
-                { v: "7", l: "Simuladores proprietários de impacto" },
-                { v: "2026–2033", l: "Toda a curva de transição modelada" },
-                { v: "26,5%", l: "Alíquota de referência projetada" },
-              ].map((kpi) => (
-                <div
-                  key={kpi.l}
-                  className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-5"
-                >
-                  <dt className="font-brand text-2xl font-extrabold text-rcb-green">{kpi.v}</dt>
-                  <dd className="mt-1 text-xs leading-relaxed text-white/60">{kpi.l}</dd>
-                </div>
-              ))}
-            </dl>
+        <div className="relative mx-auto max-w-3xl px-5 py-24 text-center sm:py-32">
+          <p className="brand-rise text-xs font-semibold uppercase tracking-[0.32em] text-brand-bronze">
+            Decisões tributárias com dado, não com achismo
+          </p>
+          <h1 className="brand-rise font-brand mt-6 text-4xl font-bold leading-[1.15] tracking-tight text-white sm:text-5xl">
+            Antes de reagir à Reforma Tributária,{" "}
+            <span className="relative inline-block whitespace-nowrap">
+              meça o impacto dela
+              <span aria-hidden className="absolute inset-x-0 -bottom-1 h-[3px] rounded-full bg-brand-gold" />
+            </span>
+          </h1>
+          <p className="brand-rise mt-6 text-base leading-relaxed text-white/70">
+            Sete simuladores proprietários traduzem IBS, CBS e a transição 2026–2033 em números que
+            a diretoria usa para decidir preço, contrato e investimento — com um time técnico
+            conduzindo a auditoria do início ao fim.
+          </p>
+          <div className="brand-rise mt-9 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              to="/simulador"
+              className="inline-flex items-center gap-2 rounded-full bg-brand-gold px-7 py-3.5 text-sm font-semibold text-brand-ink transition-transform hover:-translate-y-0.5"
+            >
+              Medir o impacto agora
+              <span aria-hidden>→</span>
+            </Link>
+            <a
+              href="#solucoes"
+              className="inline-flex items-center rounded-full border border-white/20 px-7 py-3.5 text-sm font-semibold text-white/85 transition-colors hover:bg-white/10"
+            >
+              Conhecer os módulos
+            </a>
           </div>
 
-          <div className="rcb-rise relative">
-            <div className="relative overflow-hidden rounded-[28px] border border-white/10 shadow-[0_40px_120px_-40px_#000]">
-              <img
-                src={predioDados}
-                alt="Edifício corporativo de vidro com colunas de dados em verde"
-                width={1200}
-                height={1408}
-                className="h-[420px] w-full object-cover sm:h-[560px]"
-              />
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-0 bg-gradient-to-t from-rcb-navy via-rcb-navy/20 to-transparent"
-              />
-              <div className="absolute inset-x-0 bottom-0 p-7">
-                <p className="font-brand text-2xl font-extrabold leading-tight text-white sm:text-3xl">
-                  Dados que transformam tributos em{" "}
-                  <span className="text-rcb-green">estratégia.</span>
-                </p>
-                <span aria-hidden className="mt-4 block h-1 w-14 rounded-full bg-rcb-green" />
+          <dl className="brand-rise mt-16 flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
+            {[
+              { v: "7", l: "simuladores proprietários" },
+              { v: "2026–2033", l: "curva de transição mapeada" },
+              { v: "26,5%", l: "alíquota de referência projetada" },
+            ].map((kpi, i) => (
+              <div key={kpi.l} className={`text-center ${i > 0 ? "border-l border-white/15 pl-10" : ""}`}>
+                <dt className="font-brand text-2xl font-extrabold text-white">{kpi.v}</dt>
+                <dd className="mt-1 text-xs text-white/55">{kpi.l}</dd>
               </div>
-            </div>
-          </div>
+            ))}
+          </dl>
         </div>
       </section>
 
-      <section className="border-y border-white/10 bg-white/[0.03]">
-        <div className="mx-auto grid max-w-6xl gap-8 px-5 py-12 sm:grid-cols-3">
-          {RESULTADOS.map((r) => (
-            <div key={r.l} className="text-center sm:text-left">
-              <p className="font-brand text-3xl font-extrabold text-white sm:text-4xl">{r.v}</p>
-              <p className="mt-1 text-sm text-white/60">{r.l}</p>
+      <section className="border-b border-white/10 bg-white/[0.02]">
+        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-x-12 gap-y-6 px-5 py-10">
+          {RESULTADOS.map((r, i) => (
+            <div key={r.l} className={`text-center ${i > 0 ? "border-l border-white/10 pl-12" : ""}`}>
+              <p className="font-brand text-2xl font-bold text-white">{r.v}</p>
+              <p className="mt-1 text-xs text-white/50">{r.l}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <div className="relative overflow-hidden border-b border-white/10 bg-white/[0.02] py-4">
-        <div className="rcb-marquee flex w-max gap-10 whitespace-nowrap">
-          {[...TAGS, ...TAGS].map((tag, i) => (
+      <div className="border-b border-white/10 py-6">
+        <div className="mx-auto flex max-w-5xl flex-wrap justify-center gap-2 px-5">
+          {TAGS.map((tag) => (
             <span
-              key={`${tag}-${i}`}
-              className="flex items-center gap-10 text-xs font-semibold uppercase tracking-[0.24em] text-white/45"
+              key={tag}
+              className="rounded-full border border-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white/50"
             >
               {tag}
-              <span aria-hidden className="h-1 w-1 rounded-full bg-rcb-green" />
             </span>
           ))}
         </div>
       </div>
 
-      <section className="mx-auto max-w-6xl px-5 py-20">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-rcb-green">
-          O produto
-        </p>
-        <h2 className="font-brand mt-4 max-w-2xl text-3xl font-extrabold text-white sm:text-4xl">
-          O relatório que a diretoria recebe
+      <section className="mx-auto max-w-5xl px-5 py-20">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand-bronze">O produto</p>
+        <h2 className="font-brand mt-4 max-w-2xl text-3xl font-bold text-white sm:text-4xl">
+          O painel que chega à mesa da diretoria
         </h2>
         <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/65">
           Nada de PDF estático: um painel interativo, por ano e por cenário, que o cliente acessa
           pelo link — valores ilustrativos abaixo, a tela real é gerada com os dados de cada caso.
         </p>
 
-        <div className="relative mt-10 overflow-hidden rounded-3xl border border-white/10 shadow-[0_60px_140px_-60px_#000]">
-          <div className="flex items-center gap-2 border-b border-white/10 bg-[#0a1630] px-5 py-3">
-            <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-            <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-            <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-            <span className="ml-3 rounded-md bg-white/[0.06] px-3 py-1 text-[11px] text-white/50">
-              rcbinteligenciatributaria.com.br/relatorio/…
+        <div className="relative mt-10 overflow-hidden rounded-2xl border border-white/10 shadow-[0_60px_140px_-60px_#000]">
+          <div className="flex items-center border-b border-white/10 bg-brand-ink px-5 py-2.5">
+            <span className="rounded-md bg-white/[0.06] px-3 py-1 text-[11px] text-white/45">
+              /relatorio/…
             </span>
           </div>
 
@@ -610,37 +511,37 @@ export default function Landing() {
         </div>
       </section>
 
-      <section id="solucoes" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-20">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-rcb-green">
-          Soluções RCB
-        </p>
-        <h2 className="font-brand mt-4 max-w-3xl text-3xl font-extrabold text-white sm:text-4xl">
-          Sete frentes de decisão, um único painel de inteligência
+      <section id="solucoes" className="mx-auto max-w-5xl scroll-mt-20 px-5 py-20">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand-bronze">Módulos</p>
+        <h2 className="font-brand mt-4 max-w-3xl text-3xl font-bold text-white sm:text-4xl">
+          Sete módulos, uma leitura só
         </h2>
         <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/65">
           Cada módulo responde a uma pergunta que chega à mesa da diretoria. Comece pela estimativa
           online e avance para a auditoria documental com nosso time.
         </p>
 
-        <div className="mt-10 space-y-6">
-          {MODULOS.map((modulo, i) => (
-            <ModuloShowcase key={modulo.numero} modulo={modulo} index={i} />
+        <ul className="mt-10">
+          {MODULOS.map((modulo) => (
+            <ModuloRow key={modulo.numero} modulo={modulo} />
           ))}
-        </div>
+        </ul>
       </section>
 
       <section className="border-y border-white/10 bg-white/[0.02]">
-        <div className="mx-auto max-w-6xl px-5 py-16">
-          <h2 className="font-brand text-3xl font-extrabold text-white">
-            Os pilares que sustentam cada análise
+        <div className="mx-auto max-w-5xl px-5 py-16">
+          <h2 className="font-brand text-3xl font-bold text-white">
+            O que garante a qualidade de cada número
           </h2>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {PILARES.map((p) => (
+          <div className="mt-8 flex flex-wrap">
+            {PILARES.map((p, i) => (
               <div
                 key={p.titulo}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition-colors hover:border-rcb-green/40"
+                className={`w-full py-5 sm:w-1/2 sm:py-6 lg:w-1/4 ${
+                  i % 2 === 1 ? "sm:border-l sm:border-white/10 sm:pl-6" : ""
+                } ${i >= 2 ? "lg:border-l lg:border-white/10 lg:pl-6" : ""}`}
               >
-                <span aria-hidden className="block h-1 w-10 rounded-full bg-rcb-green" />
+                <span aria-hidden className="block h-[2px] w-8 bg-brand-gold" />
                 <h3 className="font-brand mt-4 text-lg font-bold text-white">{p.titulo}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-white/65">{p.texto}</p>
               </div>
@@ -649,29 +550,30 @@ export default function Landing() {
         </div>
       </section>
 
-      <section id="metodo" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-20">
-        <h2 className="font-brand text-3xl font-extrabold text-white">Como o trabalho acontece</h2>
-        <div className="mt-8 grid gap-5 md:grid-cols-3">
+      <section id="metodo" className="mx-auto max-w-5xl scroll-mt-20 px-5 py-20">
+        <h2 className="font-brand text-3xl font-bold text-white">Da estimativa ao plano de ação</h2>
+        <div className="relative mt-12 grid gap-10 md:grid-cols-3">
+          <span aria-hidden className="absolute left-0 right-0 top-5 hidden h-px bg-white/10 md:block" />
           {JORNADA.map((passo) => (
-            <div key={passo.etapa} className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-              <span className="font-brand text-xs font-bold tracking-[0.3em] text-rcb-green">
+            <div key={passo.etapa} className="relative">
+              <span className="font-brand relative z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border border-brand-gold/50 bg-brand-ink text-sm font-bold text-brand-gold">
                 {passo.etapa}
               </span>
-              <h3 className="font-brand mt-3 text-lg font-bold text-white">{passo.titulo}</h3>
+              <h3 className="font-brand mt-5 text-lg font-bold text-white">{passo.titulo}</h3>
               <p className="mt-2 text-sm leading-relaxed text-white/65">{passo.texto}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section id="contato" className="scroll-mt-20 bg-rcb-paper py-16 text-foreground">
-        <div className="mx-auto max-w-6xl px-5">
-          <OfficeContactCta message="Olá! Gostaria de falar com a RCB Inteligência Tributária sobre o impacto da Reforma no meu negócio." />
+      <section id="contato" className="scroll-mt-20 bg-brand-paper py-16 text-foreground">
+        <div className="mx-auto max-w-5xl px-5">
+          <OfficeContactCta message="Olá! Gostaria de falar com a VÉRTICE sobre o impacto da Reforma no meu negócio." />
         </div>
       </section>
 
-      <section id="reforma" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-20">
-        <h2 className="font-brand text-3xl font-extrabold text-white">
+      <section id="reforma" className="mx-auto max-w-5xl scroll-mt-20 px-5 py-20">
+        <h2 className="font-brand text-3xl font-bold text-white">
           O que muda com a Reforma Tributária
         </h2>
         <p className="mt-4 max-w-3xl text-sm leading-relaxed text-white/65">
@@ -686,53 +588,45 @@ export default function Landing() {
           terminar pagando um valor parecido.
         </p>
 
-        <ol className="mt-10 grid gap-4 md:grid-cols-2">
+        <ol className="relative mt-12 space-y-10 border-l border-white/10 pl-8">
           {TIMELINE.map((item) => (
-            <li
-              key={item.year}
-              className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-6"
-            >
+            <li key={item.year} className="relative">
               <span
                 aria-hidden
-                className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-rcb-green to-transparent"
+                className="absolute -left-[33px] top-1 h-3 w-3 rounded-full border-2 border-brand-gold bg-brand-ink"
               />
-              <p className="font-brand text-sm font-bold tracking-wide text-rcb-green">
-                {item.year}
-              </p>
+              <p className="font-brand text-sm font-bold tracking-wide text-brand-gold">{item.year}</p>
               <h3 className="font-brand mt-1 text-lg font-bold text-white">{item.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-white/65">{item.text}</p>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/65">{item.text}</p>
             </li>
           ))}
         </ol>
       </section>
 
-      <footer className="border-t border-white/10 bg-rcb-deep">
-        <div className="mx-auto max-w-6xl px-5 py-12">
+      <footer className="border-t border-white/10 bg-brand-ink">
+        <div className="mx-auto max-w-5xl px-5 py-12">
           <div className="flex flex-wrap items-center justify-between gap-6">
-            <img
-              src={logoNegativa}
-              alt="RCB Inteligência Tributária"
-              className="h-16 w-auto"
-            />
+            <WhitelabelMark />
             <Link
               to="/auth"
-              className="text-sm font-semibold text-rcb-green underline-offset-4 hover:underline"
+              className="text-sm font-semibold text-brand-gold underline-offset-4 hover:underline"
             >
               Área restrita da equipe
             </Link>
           </div>
           <p className="mt-6 max-w-4xl text-xs leading-relaxed text-white/50">
-            Conteúdo informativo da RCB Inteligência Tributária. Estimativas baseadas na LC 214/2025
-            e no cronograma de transição vigente em {LEGAL_REFERENCE_DATE}. Alíquota de referência de
-            26,5% sujeita a alteração pelo Senado Federal. As simulações online não substituem um
-            diagnóstico fiscal completo nem constituem aconselhamento jurídico ou tributário.
+            Conteúdo informativo da VÉRTICE Inteligência Tributária. Estimativas baseadas na LC
+            214/2025 e no cronograma de transição vigente em {LEGAL_REFERENCE_DATE}. Alíquota de
+            referência de 26,5% sujeita a alteração pelo Senado Federal. As simulações online não
+            substituem um diagnóstico fiscal completo nem constituem aconselhamento jurídico ou
+            tributário.
           </p>
         </div>
       </footer>
 
       <a
         href="#contato"
-        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full bg-rcb-green px-5 py-3 text-sm font-semibold text-rcb-deep shadow-[0_10px_40px_-8px_#10b981] transition-transform hover:-translate-y-0.5 sm:bottom-7 sm:right-7"
+        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full border border-brand-gold/60 bg-brand-ink/80 px-5 py-3 text-sm font-semibold text-brand-gold backdrop-blur-sm transition-colors hover:bg-brand-gold hover:text-brand-ink sm:bottom-7 sm:right-7"
       >
         Agendar diagnóstico
         <span aria-hidden>→</span>

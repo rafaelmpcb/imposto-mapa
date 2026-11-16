@@ -23,12 +23,13 @@
   --font-display: "Instrument Serif", Georgia, serif;
   --font-presentation: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-presentation-display: "Sora", ui-sans-serif, system-ui, sans-serif;
-  --font-brand: "Montserrat", ui-sans-serif, system-ui, sans-serif;
-  --color-rcb-navy: #0b1b3d;
-  --color-rcb-deep: #060e1e;
-  --color-rcb-green: #10b981;
-  --color-rcb-slate: #64748b;
-  --color-rcb-paper: #f6f8fb;
+  --font-brand: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --color-brand-navy: #13314d;
+  --color-brand-ink: #081524;
+  --color-brand-gold: #d9a94e;
+  --color-brand-slate: #8a94a6;
+  --color-brand-paper: #f7f5f0;
+  --color-brand-bronze: #c9a47e;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -107,20 +108,7 @@
   animation: presentation-reveal 360ms ease-out both;
 }
 
-@keyframes rcb-marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-@utility rcb-marquee {
-  animation: rcb-marquee 38s linear infinite;
-}
-
-@keyframes rcb-rise {
+@keyframes brand-rise {
   from {
     opacity: 0;
     transform: translateY(18px);
@@ -131,14 +119,13 @@
   }
 }
 
-@utility rcb-rise {
-  animation: rcb-rise 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+@utility brand-rise {
+  animation: brand-rise 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .presentation-reveal,
-  .rcb-marquee,
-  .rcb-rise {
+  .brand-rise {
     animation: none;
   }
 }

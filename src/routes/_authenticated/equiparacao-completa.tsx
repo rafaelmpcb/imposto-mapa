@@ -33,7 +33,7 @@ const DESCRIPTION =
 export const Route = createFileRoute("/_authenticated/equiparacao-completa")({
   head: () => ({
     meta: [
-      { title: `${TITLE} | RCB Inteligência Tributária` },
+      { title: `${TITLE} | VÉRTICE Inteligência Tributária` },
       { name: "description", content: DESCRIPTION },
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESCRIPTION },

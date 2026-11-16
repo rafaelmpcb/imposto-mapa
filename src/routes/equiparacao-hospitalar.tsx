@@ -24,7 +24,7 @@ const DESCRIPTION =
 export const Route = createFileRoute("/equiparacao-hospitalar")({
   head: () => ({
     meta: [
-      { title: `${TITLE} | RCB Inteligência Tributária` },
+      { title: `${TITLE} | VÉRTICE Inteligência Tributária` },
       { name: "description", content: DESCRIPTION },
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESCRIPTION },
@@ -125,7 +125,7 @@ function EquiparacaoRapida() {
                     Com {pct}% do faturamento em exames e procedimentos, a base de cálculo dessa
                     parcela cai de 32% para 8% no IRPJ e 12% na CSLL. O valor a recuperar ainda é
                     corrigido pela Selic e a confirmação depende da análise das notas da clínica
-                    pela equipe da RCB.
+                    pela nossa equipe.
                   </p>
                 </div>
 
