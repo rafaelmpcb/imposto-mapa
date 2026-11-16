@@ -5,7 +5,7 @@ import { WhitelabelMark } from "@/components/brand/WhitelabelMark";
 
 import { LEGAL_REFERENCE_DATE } from "@/lib/tax/constants";
 
-const TITLE = "VÉRTICE Inteligência Tributária — simuladores de impacto da Reforma (IBS e CBS)";
+const TITLE = "Brander Inteligência Tributária — simuladores de impacto da Reforma (IBS e CBS)";
 const DESCRIPTION =
   "Assessoria tributária orientada a dados: 7 simuladores proprietários de IBS/CBS, contratos, locação, CAPEX, saldos credores, PIS/COFINS monofásico e equiparação hospitalar para decisões de diretoria.";
 
@@ -568,7 +568,7 @@ export default function Landing() {
 
       <section id="contato" className="scroll-mt-20 bg-brand-paper py-16 text-foreground">
         <div className="mx-auto max-w-5xl px-5">
-          <OfficeContactCta message="Olá! Gostaria de falar com a VÉRTICE sobre o impacto da Reforma no meu negócio." />
+          <OfficeContactCta message="Olá! Gostaria de falar com a Brander sobre o impacto da Reforma no meu negócio." />
         </div>
       </section>
 
@@ -615,7 +615,7 @@ export default function Landing() {
             </Link>
           </div>
           <p className="mt-6 max-w-4xl text-xs leading-relaxed text-white/50">
-            Conteúdo informativo da VÉRTICE Inteligência Tributária. Estimativas baseadas na LC
+            Conteúdo informativo da Brander Inteligência Tributária. Estimativas baseadas na LC
             214/2025 e no cronograma de transição vigente em {LEGAL_REFERENCE_DATE}. Alíquota de
             referência de 26,5% sujeita a alteração pelo Senado Federal. As simulações online não
             substituem um diagnóstico fiscal completo nem constituem aconselhamento jurídico ou

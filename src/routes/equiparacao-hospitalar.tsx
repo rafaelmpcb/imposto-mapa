@@ -24,7 +24,7 @@ const DESCRIPTION =
 export const Route = createFileRoute("/equiparacao-hospitalar")({
   head: () => ({
     meta: [
-      { title: `${TITLE} | VÉRTICE Inteligência Tributária` },
+      { title: `${TITLE} | Brander Inteligência Tributária` },
       { name: "description", content: DESCRIPTION },
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESCRIPTION },
