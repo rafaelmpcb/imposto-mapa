@@ -177,7 +177,7 @@ export const setSimulationShare = createServerFn({ method: "POST" })
   .inputValidator((input: { id: string; enabled: boolean }) => input)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const token = data.enabled ? crypto.randomUUID().replace(/-/g, "") : null;
+    const token = data.enabled ? crypto.randomUUID().replace(/-/g, "").slice(0, 10) : null;
     const patch = data.enabled
       ? { share_enabled: true, share_token: token }
       : { share_enabled: false, share_token: null };
