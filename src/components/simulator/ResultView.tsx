@@ -635,6 +635,7 @@ export function ResultView({
               onChange={(event) => onClientNameChange(event.target.value)}
               placeholder="Ex.: Empresa Exemplo Ltda."
               autoComplete="off"
+              disabled={readOnly}
             />
           </Field>
           <div>

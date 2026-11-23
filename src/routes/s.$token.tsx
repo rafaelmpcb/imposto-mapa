@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 
 import { OfficeContactCta } from "@/components/contact/OfficeContactCta";
 import { ResultView } from "@/components/simulator/ResultView";
@@ -50,6 +51,9 @@ function Fallback({ message }: { message: string }) {
 
 function SharedSimulation() {
   const data = Route.useLoaderData();
+  const [year, setYear] = useState<YearId>(
+    (data.found && data.item ? data.item.year_id : 2027) as YearId,
+  );
 
   if (!data.found || !data.item) {
     return <Fallback message="Este link de compartilhamento não está mais ativo." />;
@@ -60,7 +64,6 @@ function SharedSimulation() {
     ...defaultInput(),
     ...(item.input as unknown as Partial<SimulationInput>),
   } as SimulationInput;
-  const year = item.year_id as YearId;
   const cnpjData = item.cnpj_data as unknown as CnpjData | null;
 
   return (
@@ -84,10 +87,10 @@ function SharedSimulation() {
           <ResultView
             input={input}
             year={year}
-            onYearChange={() => {}}
+            onYearChange={setYear}
             clientName={item.client_name ?? ""}
             onClientNameChange={() => {}}
-            presentationMode
+            presentationMode={false}
             onPresentationModeChange={() => {}}
             cnpjData={cnpjData}
             readOnly
