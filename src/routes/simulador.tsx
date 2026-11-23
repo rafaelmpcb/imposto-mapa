@@ -2,9 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { saveSimulation, type JsonValue } from "@/lib/simulations.functions";
+import { saveSimulation, setSimulationShare, type JsonValue } from "@/lib/simulations.functions";
 import { RESTORE_KEY } from "@/lib/tax/session";
 import { simulate } from "@/lib/tax/calc";
+import { supabase } from "@/integrations/supabase/client";
+import { withAuthRetry } from "@/lib/auth-retry";
 
 import {
   ACTIVITIES,
@@ -85,6 +87,12 @@ function Simulator() {
     rbt12: number | null;
   } | null>(null);
   const [pdfError, setPdfError] = useState("");
+
+  const shareFn = useServerFn(setSimulationShare);
+  const [isOffice, setIsOffice] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [shareMsg, setShareMsg] = useState("");
 
   const searchCnpjFn = useServerFn(lookupCnpj);
   const [cnpj, setCnpj] = useState("");
@@ -181,7 +189,68 @@ function Simulator() {
       setPdfBusy(false);
     }
   };
+
   const savedIdRef = useRef<string | null>(null);
+
+  const ensureSaved = async (): Promise<string> => {
+    if (savedIdRef.current) return savedIdRef.current;
+    const result = simulate(input, year);
+    const res = await persist({
+      data: {
+        clientName,
+        taxpayerType: input.taxpayerType,
+        activityId: input.activityId,
+        uf: input.uf,
+        baseAmount: result.base,
+        yearId: year,
+        currentTotal: result.current.total,
+        reformTotal: result.reform.total,
+        currentRate: result.current.rate,
+        reformRate: result.reform.rate,
+        input: { ...input } as unknown as JsonValue,
+        cnpj: cnpjData?.cnpj ?? null,
+        cnpjData: cnpjData ? ({ ...cnpjData } as unknown as JsonValue) : null,
+      },
+    });
+    savedIdRef.current = res.id;
+    return res.id;
+  };
+
+  const openDashboard = async () => {
+    setShareBusy(true);
+    setShareMsg("");
+    try {
+      const id = await ensureSaved();
+      let token = shareToken;
+      if (!token) {
+        const res = await withAuthRetry(() => shareFn({ data: { id, enabled: true } }));
+        if (!res.ok || !res.token) throw new Error("falha");
+        token = res.token;
+        setShareToken(token);
+      }
+      window.open(`${window.location.origin}/s/${token}`, "_blank", "noopener");
+      setShareMsg("Dashboard aberto em nova aba.");
+    } catch {
+      setShareMsg("Não foi possível gerar o link do dashboard agora. Tente novamente.");
+    } finally {
+      setShareBusy(false);
+    }
+  };
+
+  const copyDashboardLink = async () => {
+    if (!shareToken) return;
+    const url = `${window.location.origin}/s/${shareToken}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareMsg("Link do dashboard copiado.");
+    } catch {
+      setShareMsg(`Link do dashboard: ${url}`);
+    }
+  };
+
+  useEffect(() => {
+    void supabase.auth.getUser().then(({ data }) => setIsOffice(!!data.user));
+  }, []);
 
   const bootstrappedRef = useRef(false);
 
@@ -826,6 +895,8 @@ function Simulator() {
                 variant="ghost"
                 onClick={() => {
                   savedIdRef.current = null;
+                  setShareToken(null);
+                  setShareMsg("");
                   setClientName("");
                   setInput(defaultInput());
                   setTaxpayerChosen(false);
@@ -875,9 +946,33 @@ function Simulator() {
               >
                 Gerar Memorando
               </button>
+              {isOffice ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => void openDashboard()}
+                    disabled={shareBusy}
+                    className="inline-flex items-center justify-center rounded-md border border-navy-foreground/40 px-6 py-3 text-sm font-semibold text-navy-foreground transition-colors hover:bg-navy-foreground/10 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {shareBusy ? "Gerando..." : "Abrir dashboard"}
+                  </button>
+                  {shareToken ? (
+                    <button
+                      type="button"
+                      onClick={() => void copyDashboardLink()}
+                      className="inline-flex items-center justify-center rounded-md border border-navy-foreground/40 px-6 py-3 text-sm font-semibold text-navy-foreground transition-colors hover:bg-navy-foreground/10"
+                    >
+                      Copiar link do dashboard
+                    </button>
+                  ) : null}
+                </>
+              ) : null}
             </div>
             {pdfError ? (
               <p className="mt-3 text-xs font-medium text-navy-foreground/80">{pdfError}</p>
+            ) : null}
+            {shareMsg ? (
+              <p className="mt-3 text-xs font-medium text-navy-foreground/80">{shareMsg}</p>
             ) : null}
           </section>
         )}
