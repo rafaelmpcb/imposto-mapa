@@ -1488,7 +1488,7 @@ export const setParecerShare = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     const existente = (atual.data?.["share_token"] as string | null) ?? null;
-    const token = data.enabled ? (existente ?? crypto.randomUUID().replace(/-/g, "")) : null;
+    const token = data.enabled ? (existente ?? crypto.randomUUID().replace(/-/g, "").slice(0, 10)) : null;
     const { error } = await supabaseAdmin
       .from("parecer_padrao")
       .update({ share_enabled: data.enabled, share_token: token } as never)
