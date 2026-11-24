@@ -1,14 +1,13 @@
 /**
- * Tipos compartilhados dos instrumentos contratuais do escritório.
- * Os modelos (diagnóstico e assessoria contínua) produzem uma lista de blocos
- * neutros, que o gerador de PDF timbrado desenha depois.
+ * Tipos compartilhados do instrumento contratual do escritório.
+ * O modelo (diagnóstico) produz uma lista de blocos neutros, que o gerador
+ * de PDF timbrado desenha depois.
  */
 
-export type ContratoKind = "diagnostico" | "assessoria";
+export type ContratoKind = "diagnostico";
 
 export const CONTRATO_LABELS: Record<ContratoKind, string> = {
   diagnostico: "Diagnóstico da Reforma Tributária",
-  assessoria: "Assessoria Tributária Contínua",
 };
 
 export type Segmento = "comercio" | "servicos" | "imobiliario";
@@ -24,21 +23,27 @@ export interface DadosEscritorio {
   cnpj: string;
   endereco: string;
   advogadoNome: string;
+  /** Vazio quando a contratada não se apresenta como sociedade de advogados. */
   oab: string;
   cpfAdvogado: string;
   foro: string;
   email: string;
 }
 
+/**
+ * Fallback vazio: os dados reais do escritório vêm de `office_config`
+ * (tela Configurações), nunca hardcoded no código. Só usado se essas
+ * configurações ainda não tiverem sido preenchidas.
+ */
 export const ESCRITORIO_PADRAO: DadosEscritorio = {
-  nome: "AZEVEDO & ADVOGADOS ASSOCIADOS",
-  cnpj: "31.893.964/0001-30",
-  endereco: "Rua Júlio Siqueira, nº 803, Bairro Dionísio Torres, Fortaleza/CE, CEP 60.135-226",
-  advogadoNome: "LEONARDO AZEVEDO PINHEIRO BORGES",
-  oab: "OAB/CE nº 12.810 | OAB/SP nº 457.940",
-  cpfAdvogado: "728.915.723-00",
-  foro: "Fortaleza/CE",
-  email: "leonardo@azevedoeadvogados.adv.br",
+  nome: "",
+  cnpj: "",
+  endereco: "",
+  advogadoNome: "",
+  oab: "",
+  cpfAdvogado: "",
+  foro: "",
+  email: "",
 };
 
 export interface DadosContratante {
@@ -68,35 +73,6 @@ export interface ParamsDiagnostico {
   segmentos: Segmento[];
 }
 
-export interface ParamsAssessoria {
-  local: string;
-  data: string;
-  validadeDias: number;
-  mensalidade: number;
-  diaVencimento: number;
-  primeiraMensalidadeData: string;
-  vigenciaMeses: number;
-  avisoPrevioDias: number;
-  reunioesMes: number;
-  duracaoReuniaoHoras: number;
-  canal: string;
-  prazoRespostaDiasUteis: number;
-  consultasMes: number;
-  periodicidadeInformativo: string;
-  periodicidadePlano: string;
-  horarioAtendimento: string;
-  horaTecnica: number;
-  reajusteIndice: string;
-  formaPagamento: string;
-  diaEnvioDocumentos: number;
-  documentosMensais: string;
-  pontoPartida: "diagnostico" | "levantamento";
-  revisaoContratos: "nao" | "incluida";
-  revisaoContratosQtd: number;
-  pareceres: "nao" | "incluidos";
-  pareceresQtd: number;
-}
-
 export const paramsDiagnosticoPadrao = (): ParamsDiagnostico => ({
   local: "Fortaleza/CE",
   data: new Date().toISOString().slice(0, 10),
@@ -105,37 +81,8 @@ export const paramsDiagnosticoPadrao = (): ParamsDiagnostico => ({
   valorTotal: 0,
   entradaPct: 50,
   entradaData: "",
-  formaPagamento: "PIX ou transferência bancária — dados informados no envio do aceite",
+  formaPagamento: "PIX, boleto ou transferência bancária — dados informados no envio do aceite",
   segmentos: [],
-});
-
-export const paramsAssessoriaPadrao = (): ParamsAssessoria => ({
-  local: "Fortaleza/CE",
-  data: new Date().toISOString().slice(0, 10),
-  validadeDias: 30,
-  mensalidade: 0,
-  diaVencimento: 10,
-  primeiraMensalidadeData: "",
-  vigenciaMeses: 12,
-  avisoPrevioDias: 30,
-  reunioesMes: 1,
-  duracaoReuniaoHoras: 1,
-  canal: "e-mail e grupo de mensagens",
-  prazoRespostaDiasUteis: 2,
-  consultasMes: 4,
-  periodicidadeInformativo: "mensal",
-  periodicidadePlano: "trimestral",
-  horarioAtendimento: "9h às 18h",
-  horaTecnica: 450,
-  reajusteIndice: "IPCA",
-  formaPagamento: "PIX ou transferência bancária — dados informados no envio do aceite",
-  diaEnvioDocumentos: 10,
-  documentosMensais: "notas fiscais e faturamento do período",
-  pontoPartida: "levantamento",
-  revisaoContratos: "nao",
-  revisaoContratosQtd: 1,
-  pareceres: "nao",
-  pareceresQtd: 1,
 });
 
 /* ---------- blocos de documento ---------- */

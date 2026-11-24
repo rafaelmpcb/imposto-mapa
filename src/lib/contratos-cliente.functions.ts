@@ -4,9 +4,32 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type {
   ContratoKind,
   DadosContratante,
-  ParamsAssessoria,
+  DadosEscritorio,
   ParamsDiagnostico,
 } from "@/lib/contrato/tipos";
+
+/** Dados do escritório para o timbre do contrato, lidos de `office_config`
+ * (tela Configurações) — nunca hardcoded no código. */
+async function obterDadosEscritorio(): Promise<DadosEscritorio> {
+  const { ESCRITORIO_PADRAO } = await import("@/lib/contrato/tipos");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("office_config")
+    .select("key, value")
+    .in("key", ["nome", "cnpj", "endereco", "advogado_nome", "oab", "cpf_advogado", "foro", "email_contato"]);
+  const porChave = new Map((data ?? []).map((r) => [r.key as string, String(r.value ?? "")]));
+  const campo = (chave: string, alternativa: string) => porChave.get(chave) || alternativa;
+  return {
+    nome: campo("nome", ESCRITORIO_PADRAO.nome),
+    cnpj: campo("cnpj", ESCRITORIO_PADRAO.cnpj),
+    endereco: campo("endereco", ESCRITORIO_PADRAO.endereco),
+    advogadoNome: campo("advogado_nome", ESCRITORIO_PADRAO.advogadoNome),
+    oab: campo("oab", ESCRITORIO_PADRAO.oab),
+    cpfAdvogado: campo("cpf_advogado", ESCRITORIO_PADRAO.cpfAdvogado),
+    foro: campo("foro", ESCRITORIO_PADRAO.foro),
+    email: campo("email_contato", ESCRITORIO_PADRAO.email),
+  };
+}
 
 export interface ContratoCaso {
   id: string;
@@ -25,21 +48,16 @@ interface Entrada {
   kinds: ContratoKind[];
   contratante: DadosContratante;
   diagnostico: ParamsDiagnostico;
-  assessoria: ParamsAssessoria;
 }
 
 async function montar(data: Entrada) {
-  const { ESCRITORIO_PADRAO } = await import("@/lib/contrato/tipos");
+  const esc = await obterDadosEscritorio();
   const { montarPropostaDiagnostico } = await import("@/lib/contrato/modelo-diagnostico");
-  const { montarPropostaAssessoria } = await import("@/lib/contrato/modelo-assessoria");
   const { gerarPdfContrato } = await import("@/lib/contrato/pdf.server");
   const out: { kind: ContratoKind; titulo: string; arquivo: string; base64: string }[] = [];
   for (const k of data.kinds) {
-    const doc =
-      k === "diagnostico"
-        ? montarPropostaDiagnostico(ESCRITORIO_PADRAO, data.contratante, data.diagnostico)
-        : montarPropostaAssessoria(ESCRITORIO_PADRAO, data.contratante, data.assessoria);
-    const bytes = await gerarPdfContrato(ESCRITORIO_PADRAO, doc);
+    const doc = montarPropostaDiagnostico(esc, data.contratante, data.diagnostico);
+    const bytes = await gerarPdfContrato(esc, doc);
     out.push({ kind: k, titulo: doc.titulo, arquivo: doc.arquivo, base64: Buffer.from(bytes).toString("base64") });
   }
   return out;
@@ -88,12 +106,13 @@ export const enviarContratosAssinafy = createServerFn({ method: "POST" })
       celular: data.contratante.telefone,
       cpf: data.contratante.cpf,
     });
-    const advEmail = cfgRaw["assinafy_signatario_email"] || "leonardo@azevedoeadvogados.adv.br";
+    const esc = await obterDadosEscritorio();
+    const advEmail = cfgRaw["assinafy_signatario_email"] || esc.email;
     const advogado = await as.criarSignatario(cfg, {
-      nome: cfgRaw["assinafy_signatario_nome"] || "Leonardo Azevedo Pinheiro Borges",
+      nome: cfgRaw["assinafy_signatario_nome"] || esc.advogadoNome,
       email: advEmail,
       celular: cfgRaw["assinafy_signatario_celular"] ?? "",
-      cpf: cfgRaw["assinafy_signatario_cpf"] ?? "",
+      cpf: cfgRaw["assinafy_signatario_cpf"] || esc.cpfAdvogado,
     });
 
     const envelopeId = await as.criarEnvelope(
@@ -119,7 +138,7 @@ export const enviarContratosAssinafy = createServerFn({ method: "POST" })
           request_signature_key: envelopeId,
           sign_url: as.linkDocumento(doc),
           ambiente: cfg.ambiente,
-          params: { contratante: data.contratante, [a.kind]: a.kind === "diagnostico" ? data.diagnostico : data.assessoria } as never,
+          params: { contratante: data.contratante, [a.kind]: data.diagnostico } as never,
         })
         .select("*")
         .single();

@@ -1,7 +1,8 @@
 /**
- * Minuta oficial: Proposta de Serviços Jurídico-Tributários — Diagnóstico da
- * Reforma Tributária. Reproduz o modelo mestre do escritório, com o Anexo I
- * modular (Parte A comum + apenas os blocos da Parte B do segmento).
+ * Minuta oficial: Proposta de Serviços de Assessoria Tributária — Diagnóstico
+ * da Reforma Tributária. Reproduz o modelo mestre da RCB Inteligência
+ * Tributária, com o Anexo I modular (Parte A comum + apenas os blocos da
+ * Parte B do segmento).
  */
 import { dataCurta, dataLonga, moeda, valorComExtenso } from "./extenso";
 import {
@@ -23,11 +24,11 @@ function termoDeAceite(esc: DadosEscritorio, cli: DadosContratante): Bloco[] {
     {
       tipo: "paragrafo",
       texto:
-        `Pelo presente, a CONTRATANTE identificada abaixo aceita a Proposta de Serviços Jurídico-Tributários – ` +
-        `Diagnóstico da Reforma Tributária, com o Anexo I, contratando os serviços do escritório ${esc.nome}, ` +
-        `sociedade de advogados inscrita no CNPJ/MF sob o nº ${esc.cnpj}, com sede na ${esc.endereco}, neste ato ` +
-        `representada por seu sócio, Dr. ${esc.advogadoNome}, brasileiro, casado, advogado, inscrito na ` +
-        `${esc.oab}, CPF nº ${esc.cpfAdvogado}, e-mail ${esc.email}.`,
+        `Pelo presente, a CONTRATANTE identificada abaixo aceita a Proposta de Serviços de Assessoria Tributária – ` +
+        `Diagnóstico da Reforma Tributária, com o Anexo I, contratando os serviços da ${esc.nome}, pessoa jurídica ` +
+        `inscrita no CNPJ sob o nº ${esc.cnpj}, sediada em ${esc.endereco}, neste ato representada por seu sócio, ` +
+        `${esc.advogadoNome}, brasileiro, casado, advogado, inscrito no CPF/MF sob o nº ${esc.cpfAdvogado}, ` +
+        `residente e domiciliado em ${esc.foro}.`,
     },
     {
       tipo: "paragrafo",
@@ -211,7 +212,7 @@ export function montarPropostaDiagnostico(
     {
       tipo: "paragrafo",
       texto:
-        "Ref.: Proposta de Serviços Jurídico-Tributários – Diagnóstico da Reforma Tributária",
+        "Ref.: Proposta de Serviços de Assessoria Tributária – Diagnóstico da Reforma Tributária",
       negrito: true,
     },
     {
@@ -219,11 +220,11 @@ export function montarPropostaDiagnostico(
       texto: `Validade da proposta: ${p.validadeDias} (${p.validadeDias === 30 ? "trinta" : String(p.validadeDias)}) dias.`,
     },
     { tipo: "espaco", altura: 10 },
-    { tipo: "titulo", texto: "PROPOSTA DE SERVIÇOS JURÍDICO-TRIBUTÁRIOS" },
+    { tipo: "titulo", texto: "PROPOSTA DE SERVIÇOS DE ASSESSORIA TRIBUTÁRIA" },
     { tipo: "subtitulo", texto: "Diagnóstico da Reforma Tributária" },
     {
       tipo: "paragrafo",
-      texto: `Prezados, em conformidade com o alinhamento realizado, o escritório ${esc.nome} (CONTRATADA) apresenta esta proposta à empresa acima identificada (CONTRATANTE). Em resumo:`,
+      texto: `Prezados, em conformidade com o alinhamento realizado, a ${esc.nome} (CONTRATADA) apresenta esta proposta à empresa acima identificada (CONTRATANTE). Em resumo:`,
     },
     {
       tipo: "tabela",
@@ -232,7 +233,7 @@ export function montarPropostaDiagnostico(
       linhas: [
         [
           "O que é",
-          "Análise jurídico-tributária dos impactos da Reforma Tributária (CBS e IBS) sobre a atividade da CONTRATANTE, com comparação de regimes tributários, simulações e plano de ação. Projeto fechado, com início e fim.",
+          "Análise tributária dos impactos da Reforma Tributária (CBS e IBS) sobre a atividade da CONTRATANTE, com comparação de regimes tributários, simulações e plano de ação. Projeto fechado, com início e fim.",
         ],
         [
           "O que você recebe",
@@ -257,7 +258,8 @@ export function montarPropostaDiagnostico(
     {
       tipo: "paragrafo",
       texto:
-        `A presente proposta tem por objeto a prestação de serviços jurídicos tributários especializados para análise dos impactos da Reforma Tributária ` +
+        `A presente proposta tem por objeto a prestação de serviços de assessoria tributária especializada, com apoio ` +
+        `de tecnologia e análise de dados, para análise dos impactos da Reforma Tributária ` +
         `(Emenda Constitucional nº 132/2023, Lei Complementar nº 214/2025 e normas regulamentares) sobre as atividades de ` +
         `${vazio(cli.atividade, "[ATIVIDADE DA CONTRATANTE]")}, incluindo ${vazio(cli.operacoes, "[OPERAÇÕES PRINCIPAIS]")}, ` +
         `realizadas pela CONTRATANTE, a partir das informações e documentos por ela fornecidos.`,
@@ -336,7 +338,7 @@ export function montarPropostaDiagnostico(
           "Estimativas",
           "As simulações são estimativas baseadas nos dados fornecidos e na legislação vigente na data-base indicada no Relatório, sem garantia de resultado ou de economia tributária. Alterações legislativas posteriores à data-base não obrigam a refazer o Relatório.",
         ],
-        ["Uso do Relatório", "Uso interno da CONTRATANTE. Não constitui parecer jurídico formal."],
+        ["Uso do Relatório", "Uso interno da CONTRATANTE. Não constitui parecer formal."],
       ],
     },
     { tipo: "clausula", texto: "4. DO PRAZO E DA CONTRATANTE" },
@@ -403,21 +405,21 @@ export function montarPropostaDiagnostico(
         ],
         [
           "Contencioso administrativo ou judicial e consultas a autoridades",
-          "Contratação específica.",
+          "Contratação específica, com profissional habilitado.",
         ],
         ["Auditoria contábil ou fiscal", "Fora da atuação da CONTRATADA neste projeto."],
         [
           "Elaboração ou revisão de contratos",
           "Proposta específica. O Relatório apenas aponta os pontos que merecem revisão.",
         ],
-        ["Pareceres jurídicos formais avulsos", "Proposta específica."],
+        ["Pareceres técnicos formais avulsos", "Proposta específica."],
         ["Definição da política de preços", "Decisão da CONTRATANTE, com base no Relatório."],
       ],
     },
-    { tipo: "clausula", texto: "6. DOS HONORÁRIOS" },
+    { tipo: "clausula", texto: "6. DA REMUNERAÇÃO" },
     {
       tipo: "tabela",
-      titulo: "Honorários e pagamento",
+      titulo: "Remuneração e pagamento",
       colunas: [0.26, 0.74],
       linhas: [
         ["Valor total", valorComExtenso(p.valorTotal)],
@@ -447,11 +449,17 @@ export function montarPropostaDiagnostico(
     {
       tipo: "paragrafo",
       texto:
-        "7.3 A proposta é aceita mediante assinatura eletrônica do Termo de Aceite, dentro da validade, e constitui, por si só, o contrato escrito de prestação de serviços e honorários (art. 48 do Código de Ética e Disciplina da OAB e art. 24 da Lei nº 8.906/1994), sem necessidade de outro instrumento. O Anexo I integra a proposta.",
+        "7.3 A proposta é aceita mediante assinatura eletrônica do Termo de Aceite, dentro da validade, e constitui, por si só, o contrato escrito de prestação de serviços e remuneração, com base na liberdade de forma dos contratos (arts. 107 e 425 do Código Civil) e na validade jurídica da assinatura eletrônica (Lei nº 14.063/2020), sem necessidade de outro instrumento. O Anexo I integra a proposta.",
     },
     { tipo: "espaco", altura: 10 },
     { tipo: "paragrafo", texto: "Atenciosamente," },
-    { tipo: "linhaAssinatura", nome: esc.nome, detalhe: `${esc.advogadoNome} | ${esc.oab}` },
+    {
+      tipo: "linhaAssinatura",
+      nome: esc.nome,
+      detalhe: esc.oab
+        ? `${esc.advogadoNome} | Sócio | ${esc.oab} | CPF nº ${esc.cpfAdvogado}`
+        : `${esc.advogadoNome} | Sócio | CPF nº ${esc.cpfAdvogado}`,
+    },
     ...termoDeAceite(esc, cli),
     { tipo: "quebra" },
     { tipo: "titulo", texto: "ANEXO I – ESCOPO DETALHADO" },
@@ -489,7 +497,7 @@ export function montarPropostaDiagnostico(
 
   return {
     kind: "diagnostico",
-    titulo: "Proposta de Serviços Jurídico-Tributários – Diagnóstico da Reforma Tributária",
+    titulo: "Proposta de Serviços de Assessoria Tributária – Diagnóstico da Reforma Tributária",
     arquivo: nomeArquivo,
     blocos,
   };

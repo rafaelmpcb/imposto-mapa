@@ -51,7 +51,7 @@ class Pdf {
   y = TOP;
   reg!: PDFFont;
   bold!: PDFFont;
-  logo!: PDFImage;
+  logo: PDFImage | null = null;
   esc!: DadosEscritorio;
 
   static async create(esc: DadosEscritorio, titulo: string) {
@@ -61,7 +61,9 @@ class Pdf {
     p.doc.setAuthor(safe(esc.nome));
     p.reg = await p.doc.embedFont(StandardFonts.Helvetica);
     p.bold = await p.doc.embedFont(StandardFonts.HelveticaBold);
-    p.logo = await p.doc.embedJpg(Uint8Array.from(atob(LOGO_ESCRITORIO_JPG_BASE64), (c) => c.charCodeAt(0)));
+    p.logo = LOGO_ESCRITORIO_JPG_BASE64
+      ? await p.doc.embedJpg(Uint8Array.from(atob(LOGO_ESCRITORIO_JPG_BASE64), (c) => c.charCodeAt(0)))
+      : null;
     p.esc = esc;
     p.newPage();
     return p;
@@ -69,13 +71,15 @@ class Pdf {
 
   newPage() {
     this.page = this.doc.addPage(A4);
-    const h = 54;
-    const w = (this.logo.width / this.logo.height) * h;
-    this.page.drawImage(this.logo, { x: M, y: A4[1] - 34 - h, width: w, height: h });
+    if (this.logo) {
+      const h = 54;
+      const w = (this.logo.width / this.logo.height) * h;
+      this.page.drawImage(this.logo, { x: M, y: A4[1] - 34 - h, width: w, height: h });
+    }
     const right = A4[0] - M;
     const lines: [string, PDFFont, number][] = [
       [this.esc.nome, this.bold, 10],
-      [this.esc.oab, this.reg, 8],
+      ...(this.esc.oab ? ([[this.esc.oab, this.reg, 8]] as [string, PDFFont, number][]) : []),
       [`CNPJ ${this.esc.cnpj}`, this.reg, 8],
       [this.esc.email, this.reg, 8],
     ];

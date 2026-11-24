@@ -8,6 +8,7 @@ export interface OfficeConfig {
   endereco: string;
   advogado_nome: string;
   oab: string;
+  cpf_advogado: string;
   foro: string;
   whatsapp: string;
   email_contato: string;
@@ -23,8 +24,13 @@ export const OFFICE_FIELDS: { key: keyof OfficeConfig; label: string; placeholde
     label: "Endereço completo",
     placeholder: "Rua X, 100, Centro, Fortaleza/CE, 60000-000",
   },
-  { key: "advogado_nome", label: "Advogado responsável", placeholder: "Maria Silva" },
-  { key: "oab", label: "Inscrição na OAB", placeholder: "OAB/CE 23.955" },
+  { key: "advogado_nome", label: "Responsável (sócio/advogado)", placeholder: "Maria Silva" },
+  {
+    key: "oab",
+    label: "Inscrição na OAB (deixe em branco se não for sociedade de advogados)",
+    placeholder: "OAB/CE 23.955",
+  },
+  { key: "cpf_advogado", label: "CPF do responsável", placeholder: "000.000.000-00" },
   { key: "foro", label: "Foro padrão (comarca)", placeholder: "Fortaleza/CE" },
 ];
 
@@ -46,6 +52,7 @@ export const emptyOfficeConfig = (): OfficeConfig => ({
   endereco: "",
   advogado_nome: "",
   oab: "",
+  cpf_advogado: "",
   foro: "",
   whatsapp: "",
   email_contato: "",
