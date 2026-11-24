@@ -1,7 +1,7 @@
 /** Gerador do PDF timbrado dos contratos (logo no cabeçalho, tabelas com bordas). */
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 
-import { LOGO_ESCRITORIO_JPG_BASE64 } from "./logo.server";
+import { LOGO_ESCRITORIO_PNG_BASE64 } from "./logo.server";
 import type { BlocoTabela, DadosEscritorio, DocumentoContrato } from "./tipos";
 
 const A4: [number, number] = [595.28, 841.89];
@@ -61,8 +61,8 @@ class Pdf {
     p.doc.setAuthor(safe(esc.nome));
     p.reg = await p.doc.embedFont(StandardFonts.Helvetica);
     p.bold = await p.doc.embedFont(StandardFonts.HelveticaBold);
-    p.logo = LOGO_ESCRITORIO_JPG_BASE64
-      ? await p.doc.embedJpg(Uint8Array.from(atob(LOGO_ESCRITORIO_JPG_BASE64), (c) => c.charCodeAt(0)))
+    p.logo = LOGO_ESCRITORIO_PNG_BASE64
+      ? await p.doc.embedPng(Uint8Array.from(atob(LOGO_ESCRITORIO_PNG_BASE64), (c) => c.charCodeAt(0)))
       : null;
     p.esc = esc;
     p.newPage();
