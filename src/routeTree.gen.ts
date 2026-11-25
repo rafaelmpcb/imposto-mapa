@@ -25,10 +25,8 @@ import { Route as AuthenticatedMeusCalculosRouteImport } from './routes/_authent
 import { Route as AuthenticatedParametrosRouteImport } from './routes/_authenticated/parametros'
 import { Route as RelatorioTokenRouteImport } from './routes/relatorio.$token'
 import { Route as STokenRouteImport } from './routes/s.$token'
-import { Route as ApiPublicAssinafyWebhookRouteImport } from './routes/api/public/assinafy-webhook'
 import { Route as ApiPublicParecerPdfRouteImport } from './routes/api/public/parecer-pdf'
 import { Route as ApiPublicRelatorioPdfRouteImport } from './routes/api/public/relatorio-pdf'
-import { Route as ApiPublicSdrSimulacaoRouteImport } from './routes/api/public/sdr-simulacao'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -112,12 +110,6 @@ const STokenRoute = STokenRouteImport.update({
   path: '/s/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicAssinafyWebhookRoute =
-  ApiPublicAssinafyWebhookRouteImport.update({
-    id: '/api/public/assinafy-webhook',
-    path: '/api/public/assinafy-webhook',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicParecerPdfRoute = ApiPublicParecerPdfRouteImport.update({
   id: '/api/public/parecer-pdf',
   path: '/api/public/parecer-pdf',
@@ -126,11 +118,6 @@ const ApiPublicParecerPdfRoute = ApiPublicParecerPdfRouteImport.update({
 const ApiPublicRelatorioPdfRoute = ApiPublicRelatorioPdfRouteImport.update({
   id: '/api/public/relatorio-pdf',
   path: '/api/public/relatorio-pdf',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicSdrSimulacaoRoute = ApiPublicSdrSimulacaoRouteImport.update({
-  id: '/api/public/sdr-simulacao',
-  path: '/api/public/sdr-simulacao',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -150,10 +137,8 @@ export interface FileRoutesByFullPath {
   '/parametros': typeof AuthenticatedParametrosRoute
   '/relatorio/$token': typeof RelatorioTokenRoute
   '/s/$token': typeof STokenRoute
-  '/api/public/assinafy-webhook': typeof ApiPublicAssinafyWebhookRoute
   '/api/public/parecer-pdf': typeof ApiPublicParecerPdfRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
-  '/api/public/sdr-simulacao': typeof ApiPublicSdrSimulacaoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -171,10 +156,8 @@ export interface FileRoutesByTo {
   '/parametros': typeof AuthenticatedParametrosRoute
   '/relatorio/$token': typeof RelatorioTokenRoute
   '/s/$token': typeof STokenRoute
-  '/api/public/assinafy-webhook': typeof ApiPublicAssinafyWebhookRoute
   '/api/public/parecer-pdf': typeof ApiPublicParecerPdfRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
-  '/api/public/sdr-simulacao': typeof ApiPublicSdrSimulacaoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -194,10 +177,8 @@ export interface FileRoutesById {
   '/_authenticated/parametros': typeof AuthenticatedParametrosRoute
   '/relatorio/$token': typeof RelatorioTokenRoute
   '/s/$token': typeof STokenRoute
-  '/api/public/assinafy-webhook': typeof ApiPublicAssinafyWebhookRoute
   '/api/public/parecer-pdf': typeof ApiPublicParecerPdfRoute
   '/api/public/relatorio-pdf': typeof ApiPublicRelatorioPdfRoute
-  '/api/public/sdr-simulacao': typeof ApiPublicSdrSimulacaoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -217,10 +198,8 @@ export interface FileRouteTypes {
     | '/parametros'
     | '/relatorio/$token'
     | '/s/$token'
-    | '/api/public/assinafy-webhook'
     | '/api/public/parecer-pdf'
     | '/api/public/relatorio-pdf'
-    | '/api/public/sdr-simulacao'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -238,10 +217,8 @@ export interface FileRouteTypes {
     | '/parametros'
     | '/relatorio/$token'
     | '/s/$token'
-    | '/api/public/assinafy-webhook'
     | '/api/public/parecer-pdf'
     | '/api/public/relatorio-pdf'
-    | '/api/public/sdr-simulacao'
   id:
     | '__root__'
     | '/'
@@ -260,10 +237,8 @@ export interface FileRouteTypes {
     | '/_authenticated/parametros'
     | '/relatorio/$token'
     | '/s/$token'
-    | '/api/public/assinafy-webhook'
     | '/api/public/parecer-pdf'
     | '/api/public/relatorio-pdf'
-    | '/api/public/sdr-simulacao'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -279,10 +254,8 @@ export interface RootRouteChildren {
   SimuladorRoute: typeof SimuladorRoute
   RelatorioTokenRoute: typeof RelatorioTokenRoute
   STokenRoute: typeof STokenRoute
-  ApiPublicAssinafyWebhookRoute: typeof ApiPublicAssinafyWebhookRoute
   ApiPublicParecerPdfRoute: typeof ApiPublicParecerPdfRoute
   ApiPublicRelatorioPdfRoute: typeof ApiPublicRelatorioPdfRoute
-  ApiPublicSdrSimulacaoRoute: typeof ApiPublicSdrSimulacaoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -399,13 +372,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof STokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/assinafy-webhook': {
-      id: '/api/public/assinafy-webhook'
-      path: '/api/public/assinafy-webhook'
-      fullPath: '/api/public/assinafy-webhook'
-      preLoaderRoute: typeof ApiPublicAssinafyWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/parecer-pdf': {
       id: '/api/public/parecer-pdf'
       path: '/api/public/parecer-pdf'
@@ -418,13 +384,6 @@ declare module '@tanstack/react-router' {
       path: '/api/public/relatorio-pdf'
       fullPath: '/api/public/relatorio-pdf'
       preLoaderRoute: typeof ApiPublicRelatorioPdfRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/sdr-simulacao': {
-      id: '/api/public/sdr-simulacao'
-      path: '/api/public/sdr-simulacao'
-      fullPath: '/api/public/sdr-simulacao'
-      preLoaderRoute: typeof ApiPublicSdrSimulacaoRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -460,10 +419,8 @@ const rootRouteChildren: RootRouteChildren = {
   SimuladorRoute: SimuladorRoute,
   RelatorioTokenRoute: RelatorioTokenRoute,
   STokenRoute: STokenRoute,
-  ApiPublicAssinafyWebhookRoute: ApiPublicAssinafyWebhookRoute,
   ApiPublicParecerPdfRoute: ApiPublicParecerPdfRoute,
   ApiPublicRelatorioPdfRoute: ApiPublicRelatorioPdfRoute,
-  ApiPublicSdrSimulacaoRoute: ApiPublicSdrSimulacaoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

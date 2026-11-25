@@ -15,7 +15,16 @@ const NFSE_MUNICIPAL_CAXIAS = `<?xml version="1.0"?><NFS-e><infNFSe versao="1.1"
 <refNF>43211533540001469800S000002216000002216</refNF></Id>
 <prest><CNPJ>21153354000146</CNPJ></prest></infNFSe></NFS-e>`;
 
+const NFSE_MUNICIPAL_SP = `<?xml version="1.0"?><NFe><ChaveNFe><InscricaoPrestador>79279406</InscricaoPrestador>
+<NumeroNFe>21</NumeroNFe><CodigoVerificacao>VVMQ-DHW2</CodigoVerificacao></ChaveNFe>
+<ChaveRPS><SerieRPS>11</SerieRPS><NumeroRPS>21</NumeroRPS></ChaveRPS>
+<CPFCNPJPrestador><CNPJ>53160553000178</CNPJ></CPFCNPJPrestador><ValorServicos>14000.00</ValorServicos></NFe>`;
+
 describe("isDpsDocumento", () => {
+  it("não confunde NFS-e municipal (layout Prefeitura de São Paulo) com DPS", () => {
+    expect(isDpsDocumento(NFSE_MUNICIPAL_SP)).toBe(false);
+  });
+
   it("reconhece DPS avulsa (sem nNFSe/chNFSe) como declaração, não como nota", () => {
     expect(isDpsDocumento(DPS_NACIONAL)).toBe(true);
   });

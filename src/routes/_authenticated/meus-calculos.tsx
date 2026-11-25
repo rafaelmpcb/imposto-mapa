@@ -7,14 +7,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Button, Field, Notice, TextInput } from "@/components/simulator/ui";
 import { MemorandoDialog } from "@/components/memorando/MemorandoDialog";
 import { HelpButton } from "@/components/help/HelpPanel";
-import { CaseKanban } from "@/components/cases/CaseKanban";
 import { ParecerPadraoPanel } from "@/components/cases/ParecerPadraoPanel";
 import { DiagnosticoCompleto } from "@/components/cases/DiagnosticoCompleto";
-import { FunnelPanel } from "@/components/cases/FunnelPanel";
-import { StageSelect } from "@/components/cases/StageSelect";
-import { CasoCrmPanel } from "@/components/cases/CasoCrmPanel";
 import { ChecklistDocumentosDialog } from "@/components/cases/ChecklistDocumentosDialog";
-import { pipelineStats } from "@/lib/crm/alerts";
 
 import { HubTabBar, type HubTabId } from "@/components/hub/HubTabs";
 import { ContratosHubPanel } from "@/components/hub/ContratosHubPanel";
@@ -27,14 +22,11 @@ import { EquiparacaoHubPanel } from "@/components/hub/EquiparacaoHubPanel";
 import type { CnpjData } from "@/lib/cnpj/types";
 import {
   deleteCase,
-  getFunnelStats,
   listCases,
   renameCase,
-  updateCaseStage,
   type CaseRecord,
-  type StageStat,
 } from "@/lib/cases.functions";
-import { STAGE_LABELS, formatCnpj, type CaseStage } from "@/lib/cases/stages";
+import { formatCnpjMask } from "@/lib/carteira/types";
 import {
   deleteSimulationsBulk,
   deleteSimulation,
@@ -47,9 +39,9 @@ import { brl, pct } from "@/lib/tax/calc";
 import { getActivity } from "@/lib/tax/constants";
 import { RESTORE_KEY } from "@/lib/tax/session";
 
-const TITLE = "Meus Cálculos — casos e funil comercial da Reforma Tributária";
+const TITLE = "Meus Cálculos — casos da Reforma Tributária";
 const DESCRIPTION =
-  "Área restrita do escritório: casos de clientes com histórico de simulações da Reforma Tributária e funil comercial em Kanban.";
+  "Área restrita do escritório: casos de clientes com histórico de simulações da Reforma Tributária.";
 
 export const Route = createFileRoute("/_authenticated/meus-calculos")({
   head: () => ({
@@ -77,8 +69,6 @@ const TAXPAYER_LABELS: Record<string, string> = {
 function MyCalculations() {
   const navigate = useNavigate();
   const fetchList = useServerFn(listCases);
-  const fetchFunnel = useServerFn(getFunnelStats);
-  const changeStage = useServerFn(updateCaseStage);
   const renameCaseFn = useServerFn(renameCase);
   const removeCase = useServerFn(deleteCase);
   const removeItem = useServerFn(deleteSimulation);
@@ -90,15 +80,8 @@ function MyCalculations() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
-  const [view, setView] = useState<"kanban" | "funnel">("kanban");
-  const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "ganho" | "perdido">(
-    "todos",
-  );
-
   const [tab, setTab] = useState<HubTabId>("casos");
-  const [funnel, setFunnel] = useState<{ stages: StageStat[]; totalCases: number } | null>(null);
   const [openCaseId, setOpenCaseId] = useState<string | null>(null);
-  const [busyCaseId, setBusyCaseId] = useState<string | null>(null);
   const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
   const [editingCaseName, setEditingCaseName] = useState("");
   const [confirmCaseId, setConfirmCaseId] = useState<string | null>(null);
@@ -115,15 +98,6 @@ function MyCalculations() {
   const [parecerCaseId, setParecerCaseId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState("");
 
-  const loadFunnel = async () => {
-    try {
-      const res = await fetchFunnel({ data: undefined });
-      if (res.ok) setFunnel({ stages: res.stages, totalCases: res.totalCases });
-    } catch {
-      /* métricas são complementares; a lista continua funcionando */
-    }
-  };
-
   const load = async () => {
     setLoading(true);
     setError("");
@@ -134,7 +108,6 @@ function MyCalculations() {
         return;
       }
       setCases(res.items);
-      void loadFunnel();
       setSelected(new Set());
       setConfirmBulk(false);
     } catch {
@@ -175,22 +148,6 @@ function MyCalculations() {
       }),
     );
     void navigate({ to: "/simulador" });
-  };
-
-  const handleStageChange = async (id: string, stage: CaseStage) => {
-    const previous = cases;
-    setBusyCaseId(id);
-    setCases((prev) => (prev ?? []).map((c) => (c.id === id ? { ...c, stage } : c)));
-    try {
-      const res = await withAuthRetry(() => changeStage({ data: { id, stage } }));
-      if (!res.ok) throw new Error("fail");
-      void loadFunnel();
-    } catch {
-      setCases(previous);
-      setError("Não foi possível mover o caso de etapa.");
-    } finally {
-      setBusyCaseId(null);
-    }
   };
 
   const handleRenameCase = async (id: string) => {
@@ -304,25 +261,14 @@ function MyCalculations() {
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!cases) return [];
-    let list = cases;
-    if (statusFilter !== "todos") {
-      list = list.filter((c) => (c.commercial_status || "ativo") === statusFilter);
-    }
+    const list = cases;
     if (!term) return list;
     return list.filter(
       (c) =>
         (c.client_name ?? "").toLowerCase().includes(term) ||
-        (c.primary_contact_name ?? "").toLowerCase().includes(term) ||
         (c.cnpj ?? "").includes(term.replace(/\D/g, "")),
     );
-  }, [cases, query, statusFilter]);
-
-  const pipeline = useMemo(() => pipelineStats(cases ?? []), [cases]);
-
-  const patchCase = (id: string, patch: Partial<CaseRecord>) => {
-    setCases((prev) => (prev ?? []).map((c) => (c.id === id ? { ...c, ...patch } : c)));
-  };
-
+  }, [cases, query]);
 
   const caseNames = useMemo(() => {
     const map = new Map<string, string>();
@@ -495,7 +441,7 @@ function MyCalculations() {
           </p>
           <h1 className="mt-3 text-3xl leading-tight sm:text-4xl">Painel de gestão</h1>
           <p className="mt-3 max-w-2xl text-sm text-navy-foreground/80">
-            Todas as ferramentas do escritório em um só lugar: casos e funil, simulações de impacto
+            Todas as ferramentas do escritório em um só lugar: casos, simulações de impacto
             fiscal, locação e os módulos em preparação.
           </p>
           <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-navy-foreground/80">
@@ -552,67 +498,6 @@ function MyCalculations() {
                   />
                 </Field>
               </div>
-              <div className="inline-flex rounded-md border border-border bg-card p-1">
-                {(["kanban", "funnel"] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => {
-                      setView(mode);
-                      setOpenCaseId(null);
-                    }}
-                    className={`rounded px-3 py-1.5 text-sm font-semibold transition-colors ${
-                      view === mode
-                        ? "bg-navy text-navy-foreground"
-                        : "text-muted-foreground hover:bg-secondary"
-                    }`}
-                  >
-                    {mode === "kanban" ? "Kanban" : "Funil"}
-                  </button>
-                ))}
-              </div>
-              <div className="inline-flex rounded-md border border-border bg-card p-1">
-                {(["todos", "ativo", "ganho", "perdido"] as const).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setStatusFilter(s)}
-                    className={`rounded px-3 py-1.5 text-sm font-semibold capitalize transition-colors ${
-                      statusFilter === s
-                        ? "bg-navy text-navy-foreground"
-                        : "text-muted-foreground hover:bg-secondary"
-                    }`}
-                  >
-                    {s === "todos"
-                      ? "Todos"
-                      : s === "ativo"
-                        ? "Em negociação"
-                        : s === "ganho"
-                          ? "Ganhos"
-                          : "Perdidos"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-              {[
-                { label: "Em negociação", value: String(pipeline.ativos) },
-                { label: "Honorários em carteira", value: brl(pipeline.total) },
-                { label: "Valor ponderado", value: brl(pipeline.ponderado) },
-                {
-                  label: "Taxa de conversão",
-                  value: pipeline.conversao === null ? "—" : `${pipeline.conversao.toFixed(0)}%`,
-                },
-                { label: "Casos com alerta", value: String(pipeline.alertas) },
-              ].map((kpi) => (
-                <div key={kpi.label} className="rounded-xl border border-border bg-card p-3">
-                  <p className="text-xs text-muted-foreground">{kpi.label}</p>
-                  <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
-                    {kpi.value}
-                  </p>
-                </div>
-              ))}
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -630,31 +515,62 @@ function MyCalculations() {
             {openCaseId ? (
               <div>
                 <Button variant="ghost" onClick={() => setOpenCaseId(null)}>
-                  ← Voltar ao {view === "funnel" ? "funil" : "Kanban"}
+                  ← Voltar aos casos
                 </Button>
               </div>
             ) : null}
 
-            {!openCaseId && view === "funnel" ? (
-              funnel ? (
-                <FunnelPanel stages={funnel.stages} totalCases={funnel.totalCases} />
-              ) : (
-                <Notice>Carregando as métricas do funil...</Notice>
-              )
-            ) : !openCaseId && filtered.length === 0 ? (
+            {!openCaseId && filtered.length === 0 ? (
               <Notice>Nenhum caso encontrado.</Notice>
             ) : !openCaseId ? (
-              <CaseKanban
-                items={filtered}
-                busyId={busyCaseId}
-                onStageChange={(id, stage) => void handleStageChange(id, stage)}
-                onOpen={(id) => setOpenCaseId(id)}
-              />
+              <ul className="space-y-3">
+                {filtered.map((item) => {
+                  const latest = item.simulations[0];
+                  const cnpj = item.cnpj ? formatCnpjMask(item.cnpj) : null;
+                  const diff = latest
+                    ? Number(latest.reform_total) - Number(latest.current_total)
+                    : 0;
+                  const worse = diff > 0.004;
+                  return (
+                    <li
+                      key={item.id}
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <button
+                          type="button"
+                          onClick={() => setOpenCaseId(item.id)}
+                          className="block max-w-full truncate text-left text-base font-semibold text-foreground underline-offset-2 hover:underline"
+                        >
+                          {item.client_name || "Sem identificação"}
+                        </button>
+                        {cnpj ? (
+                          <p className="mt-0.5 text-xs text-muted-foreground">CNPJ {cnpj}</p>
+                        ) : null}
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {item.simulations.length} cálculo
+                          {item.simulations.length === 1 ? "" : "s"} no histórico
+                        </p>
+                        {latest ? (
+                          <p className="mt-1 text-xs tabular-nums text-muted-foreground">
+                            {brl(Number(latest.current_total))} → {brl(Number(latest.reform_total))}{" "}
+                            <span className={`font-semibold ${worse ? "text-danger" : "text-success"}`}>
+                              ({worse ? "+" : "−"}
+                              {brl(Math.abs(diff))})
+                            </span>
+                          </p>
+                        ) : null}
+                      </div>
+                      <Button onClick={() => setOpenCaseId(item.id)}>Abrir caso</Button>
+                    </li>
+                  );
+                })}
+              </ul>
             ) : (
               <ul className="space-y-3">
                 {cases.filter((c) => c.id === openCaseId).map((item) => {
                   const latest = item.simulations[0];
-                  const cnpj = formatCnpj(item.cnpj);
+                  const cnpj = item.cnpj ? formatCnpjMask(item.cnpj) : null;
                   const isOpen = openCaseId === item.id;
                   const diff = latest
                     ? Number(latest.reform_total) - Number(latest.current_total)
@@ -690,7 +606,7 @@ function MyCalculations() {
                             <p className="mt-0.5 text-xs text-muted-foreground">CNPJ {cnpj}</p>
                           ) : null}
                           <p className="mt-1 text-xs text-muted-foreground">
-                            Etapa: {STAGE_LABELS[item.stage]} · {item.simulations.length} cálculo
+                            {item.simulations.length} cálculo
                             {item.simulations.length === 1 ? "" : "s"}
                           </p>
                           {latest ? (
@@ -713,13 +629,6 @@ function MyCalculations() {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
-                          <div className="w-56">
-                            <StageSelect
-                              value={item.stage}
-                              disabled={busyCaseId === item.id}
-                              onChange={(stage) => void handleStageChange(item.id, stage)}
-                            />
-                          </div>
                            <Button
                              onClick={() =>
                                setDiagCaseId(diagCaseId === item.id ? null : item.id)
@@ -773,15 +682,6 @@ function MyCalculations() {
                           )}
                         </div>
                       </div>
-
-                      <div className="mt-4 border-t border-border pt-4">
-                        <CasoCrmPanel
-                          caseItem={item}
-                          onUpdated={(patch) => patchCase(item.id, patch)}
-                        />
-                      </div>
-
-
 
                       {parecerCaseId === item.id ? (
                         <div className="mt-4 border-t border-border pt-4">

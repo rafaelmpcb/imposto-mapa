@@ -147,11 +147,24 @@ export function parseServicos(root: Element, valorTotal: number): NfseServicoIte
   const vCofinsRaiz = num(findTag(root, ["vCofins"]));
 
   return alvos.map((bloco) => {
-    const ibscbs = findTag(bloco, ["IBSCBS", "gIBSCBS", "tribIBSCBS"]);
-    const cclasstribNode = findTag(ibscbs ?? bloco, ["cClassTrib", "CClassTrib"]);
+    // Na NFS-e Nacional o <IBSCBS> com o cClassTrib fica como IRMÃO de
+    // <serv> dentro de <infDPS> (e os totais calculados de CBS/IBS-UF/IBS-Mun
+    // ficam em outro <IBSCBS>, no nível de <infNFSe>) — nenhum dos dois fica
+    // DENTRO de <serv>. Por isso a busca cai para o nível do documento
+    // (`root`) quando o próprio item não traz o bloco; sem isso, toda nota
+    // nesse layout era lida como "sem classificação no documento" e o
+    // crédito caía para a estimativa da tabela de exceções por NBS mesmo
+    // quando a nota já trazia o valor oficial pronto.
+    const ibscbsBloco = findTag(bloco, ["IBSCBS", "gIBSCBS", "tribIBSCBS"]);
+    const ibscbs = ibscbsBloco ?? findTag(root, ["IBSCBS", "gIBSCBS", "tribIBSCBS"]);
+    // cClassTrib é buscado direto na raiz (não dentro de `ibscbs`) porque,
+    // quando há dois blocos <IBSCBS> (classificação e totais), o primeiro
+    // encontrado por nome pode ser o de totais, que não tem cClassTrib.
+    const cclasstribNode =
+      findTag(bloco, ["cClassTrib", "CClassTrib"]) ?? findTag(root, ["cClassTrib", "CClassTrib"]);
     const gCbs = findTag(ibscbs, ["gCBS"]);
-    const gUf = findTag(ibscbs, ["gIBSUF"]);
-    const gMun = findTag(ibscbs, ["gIBSMun"]);
+    const gUf = findTag(ibscbs, ["gIBSUF", "gIBSUFTot"]);
+    const gMun = findTag(ibscbs, ["gIBSMun", "gIBSMunTot"]);
     const valor =
       num(findTag(bloco, ["vServ", "ValorServicos", "vServPrest", "vLiq"])) || valorTotal;
 
@@ -235,6 +248,10 @@ export function parseNfseXml(xml: string, arquivo: string): NfseNota {
   // aninhado em vez do <emit> de topo, que é o único com xNome preenchido.
   const prestScope = findTag(root, ["emit", "prest", "PrestadorServico", "Prestador"]);
   const tomaScope = findTag(root, ["toma", "TomS", "TomadorServico", "Tomador", "dest"]);
+  // Layout da Prefeitura de São Paulo (<NFe> com NumeroNFe, CPFCNPJPrestador,
+  // RazaoSocialPrestador...): os dados das partes são tags soltas na raiz, sem
+  // um bloco <prest>/<toma> que as agrupe.
+  const layoutSp = Boolean(findTag(root, ["NumeroNFe"]));
 
   // Receita é sempre o valor bruto faturado (base de cálculo legal do ISS,
   // PIS/COFINS, IRPJ/CSLL e Simples) — retenção na fonte (ISS retido,
@@ -243,19 +260,26 @@ export function parseNfseXml(xml: string, arquivo: string): NfseNota {
   const valorTotal =
     num(findTag(root, ["vServ", "ValorServicos", "vServPrest", "vLiq", "ValorLiquidoNfse"])) || 0;
   const emissao =
-    text(findTag(root, ["dhEmi", "dEmi", "DataEmissao", "dhProc", "dCompet"])) || "";
+    text(findTag(root, ["dhEmi", "dEmi", "DataEmissao", "DataEmissaoNFe", "dhProc", "dCompet"])) || "";
   const chaveAttr = root.getAttribute("Id") ?? "";
-  const cnpjPrestador = cnpjOf(prestScope);
+  const cnpjPrestador = layoutSp
+    ? cnpjOf(findTag(root, ["CPFCNPJPrestador"]))
+    : cnpjOf(prestScope);
   const itens = parseServicos(root, valorTotal);
-  const numero = text(findTag(root, ["nNFSe", "nNFS-e", "Numero", "nDPS"])) || null;
-  const serieDoc = text(findTag(root, ["serie", "Serie"])) || "";
+  const numero = text(findTag(root, ["nNFSe", "nNFS-e", "Numero", "NumeroNFe", "nDPS"])) || null;
+  const serieDoc = text(findTag(root, ["serie", "Serie", "SerieRPS"])) || "";
   // Layouts municipais (ex.: Caxias do Sul) não têm chave nacional: usa
   // referência do documento ou CNPJ+série+número como identificador único.
   // ChaveAcesso (quando existe) é o identificador oficial do documento — mais
   // robusto para deduplicação do que CodigoVerificacao, que é só o código de
   // consulta pública da nota.
+  // No layout de São Paulo o CodigoVerificacao é alfanumérico (ex.: "VVMQ-DHW2"):
+  // extrair só os dígitos daria um "2" que colidiria entre notas diferentes,
+  // então a chave vem de CNPJ+série+número.
   const chave =
-    onlyDigits(text(findTag(root, ["chNFSe", "ChaveAcesso", "CodigoVerificacao"])) || chaveAttr) ||
+    (layoutSp
+      ? ""
+      : onlyDigits(text(findTag(root, ["chNFSe", "ChaveAcesso", "CodigoVerificacao"])) || chaveAttr)) ||
     text(findTag(root, ["refNF"])) ||
     (cnpjPrestador && numero ? `${cnpjPrestador}-${serieDoc}-${numero}` : "") ||
     null;
@@ -270,11 +294,15 @@ export function parseNfseXml(xml: string, arquivo: string): NfseNota {
     arquivo,
     chave,
     numero,
-    serie: text(findTag(root, ["serie", "Serie"])) || null,
+    serie: text(findTag(root, ["serie", "Serie", "SerieRPS"])) || null,
     cnpjPrestador,
-    razaoSocialPrestador: nomeOf(prestScope),
-    cnpjTomador: cnpjOf(tomaScope),
-    razaoSocialTomador: nomeOf(tomaScope),
+    razaoSocialPrestador: layoutSp
+      ? text(findTag(root, ["RazaoSocialPrestador"])) || null
+      : nomeOf(prestScope),
+    cnpjTomador: layoutSp ? cnpjOf(findTag(root, ["CPFCNPJTomador"])) : cnpjOf(tomaScope),
+    razaoSocialTomador: layoutSp
+      ? text(findTag(root, ["RazaoSocialTomador"])) || null
+      : nomeOf(tomaScope),
     codigoServico: itens.find((i) => i.nbs)?.nbs ?? itens.find((i) => i.itemLc116)?.itemLc116 ?? null,
     regimePrestador: regimeDoDocumento(root),
     valorTotal: valorTotal || itens.reduce((acc, i) => acc + i.valorServico, 0),
@@ -296,8 +324,8 @@ function regimeDoDocumento(root: Element): "simples" | "regular" | null {
   if (nacionalVal === "2" || nacionalVal === "3") return "simples";
 
   const abrasf = text(findTag(root, ["OptanteSimplesNacional"]));
-  if (abrasf === "1") return "simples";
-  if (abrasf === "2") return "regular";
+  if (abrasf === "1" || abrasf.toLowerCase() === "true") return "simples";
+  if (abrasf === "2" || abrasf.toLowerCase() === "false") return "regular";
   return null;
 }
 

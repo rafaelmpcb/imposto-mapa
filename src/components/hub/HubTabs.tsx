@@ -32,7 +32,7 @@ export interface HubTab {
 export const HUB_TABS: HubTab[] = [
   {
     id: "casos",
-    label: "Casos e Funil Comercial",
+    label: "Casos",
     hint: "CRM: clientes, etapas, contatos e diagnóstico",
     ativo: true,
     icon: Briefcase,
