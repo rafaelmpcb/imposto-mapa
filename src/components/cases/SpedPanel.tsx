@@ -32,10 +32,13 @@ export function SpedPanel({
   caseId,
   pacote,
   onStatus,
+  onGravado,
 }: {
   caseId: string;
   pacote: PacoteTriado | null;
   onStatus?: (s: { icmsMeses: number; contribMeses: number }) => void;
+  /** Chamado depois que arquivos SPED novos foram gravados. */
+  onGravado?: () => void;
 }) {
   const list = useServerFn(listSped);
   const save = useServerFn(saveSped);
@@ -68,6 +71,7 @@ export function SpedPanel({
     void save({ data: { caseId, itens: pacote.resultado.sped } })
       .then((r) => {
         setMsg(`${r.gravados} arquivo(s) do SPED lido(s) e gravado(s). Períodos repetidos foram substituídos.`);
+        onGravado?.();
         return carregar();
       })
       .catch(() => setMsg("Não foi possível gravar os SPEDs lidos."))

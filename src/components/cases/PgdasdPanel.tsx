@@ -32,11 +32,14 @@ export function PgdasdPanel({
   caseItem,
   onStatus,
   onCount,
+  onGravado,
   incoming,
 }: {
   caseItem: CaseRecord;
   onStatus?: (status: string) => void;
   onCount?: (n: number) => void;
+  /** Chamado depois que um extrato do PGDAS-D foi gravado. */
+  onGravado?: () => void;
   incoming?: { id: number; file: File } | null;
 }) {
   const navigate = useNavigate();
@@ -135,6 +138,7 @@ export function PgdasdPanel({
       );
       setDraft(null);
       setFileName("");
+      onGravado?.();
       await refresh();
     } catch {
       setError("Não foi possível gravar os dados do PGDAS-D.");

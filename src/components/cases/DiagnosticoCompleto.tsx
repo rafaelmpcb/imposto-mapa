@@ -23,6 +23,7 @@ import { FluxoCaixaPanel } from "@/components/cases/FluxoCaixaPanel";
 import { SplitPaymentPanel } from "@/components/cases/SplitPaymentPanel";
 import { ContratosAlugueisPanel } from "@/components/cases/ContratosAlugueisPanel";
 import { withAuthRetry } from "@/lib/auth-retry";
+import { gerarParecer } from "@/lib/parecer.functions";
 import {
   classifyCarteiraRowManually,
   deleteCarteiraRow,
@@ -93,6 +94,39 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const stopRef = useRef(false);
 
+  /* Parecer Padrão automático: o dashboard lê o parecer salvo (uma foto dos
+   * dados), então documento novo só aparece lá numa versão nova. Cada envio
+   * marca o parecer como pendente; ao fim do processamento (regimes dos CNPJs
+   * consultados) ou, nos envios que não processam CNPJ, direto, gera-se UMA
+   * versão nova após uma pausa curta — vários envios seguidos viram uma versão
+   * só. Versões finalizadas nunca são alteradas; a nova nasce como rascunho. */
+  const gerarParecerFn = useServerFn(gerarParecer);
+  const parecerPendente = useRef(false);
+  const parecerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const gerarParecerAgora = () => {
+    if (parecerTimer.current) clearTimeout(parecerTimer.current);
+    parecerTimer.current = null;
+    if (!parecerPendente.current) return;
+    parecerPendente.current = false;
+    void withAuthRetry(() => gerarParecerFn({ data: { caseId: caseItem.id } }))
+      .then((res) => {
+        if (res.ok) {
+          setInfo(`Parecer Padrão atualizado automaticamente (versão ${res.versao.versao}).`);
+        }
+      })
+      .catch(() => {
+        /* o parecer continua disponível em "Gerar nova versão" */
+      });
+  };
+  const marcarParecer = () => {
+    parecerPendente.current = true;
+  };
+  const agendarParecer = () => {
+    parecerPendente.current = true;
+    if (parecerTimer.current) clearTimeout(parecerTimer.current);
+    parecerTimer.current = setTimeout(gerarParecerAgora, 15_000);
+  };
+
   const refresh = async () => {
     try {
       const res = await withAuthRetry(() => load({ data: { caseId: caseItem.id } }));
@@ -112,6 +146,8 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
     void refresh();
     return () => {
       stopRef.current = true;
+      // Saiu da tela com envio pendente: gera já, sem esperar a pausa.
+      gerarParecerAgora();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseItem.id]);
@@ -247,7 +283,12 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
       setStep("docs");
       setListaAberta(true);
       await refresh();
-      if (servicoTomadoUpload) void runDiagnostic();
+      if (servicoTomadoUpload) {
+        marcarParecer();
+        void runDiagnostic();
+      } else {
+        agendarParecer();
+      }
     } catch {
       setError("Não foi possível gravar a composição de carteira.");
     } finally {
@@ -305,6 +346,7 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
     } finally {
       setRunning(false);
       setProgress(null);
+      if (parecerPendente.current) agendarParecer();
     }
   };
 
@@ -783,7 +825,12 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
             <span className="ml-1 text-xs font-normal text-muted-foreground">Ver conferência</span>
           </summary>
           <div className="mt-3">
-            <SpedPanel caseId={caseItem.id} pacote={pacote} onStatus={setSpedStatus} />
+            <SpedPanel
+              caseId={caseItem.id}
+              pacote={pacote}
+              onStatus={setSpedStatus}
+              onGravado={agendarParecer}
+            />
           </div>
         </details>
       </div>
@@ -875,6 +922,7 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
                         onApplied={async () => {
                           setListaAberta(true);
                           await refresh();
+                          marcarParecer();
                           void runDiagnostic();
                         }}
                         incoming={pacote ? { id: pacote.id, files: pacote.resultado.nfe } : null}
@@ -895,6 +943,7 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
                           setListaAberta(true);
                           await refresh();
                           setNbsReload((v) => v + 1);
+                          marcarParecer();
                           void runDiagnostic();
                         }}
                       />
@@ -923,6 +972,7 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
                         setListaAberta(true);
                         await refresh();
                         setNbsReload((v) => v + 1);
+                        marcarParecer();
                         void runDiagnostic();
                       }}
                     />
@@ -931,6 +981,7 @@ export function DiagnosticoCompleto({ caseItem }: { caseItem: CaseRecord }) {
                       caseItem={caseItem}
                       onStatus={setRegimeStatus}
                       onCount={setPgdasCount}
+                      onGravado={agendarParecer}
                       incoming={
                         pacote?.resultado.pgdasd[0]
                           ? { id: pacote.id, file: pacote.resultado.pgdasd[0] }
