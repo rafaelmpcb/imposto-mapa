@@ -270,7 +270,7 @@ function EquiparacaoPage() {
       <div className="mx-auto grid max-w-6xl gap-6 px-5 py-8 lg:grid-cols-[1fr_1.1fr]">
         <section className="space-y-6">
           <div className="space-y-4 rounded-xl border border-border bg-card p-5 print:hidden">
-            <h2 className="font-display text-lg font-bold">Caso da clínica no CRM</h2>
+            <h2 className="font-display text-lg font-bold">Caso da clínica</h2>
             <Field label="Vincular ao Caso">
               <Select value={casoId} onChange={(e) => onCaso(e.target.value)}>
                 <option value="">Sem vínculo</option>

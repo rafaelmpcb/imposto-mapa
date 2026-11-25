@@ -33,7 +33,7 @@ export const HUB_TABS: HubTab[] = [
   {
     id: "casos",
     label: "Casos",
-    hint: "CRM: clientes, etapas, contatos e diagnóstico",
+    hint: "Casos de clientes, diagnóstico e parecer",
     ativo: true,
     icon: Briefcase,
   },
